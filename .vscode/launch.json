@@ -1,0 +1,145 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ROS_Flutter_Gui_App-old",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "ROS_Flutter_Gui_App-old (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "ROS_Flutter_Gui_App-old (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "roslibdart",
+            "cwd": "plugin/roslibdart",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "roslibdart (profile mode)",
+            "cwd": "plugin/roslibdart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "roslibdart (release mode)",
+            "cwd": "plugin/roslibdart",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "caller",
+            "cwd": "plugin/roslibdart/example/caller",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "caller (profile mode)",
+            "cwd": "plugin/roslibdart/example/caller",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "caller (release mode)",
+            "cwd": "plugin/roslibdart/example/caller",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "pspad",
+            "cwd": "plugin/roslibdart/example/pspad",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "pspad (profile mode)",
+            "cwd": "plugin/roslibdart/example/pspad",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "pspad (release mode)",
+            "cwd": "plugin/roslibdart/example/pspad",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "publisher",
+            "cwd": "plugin/roslibdart/example/publisher",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "publisher (profile mode)",
+            "cwd": "plugin/roslibdart/example/publisher",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "publisher (release mode)",
+            "cwd": "plugin/roslibdart/example/publisher",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "service",
+            "cwd": "plugin/roslibdart/example/service",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "service (profile mode)",
+            "cwd": "plugin/roslibdart/example/service",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "service (release mode)",
+            "cwd": "plugin/roslibdart/example/service",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "subscriber",
+            "cwd": "plugin/roslibdart/example/subscriber",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "subscriber (profile mode)",
+            "cwd": "plugin/roslibdart/example/subscriber",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "subscriber (release mode)",
+            "cwd": "plugin/roslibdart/example/subscriber",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
