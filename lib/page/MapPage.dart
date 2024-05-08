@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ros_flutter_gui_app/channel/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
+import 'package:ros_flutter_gui_app/display/display_map.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -26,14 +28,12 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            // Consumer<JoyStickController>(
-            //   builder: (context, joy, child) {
-            //     print('btn event: ${joy.buttonEvent_}');
-            //   },
-            // )
+            CustomPaint(
+              painter: DisplayMap(
+                  map: Provider.of<RosChannel>(context, listen: true).map_),
+            )
           ],
         ),
       ),

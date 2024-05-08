@@ -11,7 +11,21 @@ class MapConfig {
 class OccupancyMap {
   MapConfig mapConfig = MapConfig();
   List<List<int>> data = [[]];
-  
+  int Rows() {
+    return mapConfig.height;
+  }
+
+  int Cols() {
+    return mapConfig.width;
+  }
+
+  int width() {
+    return mapConfig.width;
+  }
+
+  int height() {
+    return mapConfig.height;
+  }
 }
 
 
