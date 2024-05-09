@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
 class MapConfig {
   String image = "./";
   double resolution = 0.1;
@@ -25,6 +27,26 @@ class OccupancyMap {
 
   int height() {
     return mapConfig.height;
+  }
+
+  void setFlip(){
+    data=List.from(data.reversed);
+  }
+  /**
+   * @description: 输入栅格地图的坐标，返回该位置的全局坐标
+   * @return {*}
+   */
+  void idx2xy(Offset occPoint, Offset mapPoint) {
+    mapPoint = Offset(mapConfig.originX + occPoint.dy * mapConfig.resolution,
+        mapConfig.originY + occPoint.dx * mapConfig.resolution);
+  }
+
+    /**
+   * @description: 输入全局坐标，返回栅格地图的行与列号
+   * @return {*}
+   */
+  void xy2idx(Offset mapPoint, Offset occPoint) {
+    occPoint=Offset((mapPoint.dy - mapConfig.originY) / mapConfig.resolution,(mapPoint.dx - mapConfig.originX) / mapConfig.resolution);
   }
 }
 

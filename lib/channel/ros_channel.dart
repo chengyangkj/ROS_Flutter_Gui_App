@@ -88,6 +88,7 @@ class RosChannel extends ChangeNotifier {
       int y = i % map_.mapConfig.width;
       map_.data[x][y] = dataList[i];
     }
+    map_.setFlip();
     notifyListeners();
   }
 
