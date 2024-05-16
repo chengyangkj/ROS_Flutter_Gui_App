@@ -24,7 +24,7 @@ class RosChannel extends ChangeNotifier {
   RosChannel() {
     //启动定时器 获取机器人实时坐标
 
-    Timer.periodic(const Duration(milliseconds: 200), (timer) {
+    Timer.periodic(const Duration(milliseconds: 50), (timer) {
       try {
         currRobotPose_ = tf_.lookUpForTransform("map", "base_link");
         notifyListeners();

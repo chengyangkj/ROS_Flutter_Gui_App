@@ -47,44 +47,43 @@ class _MapPageState extends State<MapPage> {
                   return Transform(
                     transform: notifier.value
                         .scaled(scaleValue_, scaleValue_, scaleValue_),
-                    child: Stack(
-                      children: <Widget>[
-                        Container(
-                          color: Colors.white30,
-                        ),
-                        Positioned.fill(
-                          child: Container(
-                            transform: notifier.value
-                                .scaled(scaleValue_, scaleValue_, scaleValue_),
-                            child: ValueListenableBuilder<OccupancyMap>(
-                              valueListenable: Provider.of<RosChannel>(context,
-                                      listen: false)
-                                  .map,
-                              builder: (context, value, child) {
-                                return CustomPaint(
-                                  foregroundPainter: DisplayMap(map: value),
-                                );
-                              },
+                    child: ValueListenableBuilder<OccupancyMap>(
+                      valueListenable:
+                          Provider.of<RosChannel>(context, listen: false).map,
+                      builder: (context, value, child) {
+                        return Container(
+                          transform: notifier.value
+                              .scaled(scaleValue_, scaleValue_, scaleValue_),
+                          child: CustomPaint(
+                            foregroundPainter: DisplayMap(map: value),
+                            child: Stack(
+                              children: <Widget>[
+                                Container(
+                                  color: Colors.white,
+                                ),
+                                Positioned(child: Consumer<RosChannel>(
+                                  builder: (context, rosChannel, child) {
+                                    var pose = rosChannel.robotPoseScene;
+                                    const double robotSize = 30;
+                                    return Container(
+                                      transform: Matrix4.identity()
+                                        ..translate(pose.x, pose.y)
+                                        ..rotateZ(-pose.theta),
+                                      width: robotSize,
+                                      height: robotSize,
+                                      child: DisplayRobot(
+                                        size: robotSize,
+                                        color: Colors.blue,
+                                        count: 2,
+                                      ),
+                                    );
+                                  },
+                                ))
+                              ],
                             ),
                           ),
-                        ),
-                        Consumer<RosChannel>(
-                          builder: (context, rosChannel, child) {
-                            var pose = rosChannel.robotPoseScene;
-                            double robotIconSize = 30;
-                            return Transform(
-                              transform: Matrix4.identity()
-                                ..translate(pose.x, pose.y)
-                                ..rotateZ(-pose.theta),
-                              child: DisplayRobot(
-                                size: robotIconSize,
-                                color: Colors.blue,
-                                count: 2,
-                              ),
-                            );
-                          },
-                        )
-                      ],
+                        );
+                      },
                     ),
                   );
                 },
