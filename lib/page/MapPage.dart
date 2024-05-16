@@ -1,8 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:matrix_gesture_detector_pro/matrix_gesture_detector_pro.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/channel/ros_channel.dart';
+import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:ros_flutter_gui_app/display/display_robot.dart';
+import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
 
@@ -14,29 +19,76 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
+  double scaleValue_ = 1;
   @override
   Widget build(BuildContext context) {
+    final ValueNotifier<Matrix4> notifier = ValueNotifier(Matrix4.identity());
     return Scaffold(
-      body: Center(
-        child: Stack(
-          children: [
-            CustomPaint(
-              painter: DisplayMap(
-                  map: Provider.of<RosChannel>(context, listen: true).map_),
-            )
-          ],
-        ),
-      ),
-    );
+        backgroundColor: Colors.grey,
+        body: Listener(
+            // 监听手势事件
+            onPointerSignal: (event) {
+              if (event is PointerScrollEvent) {
+                if (event.scrollDelta.dy < 0) {
+                  scaleValue_ += 0.1;
+                } else {
+                  scaleValue_ -= 0.1;
+                }
+                setState(() {});
+              }
+            },
+            child: MatrixGestureDetector(
+              onMatrixUpdate: (m, tm, sm, rm) {
+                notifier.value = m;
+              },
+              child: AnimatedBuilder(
+                animation: notifier,
+                builder: (ctx, child) {
+                  return Transform(
+                    transform: notifier.value
+                        .scaled(scaleValue_, scaleValue_, scaleValue_),
+                    child: Stack(
+                      children: <Widget>[
+                        Container(
+                          color: Colors.white30,
+                        ),
+                        Positioned.fill(
+                          child: Container(
+                            transform: notifier.value
+                                .scaled(scaleValue_, scaleValue_, scaleValue_),
+                            child: ValueListenableBuilder<OccupancyMap>(
+                              valueListenable: Provider.of<RosChannel>(context,
+                                      listen: false)
+                                  .map,
+                              builder: (context, value, child) {
+                                return CustomPaint(
+                                  foregroundPainter: DisplayMap(map: value),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        Consumer<RosChannel>(
+                          builder: (context, rosChannel, child) {
+                            var pose = rosChannel.robotPoseScene;
+                            double robotIconSize = 30;
+                            return Transform(
+                              transform: Matrix4.identity()
+                                ..translate(pose.x, pose.y)
+                                ..rotateZ(-pose.theta),
+                              child: DisplayRobot(
+                                size: robotIconSize,
+                                color: Colors.blue,
+                                count: 2,
+                              ),
+                            );
+                          },
+                        )
+                      ],
+                    ),
+                  );
+                },
+              ),
+            )));
   }
 }

@@ -1,10 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 
 class DisplayMap extends CustomPainter {
-  OccupancyMap map;
+  late OccupancyMap map;
   List<Offset> pointList = [];
   DisplayMap({required this.map}) {
     for (int i = 0; i < map.Cols(); i++)
@@ -21,9 +23,8 @@ class DisplayMap extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
       ..color = Colors.black // 设置颜色为传入的颜色参数
-      ..strokeCap = StrokeCap.round // 设置画笔的端点为圆形，以便绘制圆形点
-      ..strokeWidth = 1; // 设置画笔的宽度为5个像素
-
+      ..strokeCap = StrokeCap.butt // 设置画笔的端点为圆形，以便绘制圆形点
+      ..strokeWidth = 1; // 设置画笔的宽度为1个像素
     canvas.drawPoints(PointMode.points, pointList, paint);
   }
 
