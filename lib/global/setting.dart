@@ -40,6 +40,24 @@ class Setting {
     return prefs.getString("laserTopic") ?? "scan";
   }
 
+  void setGloalPathTopic(String topic) {
+    prefs.setString('globalPathTopic', topic);
+  }
+
+  String get globalPathTopic {
+    return prefs.getString("globalPathTopic") ??
+        "/move_base/DWAPlannerROS/global_plan";
+  }
+
+  void setLocalPathTopic(String topic) {
+    prefs.setString('localPathTopic', topic);
+  }
+
+  String get localPathTopic {
+    return prefs.getString("localPathTopic") ??
+        "/move_base/DWAPlannerROS/local_plan";
+  }
+
   void setMapFrame(String frame) {
     prefs.setString('mapFrame', frame);
   }

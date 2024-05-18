@@ -7,7 +7,11 @@
         {
             "name": "ROS_Flutter_Gui_App-old",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": [
+                "--web-port",
+                "5050"
+            ]
         },
         {
             "name": "ROS_Flutter_Gui_App-old (profile mode)",

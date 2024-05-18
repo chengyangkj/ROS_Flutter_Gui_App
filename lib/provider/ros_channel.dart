@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/basic/robot_path.dart';
 import 'package:ros_flutter_gui_app/basic/tf2_dart.dart';
+import 'package:ros_flutter_gui_app/basic/transform.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:roslibdart/roslibdart.dart';
 import 'dart:async';
@@ -19,13 +21,16 @@ class RosChannel extends ChangeNotifier {
   late Topic tfChannel_;
   late Topic tfStaticChannel_;
   late Topic laserChannel_;
+  late Topic localPathChannel_;
+  late Topic globalPathChannel_;
   TF2Dart tf_ = TF2Dart();
   ValueNotifier<OccupancyMap> map_ =
       ValueNotifier<OccupancyMap>(OccupancyMap());
   Status rosConnectState_ = Status.none;
   RobotPose currRobotPose_ = RobotPose(0, 0, 0);
   List<Offset> laserPoint_ = [];
-
+  List<Offset> localPath_ = [];
+  List<Offset> globalPath_ = [];
   RosChannel() {
     //启动定时器 获取机器人实时坐标
 
@@ -47,6 +52,14 @@ class RosChannel extends ChangeNotifier {
     Offset poseScene =
         map_.value.xy2idx(Offset(currRobotPose_.x, currRobotPose_.y));
     return RobotPose(poseScene.dx, poseScene.dy, currRobotPose_.theta);
+  }
+
+  List<Offset> get localPathScene {
+    return localPath_;
+  }
+
+  List<Offset> get globalPathScene {
+    return globalPath_;
   }
 
   Future<bool> connect(String url) async {
@@ -125,6 +138,24 @@ class RosChannel extends ChangeNotifier {
     );
 
     laserChannel_.subscribe(laserCallback);
+
+    localPathChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.localPathTopic,
+      type: "nav_msgs/Path",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    localPathChannel_.subscribe(localPathCallback);
+
+    globalPathChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.globalPathTopic,
+      type: "nav_msgs/Path",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    globalPathChannel_.subscribe(globalPathCallback);
   }
 
   void destroyConnection() async {
@@ -136,6 +167,41 @@ class RosChannel extends ChangeNotifier {
     // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
     // notifyListeners();
+  }
+
+  Future<void> localPathCallback(Map<String, dynamic> msg) async {
+    localPath_.clear();
+    // print("${json.encode(msg)}");
+    RobotPath path = RobotPath.fromJson(msg);
+    String framId = path.header!.frameId!;
+    var transPose = tf_.lookUpForTransform("map", framId);
+
+    for (var pose in path.poses!) {
+      RosTransform tran = RosTransform(
+          translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
+      var poseFrame = tran.getRobotPose();
+      var poseMap = absoluteSum(poseFrame, transPose);
+      Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
+      localPath_.add(Offset(poseScene.dx, poseScene.dy));
+    }
+    notifyListeners();
+  }
+
+  Future<void> globalPathCallback(Map<String, dynamic> msg) async {
+    globalPath_.clear();
+    RobotPath path = RobotPath.fromJson(msg);
+    String framId = path.header!.frameId!;
+    var transPose = tf_.lookUpForTransform("map", framId);
+
+    for (var pose in path.poses!) {
+      RosTransform tran = RosTransform(
+          translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
+      var poseFrame = tran.getRobotPose();
+      var poseMap = absoluteSum(poseFrame, transPose);
+      Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
+      globalPath_.add(Offset(poseScene.dx, poseScene.dy));
+    }
+    notifyListeners();
   }
 
   Future<void> laserCallback(Map<String, dynamic> msg) async {

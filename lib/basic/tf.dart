@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:ros_flutter_gui_app/basic/transform.dart';
+
 import 'RobotPose.dart';
 
 class TF {
@@ -44,13 +46,13 @@ class TransformElement {
   final String childFrameId;
   static const String childFrameIdKey = "child_frame_id";
 
-  final Transform? transform;
+  final RosTransform? transform;
   static const String transformKey = "transform";
 
   TransformElement copyWith({
     Header? header,
     String? childFrameId,
-    Transform? transform,
+    RosTransform? transform,
   }) {
     return TransformElement(
       header: header ?? this.header,
@@ -65,7 +67,7 @@ class TransformElement {
       childFrameId: json["child_frame_id"] ?? "",
       transform: json["transform"] == null
           ? null
-          : Transform.fromJson(json["transform"]),
+          : RosTransform.fromJson(json["transform"]),
     );
   }
 
@@ -177,127 +179,5 @@ class Stamp {
   @override
   String toString() {
     return "$secs, $nsecs, ";
-  }
-}
-
-class Transform {
-  Transform({
-    required this.translation,
-    required this.rotation,
-  });
-
-  final Ation? translation;
-  static const String translationKey = "translation";
-
-  final Ation? rotation;
-  static const String rotationKey = "rotation";
-
-  RobotPose getRobotPose() {
-    return RobotPose(
-        getXYZ()[0].toDouble(), getXYZ()[1].toDouble(), getRPY()[2].toDouble());
-  }
-
-  List<num> getXYZ() {
-    return [translation!.x, translation!.y, translation!.z];
-  }
-
-  List<num> getRPY() {
-    num rx = rotation!.x;
-    num ry = rotation!.y;
-    num rz = rotation!.z;
-    num rw = rotation!.w;
-
-    // Calculate Euler angles from quaternion
-    double roll = atan2(2 * (rw * rx + ry * rz), 1 - 2 * (rx * rx + ry * ry));
-    double pitch = asin(2 * (rw * ry - rz * rx));
-    double yaw = atan2(2 * (rw * rz + rx * ry), 1 - 2 * (ry * ry + rz * rz));
-
-    return [roll, pitch, yaw];
-  }
-
-  Transform copyWith({
-    Ation? translation,
-    Ation? rotation,
-  }) {
-    return Transform(
-      translation: translation ?? this.translation,
-      rotation: rotation ?? this.rotation,
-    );
-  }
-
-  factory Transform.fromJson(Map<String, dynamic> json) {
-    return Transform(
-      translation: json["translation"] == null
-          ? null
-          : Ation.fromJson(json["translation"]),
-      rotation:
-          json["rotation"] == null ? null : Ation.fromJson(json["rotation"]),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        "translation": translation?.toJson(),
-        "rotation": rotation?.toJson(),
-      };
-
-  @override
-  String toString() {
-    return "$translation, $rotation, ";
-  }
-}
-
-class Ation {
-  Ation({
-    required this.x,
-    required this.y,
-    required this.z,
-    required this.w,
-  });
-
-  final num x;
-  static const String xKey = "x";
-
-  final num y;
-  static const String yKey = "y";
-
-  final num z;
-  static const String zKey = "z";
-
-  final num w;
-  static const String wKey = "w";
-
-  Ation copyWith({
-    num? x,
-    num? y,
-    num? z,
-    num? w,
-  }) {
-    return Ation(
-      x: x ?? this.x,
-      y: y ?? this.y,
-      z: z ?? this.z,
-      w: w ?? this.w,
-    );
-  }
-
-  factory Ation.fromJson(Map<String, dynamic> json) {
-    return Ation(
-      x: json["x"] ?? 0,
-      y: json["y"] ?? 0,
-      z: json["z"] ?? 0,
-      w: json["w"] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        "x": x,
-        "y": y,
-        "z": z,
-        "w": w,
-      };
-
-  @override
-  String toString() {
-    return "$x, $y, $z, $w, ";
   }
 }

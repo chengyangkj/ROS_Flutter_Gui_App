@@ -7,6 +7,7 @@ import 'package:matrix_gesture_detector_pro/matrix_gesture_detector_pro.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/display/display_laser.dart';
+import 'package:ros_flutter_gui_app/display/display_path.dart';
 import 'package:ros_flutter_gui_app/display/display_robot.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
@@ -117,6 +118,38 @@ class _MapPageState extends State<MapPage> {
                                                 painter: DisplayLaser(
                                                     pointList: rosChannel
                                                         .laserPointScene),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      //全局路径
+                                      Positioned(
+                                        child: Consumer<RosChannel>(
+                                          builder:
+                                              (context, rosChannel, child) {
+                                            return Container(
+                                              child: CustomPaint(
+                                                painter: DisplayPath(
+                                                    pointList: rosChannel
+                                                        .globalPathScene,
+                                                    color: Colors.green),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      //局部路径
+                                      Positioned(
+                                        child: Consumer<RosChannel>(
+                                          builder:
+                                              (context, rosChannel, child) {
+                                            return Container(
+                                              child: CustomPaint(
+                                                painter: DisplayPath(
+                                                    pointList: rosChannel
+                                                        .localPathScene,
+                                                    color: Colors.yellow),
                                               ),
                                             );
                                           },
