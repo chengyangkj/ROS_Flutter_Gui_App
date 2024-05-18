@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
@@ -9,17 +11,20 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import "package:ros_flutter_gui_app/basic/occupancy_map.dart";
 import 'package:ros_flutter_gui_app/basic/tf.dart';
+import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 
 class RosChannel extends ChangeNotifier {
   late Ros ros;
   late Topic mapChannel_;
   late Topic tfChannel_;
   late Topic tfStaticChannel_;
+  late Topic laserChannel_;
   TF2Dart tf_ = TF2Dart();
   ValueNotifier<OccupancyMap> map_ =
       ValueNotifier<OccupancyMap>(OccupancyMap());
   Status rosConnectState_ = Status.none;
   RobotPose currRobotPose_ = RobotPose(0, 0, 0);
+  List<Offset> laserPoint_ = [];
 
   RosChannel() {
     //启动定时器 获取机器人实时坐标
@@ -32,6 +37,10 @@ class RosChannel extends ChangeNotifier {
         print("get robot pose error:${e}");
       }
     });
+  }
+
+  List<Offset> get laserPointScene {
+    return laserPoint_;
   }
 
   RobotPose get robotPoseScene {
@@ -89,13 +98,33 @@ class RosChannel extends ChangeNotifier {
         queueSize: 10);
     mapChannel_.subscribe(mapCallback);
 
-    tfChannel_ =
-        Topic(ros: ros, name: "/tf", type: "tf2_msgs/TFMessage", queueSize: 1);
+    tfChannel_ = Topic(
+      ros: ros,
+      name: "/tf",
+      type: "tf2_msgs/TFMessage",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
     tfChannel_.subscribe(tfCallback);
 
     tfStaticChannel_ = Topic(
-        ros: ros, name: "/tf_static", type: "tf2_msgs/TFMessage", queueSize: 1);
+      ros: ros,
+      name: "/tf_static",
+      type: "tf2_msgs/TFMessage",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
     tfStaticChannel_.subscribe(tfCallback);
+
+    laserChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.laserTopic,
+      type: "sensor_msgs/LaserScan",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+
+    laserChannel_.subscribe(laserCallback);
   }
 
   void destroyConnection() async {
@@ -107,6 +136,38 @@ class RosChannel extends ChangeNotifier {
     // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
     // notifyListeners();
+  }
+
+  Future<void> laserCallback(Map<String, dynamic> msg) async {
+    // print("${json.encode(msg)}");
+    LaserScan laser = LaserScan.fromJson(msg);
+    RobotPose laserPoseMap = RobotPose(0, 0, 0);
+    try {
+      laserPoseMap = tf_.lookUpForTransform("map", laser.header!.frameId!);
+    } catch (e) {
+      print("not find transform from:map to ${laser.header!.frameId!}");
+      return;
+    }
+    // print("find laser size:${laser.ranges!.length}");
+    double angleMin = laser.angleMin!.toDouble();
+    double angleMax = laser.angleMax!;
+    double angleIncrement = laser.angleIncrement!;
+    laserPoint_.clear();
+    for (int i = 0; i < laser.ranges!.length; i++) {
+      double angle = angleMin + i * angleIncrement;
+      // print("${laser.ranges![i]}");
+      if (laser.ranges![i].isInfinite || laser.ranges![i].isNaN) continue;
+      double dist = laser.ranges![i];
+      //null数据处理
+      if (dist == -1) continue;
+      RobotPose poseLaser = RobotPose(dist * cos(angle), dist * sin(angle), 0);
+
+      //转换到map坐标系
+      RobotPose poseMap = absoluteSum(laserPoseMap, poseLaser);
+      Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
+      laserPoint_.add(Offset(poseScene.dx, poseScene.dy));
+    }
+    notifyListeners();
   }
 
   Future<void> mapCallback(Map<String, dynamic> msg) async {

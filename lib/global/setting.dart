@@ -32,6 +32,14 @@ class Setting {
     return prefs.getString("mapTopic") ?? "map";
   }
 
+  void setLaserTopic(String topic) {
+    prefs.setString('laserTopic', topic);
+  }
+
+  String get laserTopic {
+    return prefs.getString("laserTopic") ?? "scan";
+  }
+
   void setMapFrame(String frame) {
     prefs.setString('mapFrame', frame);
   }
