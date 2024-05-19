@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:matrix_gesture_detector_pro/matrix_gesture_detector_pro.dart';
 import 'package:provider/provider.dart';
+import 'package:ros_flutter_gui_app/basic/matrix_gesture_detector.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/display/display_laser.dart';
 import 'package:ros_flutter_gui_app/display/display_path.dart';
@@ -22,40 +22,25 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  double scaleValue_ = 2;
   @override
   Widget build(BuildContext context) {
-    final ValueNotifier<Matrix4> notifier = ValueNotifier(Matrix4.identity());
+    final ValueNotifier<Matrix4> gestureNotifier =
+        ValueNotifier(Matrix4.identity());
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.white,
       body: Row(
         children: [
           Expanded(
-              child: Listener(
-                  // 监听手势事件
-                  onPointerSignal: (event) {
-                    if (event is PointerScrollEvent) {
-                      if (event.scrollDelta.dy < 0) {
-                        scaleValue_ += 0.1;
-                      } else {
-                        scaleValue_ -= 0.1;
-                      }
-                      if (scaleValue_ < 1) scaleValue_ = 1;
-                      if (scaleValue_ > 5) scaleValue_ = 5;
-                      setState(() {});
-                    }
-                  },
-                  child: MatrixGestureDetector(
+              child: MatrixGestureDetector(
                     onMatrixUpdate: (m, tm, sm, rm) {
-                      notifier.value = m;
+                      gestureNotifier.value = m;
                     },
                     child: AnimatedBuilder(
-                      animation: notifier,
+                      animation: gestureNotifier,
                       builder: (ctx, child) {
                         return Transform(
-                          transform: notifier.value
-                              .scaled(scaleValue_, scaleValue_, scaleValue_),
+                          transform: gestureNotifier.value,
                           child: ValueListenableBuilder<OccupancyMap>(
                             valueListenable:
                                 Provider.of<RosChannel>(context, listen: false)
@@ -63,8 +48,6 @@ class _MapPageState extends State<MapPage> {
                             builder: (context, occMap, child) {
                               return Container(
                                 color: Colors.red,
-                                transform: notifier.value.scaled(
-                                    scaleValue_, scaleValue_, scaleValue_),
                                 width: screenSize.width,
                                 height: screenSize.height,
                                 child: Container(
@@ -164,7 +147,7 @@ class _MapPageState extends State<MapPage> {
                         );
                       },
                     ),
-                  )))
+                  ))
         ],
       ),
     );
