@@ -23,6 +23,9 @@ class RosChannel extends ChangeNotifier {
   late Topic laserChannel_;
   late Topic localPathChannel_;
   late Topic globalPathChannel_;
+  late Topic relocChannel_;
+  late Topic navGoalChannel_;
+
   TF2Dart tf_ = TF2Dart();
   ValueNotifier<OccupancyMap> map_ =
       ValueNotifier<OccupancyMap>(OccupancyMap());
@@ -156,6 +159,22 @@ class RosChannel extends ChangeNotifier {
       reconnectOnClose: true,
     );
     globalPathChannel_.subscribe(globalPathCallback);
+
+//发布者
+    relocChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.globalPathTopic,
+      type: "geometry_msgs/PoseWithCovarianceStamped",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    navGoalChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.globalPathTopic,
+      type: "move_base_msgs/MoveBaseActionGoal",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
   }
 
   void destroyConnection() async {
@@ -174,13 +193,19 @@ class RosChannel extends ChangeNotifier {
     // print("${json.encode(msg)}");
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
-    var transPose = tf_.lookUpForTransform("map", framId);
+    RobotPose transPose = RobotPose(0, 0, 0);
+    try {
+      transPose = tf_.lookUpForTransform("map", framId);
+    } catch (e) {
+      print("not find local path transfrom form:map to:$framId");
+      return;
+    }
 
     for (var pose in path.poses!) {
       RosTransform tran = RosTransform(
           translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
       var poseFrame = tran.getRobotPose();
-      var poseMap = absoluteSum(poseFrame, transPose);
+      var poseMap = absoluteSum(transPose, poseFrame);
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       localPath_.add(Offset(poseScene.dx, poseScene.dy));
     }
@@ -191,13 +216,19 @@ class RosChannel extends ChangeNotifier {
     globalPath_.clear();
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
-    var transPose = tf_.lookUpForTransform("map", framId);
+    RobotPose transPose = RobotPose(0, 0, 0);
+    try {
+      transPose = tf_.lookUpForTransform("map", framId);
+    } catch (e) {
+      print("not find global path transfrom form:map to:$framId");
+      return;
+    }
 
     for (var pose in path.poses!) {
       RosTransform tran = RosTransform(
           translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
       var poseFrame = tran.getRobotPose();
-      var poseMap = absoluteSum(poseFrame, transPose);
+      var poseMap = absoluteSum(transPose, poseFrame);
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       globalPath_.add(Offset(poseScene.dx, poseScene.dy));
     }

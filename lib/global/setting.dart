@@ -58,6 +58,23 @@ class Setting {
         "/move_base/DWAPlannerROS/local_plan";
   }
 
+  void setRelocTopic(String topic) {
+    prefs.setString('relocTopic', topic);
+  }
+
+  String get relocTopicTopic {
+    return prefs.getString("relocTopic") ??
+        "/initialpose";
+  }
+
+  void setNavGoalTopic(String topic) {
+    prefs.setString('navGoalTopic', topic);
+  }
+
+  String get navGoalTopic {
+    return prefs.getString("navGoalTopic") ?? "/move_base/goal";
+  }
+
   void setMapFrame(String frame) {
     prefs.setString('mapFrame', frame);
   }
