@@ -1,17 +1,18 @@
 
+![web](https://https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/web_build.yaml/badge.svg)
 
 借助ros brdige websocket实现的跨平台flutter gui 人机交互软件
 
 目录 
 <!-- TOC -->
 
-- [一,ROS Bridge WebSocket 安装与运行指南](#%E4%B8%80ros-bridge-websocket-%E5%AE%89%E8%A3%85%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%8C%87%E5%8D%97)
+- [一,ROS Bridge WebSocket 安装与运行指南](#一ros-bridge-websocket-安装与运行指南)
     - [ROS 1](#ros-1)
-        - [安装 rosbridge_suite](#%E5%AE%89%E8%A3%85-rosbridge_suite)
-        - [运行 rosbridge_websocket](#%E8%BF%90%E8%A1%8C-rosbridge_websocket)
+        - [安装 rosbridgesuite](#安装-rosbridgesuite)
+        - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
     - [ROS 2](#ros-2)
-        - [安装 rosbridge_suite](#%E5%AE%89%E8%A3%85-rosbridge_suite)
-        - [运行 rosbridge_websocket](#%E8%BF%90%E8%A1%8C-rosbridge_websocket)
+        - [安装 rosbridgesuite](#安装-rosbridgesuite)
+        - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
 
 <!-- /TOC -->
 
