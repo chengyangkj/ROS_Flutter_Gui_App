@@ -1,5 +1,5 @@
 
-![web](https://https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/web_build.yaml/badge.svg)
+![web](https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/web_build.yaml/badge.svg)
 
 借助ros brdige websocket实现的跨平台flutter gui 人机交互软件
 
