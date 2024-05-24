@@ -83,7 +83,6 @@ jobs:
       - name: Package Release
         run: |
           tar -czvf linux_release_package.tar.gz -C ./build/linux/x64/release/bundle/ .
-          mv linux_release_package.tar.gz $GITHUB_WORKSPACE/linux_release_package.tar.gz
       - name: Upload linux Release Asset
         env:
           # upload_url: ${{needs.create_release.outputs.upload_url}}
