@@ -68,6 +68,7 @@ jobs:
           asset_content_type: application/gzip
   build_on_linux:
     runs-on: ubuntu-latest
+    needs: create_release
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
@@ -81,7 +82,7 @@ jobs:
       - run: flutter build linux
       - name: Package Release
         run: |
-          tar -czvf linux_release_package.tar.gz -C ./build/web/ .
+          tar -czvf linux_release_package.tar.gz -C ./build/linux/x64/release/bundle/ .
           mv linux_release_package.tar.gz $GITHUB_WORKSPACE/linux_release_package.tar.gz
       - name: Upload linux Release Asset
         env:
@@ -92,7 +93,7 @@ jobs:
         with:
           upload_url: ${{needs.create_release.outputs.upload_url}}
           asset_path: ${{ github.workspace }}/linux_release_package.tar.gz
-          asset_name: ros_flutter_gui_app_linux.tar.gz
+          asset_name: ros_flutter_gui_app_linux_x86_64.tar.gz
           asset_content_type: application/gzip
   build_on_windows:
     runs-on: windows-latest
@@ -108,8 +109,6 @@ jobs:
       - run:
           $sourcePath = "${{ github.workspace }}/build/windows";
           $destinationPath = "${{ github.workspace }}/windows_release.zip";
-
-          Add-Type -A 'System.IO.Compression.FileSystem'
           [System.IO.Compression.ZipFile]::CreateFromDirectory($sourcePath, $destinationPath)
       - name: Upload windows Release Asset
         env:
@@ -120,5 +119,5 @@ jobs:
         with:
           upload_url: ${{needs.create_release.outputs.upload_url}}
           asset_path: ${{ github.workspace }}/windows_release.tar.gz
-          asset_name: ros_flutter_gui_app_windows.tar.gz
+          asset_name: ros_flutter_gui_app_windows_x86_64.tar.gz
           asset_content_type: application/gzip
