@@ -43,7 +43,6 @@ jobs:
       - name: Package Release
         run: |
           tar -czvf web_release_package.tar.gz ./build/web/*
-          tar -czvf macos_release_package.tar.gz ./build/macos/*
           tar -czvf apk_release_package.tar.gz ./build/app/outputs/flutter-apk/app-release.apk
           mv web_release_package.tar.gz $GITHUB_WORKSPACE/web_release_package.tar.gz
           mv apk_release_package.tar.gz $GITHUB_WORKSPACE/apk_release_package.tar.gz
