@@ -2,8 +2,6 @@ name: AutoRelease
 
 on:
   push:
-    branches:
-      - main
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*'
@@ -26,7 +24,7 @@ jobs:
       - name: Write URL
         run: |
           echo "upload_url=${{steps.create_release.outputs.upload_url}}" >> $GITHUB_OUTPUT
-  build_web:
+  build_on_mac:
     runs-on: macos-latest
     needs: create_release
     steps:
@@ -67,4 +65,32 @@ jobs:
           upload_url: ${{needs.create_release.outputs.upload_url}}
           asset_path: ${{ github.workspace }}/apk_release_package.tar.gz
           asset_name: ros_flutter_gui_app_apk.tar.gz
+          asset_content_type: application/gzip
+  build_on_windows:
+    runs-on: windows-latest
+    needs: create_release
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter build windows
+      - run:
+          $sourcePath = "./build/windows"
+          $destinationPath = "${{ github.workspace }}/windows_release.zip"
+
+          Add-Type -A 'System.IO.Compression.FileSystem'
+          [System.IO.Compression.ZipFile]::CreateFromDirectory($sourcePath, $destinationPath)
+      - name: Upload windows Release Asset
+        env:
+          # upload_url: ${{needs.create_release.outputs.upload_url}}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        id: upload-windows-release-asset 
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{needs.create_release.outputs.upload_url}}
+          asset_path: ${{ github.workspace }}/windows_release.tar.gz
+          asset_name: ros_flutter_gui_app_windows.tar.gz
           asset_content_type: application/gzip

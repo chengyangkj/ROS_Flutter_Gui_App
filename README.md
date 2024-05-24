@@ -5,6 +5,7 @@
 ![windows](https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/windows_build.yaml/badge.svg)
 
 借助ros brdige websocket实现的跨平台flutter gui 人机交互软件
+本项目已接入CI,保证多环境可用,并自动打包多平台二进制Release版本
 
 目录 
 <!-- TOC -->
