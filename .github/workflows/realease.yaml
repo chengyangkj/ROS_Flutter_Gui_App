@@ -42,8 +42,8 @@ jobs:
       - run: flutter build apk
       - name: Package Release
         run: |
-          tar -czvf web_release_package.tar.gz ./build/web/*
-          tar -czvf apk_release_package.tar.gz ./build/app/outputs/flutter-apk/app-release.apk
+          tar -czvf web_release_package.tar.gz -C ./build/web/ .
+          tar -czvf apk_release_package.tar.gz -C  ./build/app/outputs/flutter-apk/ .
           mv web_release_package.tar.gz $GITHUB_WORKSPACE/web_release_package.tar.gz
           mv apk_release_package.tar.gz $GITHUB_WORKSPACE/apk_release_package.tar.gz
       - name: Upload web Release Asset
