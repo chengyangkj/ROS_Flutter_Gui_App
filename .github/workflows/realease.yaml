@@ -2,6 +2,8 @@ name: AutoRelease
 
 on:
   push:
+    branches:
+      - main
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*'
@@ -37,18 +39,33 @@ jobs:
           flutter-version: 3.16.5
       - run: flutter pub get
       - run: flutter build web
+      - run: flutter build apk
       - name: Package Release
         run: |
-          tar -czvf release_package.tar.gz ./build/web/*
-          mv release_package.tar.gz $GITHUB_WORKSPACE/release_package.tar.gz
-      - name: Upload Release Asset
+          tar -czvf web_release_package.tar.gz ./build/web/*
+          tar -czvf macos_release_package.tar.gz ./build/macos/*
+          tar -czvf apk_release_package.tar.gz ./build/app/outputs/flutter-apk/app-release.apk
+          mv web_release_package.tar.gz $GITHUB_WORKSPACE/web_release_package.tar.gz
+          mv apk_release_package.tar.gz $GITHUB_WORKSPACE/apk_release_package.tar.gz
+      - name: Upload web Release Asset
         env:
           # upload_url: ${{needs.create_release.outputs.upload_url}}
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
-        id: upload-release-asset 
+        id: upload-web-release-asset 
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{needs.create_release.outputs.upload_url}}
-          asset_path: ${{ github.workspace }}/release_package.tar.gz
+          asset_path: ${{ github.workspace }}/web_release_package.tar.gz
           asset_name: ros_flutter_gui_app_web.tar.gz
+          asset_content_type: application/gzip
+      - name: Upload apk Release Asset
+        env:
+          # upload_url: ${{needs.create_release.outputs.upload_url}}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        id: upload-apk-release-asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{needs.create_release.outputs.upload_url}}
+          asset_path: ${{ github.workspace }}/apk_release_package.tar.gz
+          asset_name: ros_flutter_gui_app_apk.tar.gz
           asset_content_type: application/gzip
