@@ -117,6 +117,6 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{needs.create_release.outputs.upload_url}}
-          asset_path: ${{ github.workspace }}/windows_release.tar.gz
-          asset_name: ros_flutter_gui_app_windows_x86_64.tar.gz
+          asset_path: ${{ github.workspace }}/windows_release.zip
+          asset_name: ros_flutter_gui_app_windows_x86_64.zip
           asset_content_type: application/gzip
