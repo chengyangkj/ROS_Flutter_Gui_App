@@ -109,13 +109,14 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
 
   @override
   void initState() {
-     widget.onMatrixUpdate(
+    widget.onMatrixUpdate(
         matrix.scaled(
             pointerScaleValue_, pointerScaleValue_, pointerScaleValue_),
         translationDeltaMatrix,
         scaleDeltaMatrix,
         rotationDeltaMatrix);
   }
+
   @override
   Widget build(BuildContext context) {
     Widget child =
@@ -131,11 +132,12 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
             }
             if (pointerScaleValue_ < 1) pointerScaleValue_ = 1;
             if (pointerScaleValue_ > 15) pointerScaleValue_ = 15;
-            print("PointerScrollEvent:$event");
             widget.onMatrixUpdate(
                 matrix.scaled(
-                    pointerScaleValue_, pointerScaleValue_, pointerScaleValue_), translationDeltaMatrix,
-                scaleDeltaMatrix, rotationDeltaMatrix);
+                    pointerScaleValue_, pointerScaleValue_, pointerScaleValue_),
+                translationDeltaMatrix,
+                scaleDeltaMatrix,
+                rotationDeltaMatrix);
             setState(() {});
           }
         },
@@ -207,7 +209,10 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
 
     widget.onMatrixUpdate(
         matrix.scaled(
-            pointerScaleValue_, pointerScaleValue_, pointerScaleValue_), translationDeltaMatrix, scaleDeltaMatrix, rotationDeltaMatrix);
+            pointerScaleValue_, pointerScaleValue_, pointerScaleValue_),
+        translationDeltaMatrix,
+        scaleDeltaMatrix,
+        rotationDeltaMatrix);
   }
 
   Matrix4 _translate(Offset translation) {
