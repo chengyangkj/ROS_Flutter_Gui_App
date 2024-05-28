@@ -67,7 +67,6 @@ class DisplayRobotPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
-    canvas.translate(-size.width / 2, -size.height / 2);
     //绘制机器人坐标
     double radius = min(size.width / 2, size.height / 2);
     canvas.drawCircle(

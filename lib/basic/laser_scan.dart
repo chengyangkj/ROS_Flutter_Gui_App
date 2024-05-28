@@ -1,10 +1,10 @@
 class LaserScan {
   Header? header;
-  int? angleMin;
+  double? angleMin;
   double? angleMax;
   double? angleIncrement;
-  int? timeIncrement;
-  int? scanTime;
+  double? timeIncrement;
+  double? scanTime;
   double? rangeMin;
   double? rangeMax;
   List<double>? ranges;
@@ -25,13 +25,13 @@ class LaserScan {
   LaserScan.fromJson(Map<String, dynamic> json) {
     header =
         json['header'] != null ? new Header.fromJson(json['header']) : null;
-    angleMin = json['angle_min'];
-    angleMax = json['angle_max'];
-    angleIncrement = json['angle_increment'];
-    timeIncrement = json['time_increment'];
-    scanTime = json['scan_time'];
-    rangeMin = json['range_min'];
-    rangeMax = json['range_max'];
+    angleMin = json['angle_min'] as double;
+    angleMax = json['angle_max'] as double;
+    angleIncrement = json['angle_increment'] as double;
+    timeIncrement = json['time_increment'] as double;
+    scanTime = json['scan_time'] as double;
+    rangeMin = json['range_min'] as double;
+    rangeMax = json['range_max'] as double;
     ranges = (json['ranges'] as List<dynamic>).map((e) {
       // print("e:${e.runtimeType}");
       if (e == null) -1.toDouble();

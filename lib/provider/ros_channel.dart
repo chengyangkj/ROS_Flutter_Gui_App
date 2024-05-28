@@ -247,7 +247,7 @@ class RosChannel extends ChangeNotifier {
     }
     // print("find laser size:${laser.ranges!.length}");
     double angleMin = laser.angleMin!.toDouble();
-    double angleMax = laser.angleMax!;
+    double angleMax = laser.angleMax!.toDouble();
     double angleIncrement = laser.angleIncrement!;
     laserPoint_.clear();
     for (int i = 0; i < laser.ranges!.length; i++) {

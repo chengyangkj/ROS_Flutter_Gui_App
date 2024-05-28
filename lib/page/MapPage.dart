@@ -13,6 +13,7 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
 import 'package:ros_flutter_gui_app/display/display_grid.dart';
+import 'package:vector_math/vector_math_64.dart' as vector;
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,7 +24,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   ValueNotifier<bool> relocMode_ = ValueNotifier(false);
-  final ValueNotifier<Matrix4> gestureNotifier =
+  final ValueNotifier<Matrix4> globalTransform =
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<Matrix4> robotPoseMatrix =
       ValueNotifier(Matrix4.identity());
@@ -35,7 +36,7 @@ class _MapPageState extends State<MapPage> {
       body: Stack(
         children: [
           AnimatedBuilder(
-            animation: gestureNotifier,
+            animation: globalTransform,
             builder: (ctx, child) {
               return ValueListenableBuilder<OccupancyMap>(
                 valueListenable:
@@ -45,118 +46,118 @@ class _MapPageState extends State<MapPage> {
                     color: Colors.grey,
                     width: screenSize.width,
                     height: screenSize.height,
-                    child: Stack(
-                      children: [
-                        MatrixGestureDetector(
-                            onMatrixUpdate: (m, tm, sm, rm) {
-                              gestureNotifier.value = m;
-                            },
-                            child: Transform(
-                              transform: gestureNotifier.value,
-                              child: Stack(
-                                children: [
-                                  //网格
-                                  Container(
-                                    color: Colors.white,
-                                    child: DisplayGrid(
-                                      step: 1 / occMap.mapConfig.resolution,
-                                      width: screenSize.width,
-                                      height: screenSize.height,
-                                    ),
-                                  ),
-                                  //地图
-                                  CustomPaint(
-                                    foregroundPainter: DisplayMap(map: occMap),
-                                  ),
-
-                                  //激光
-                                  Positioned(
-                                    child: Consumer<RosChannel>(
-                                      builder: (context, rosChannel, child) {
-                                        return Container(
-                                          child: CustomPaint(
-                                            painter: DisplayLaser(
-                                                pointList:
-                                                    rosChannel.laserPointScene),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  //全局路径
-                                  Positioned(
-                                    child: Consumer<RosChannel>(
-                                      builder: (context, rosChannel, child) {
-                                        return Container(
-                                          child: CustomPaint(
-                                            painter: DisplayPath(
-                                                pointList:
-                                                    rosChannel.globalPathScene,
-                                                color: Colors.green),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  //局部路径
-                                  Positioned(
-                                    child: Consumer<RosChannel>(
-                                      builder: (context, rosChannel, child) {
-                                        return Container(
-                                          child: CustomPaint(
-                                            painter: DisplayPath(
-                                                pointList:
-                                                    rosChannel.localPathScene,
-                                                color: Colors.yellow),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  )
-                                ],
-                              ),
-                            )),
-
-                        //机器人位置
-                        // MatrixGestureDetector(onMatrixUpdate: (m, tm, sm, rm) {
-                        //   robotPoseMatrix.value = m;
-                        // }, child: Consumer<RosChannel>(
-                        //   builder: (context, rosChannel, child) {
-                        //     var pose = rosChannel.robotPoseScene;
-                        //     const double robotSize = 20;
-                        //     // if (!relocMode_.value) {
-                        //     robotPoseMatrix.value = Matrix4.identity()
-                        //       ..translate(pose.x, pose.y)
-                        //       ..rotateZ(-pose.theta);
-                        //     // }
-
-                        //     return Transform(
-                        //         transform: robotPoseMatrix.value,
-                        //         child: SizedBox(
-                        //           width: robotSize,
-                        //           height: robotSize,
-                        //           child: DisplayRobot(
-                        //             size: robotSize,
-                        //             color: Colors.blue,
-                        //             count: 2,
-                        //           ),
-                        //         ));
-                        //   },
-                        // )),
-                        MatrixGestureDetector(
-                          onMatrixUpdate: (m, tm, sm, rm) {
-                            robotPoseMatrix.value = m;
-                          },
-                          child: Transform(
-                            transform: robotPoseMatrix.value,
-                            child: Container(
-                              width: 30,
-                              height: 30,
-                              color: Colors.blue,
+                    child: MatrixGestureDetector(
+                      onMatrixUpdate: (m, tm, sm, rm) {
+                        globalTransform.value = m;
+                      },
+                      child: Stack(
+                        children: [
+                          //网格
+                          Container(
+                            color: Colors.white,
+                            child: DisplayGrid(
+                              step: 1 / occMap.mapConfig.resolution,
+                              width: screenSize.width,
+                              height: screenSize.height,
                             ),
                           ),
-                        ),
-                      ],
+                          //地图
+                          Container(
+                            transform: globalTransform.value,
+                            child: CustomPaint(
+                              foregroundPainter: DisplayMap(map: occMap),
+                            ),
+                          ),
+
+                          //激光
+                          Container(
+                            transform: globalTransform.value,
+                            child: Consumer<RosChannel>(
+                              builder: (context, rosChannel, child) {
+                                return Container(
+                                  child: CustomPaint(
+                                    painter: DisplayLaser(
+                                        pointList: rosChannel.laserPointScene),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          //全局路径
+                          Container(
+                            transform: globalTransform.value,
+                            child: Consumer<RosChannel>(
+                              builder: (context, rosChannel, child) {
+                                return Container(
+                                  child: CustomPaint(
+                                    painter: DisplayPath(
+                                        pointList: rosChannel.globalPathScene,
+                                        color: Colors.green),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          //局部路径
+                          Container(
+                            transform: globalTransform.value,
+                            child: Consumer<RosChannel>(
+                              builder: (context, rosChannel, child) {
+                                return Container(
+                                  child: CustomPaint(
+                                    painter: DisplayPath(
+                                        pointList: rosChannel.localPathScene,
+                                        color: Colors.yellow),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          //机器人位置
+
+                          Transform(
+                            transform: globalTransform.value,
+                            child: Consumer<RosChannel>(
+                              builder: (context, rosChannel, child) {
+                                var pose = rosChannel.robotPoseScene;
+                                const double robotSize = 20;
+                                if (!relocMode_.value) {
+                                  robotPoseMatrix.value = Matrix4.identity()
+                                    ..translate(pose.x - robotSize / 2,
+                                        pose.y - robotSize / 2)
+                                    ..rotateZ(-pose.theta);
+                                }
+                                return Transform(
+                                    transform: robotPoseMatrix.value,
+                                    child: MatrixGestureDetector(
+                                      onMatrixUpdate: (m, tm, sm, rm) {
+                                        if (relocMode_.value) {
+                                          // vector.Vector3 position =
+                                          //     vector.Vector3.zero();
+                                          // vector.Quaternion rotation =
+                                          //     vector.Quaternion.identity();
+                                          // vector.Vector3 scale =
+                                          //     vector.Vector3.zero();
+                                          // tm.decompose(
+                                          //     position, rotation, scale);
+                                          // print("get posetion:${position}");
+                                          robotPoseMatrix.value =
+                                              tm * robotPoseMatrix.value;
+                                          robotPoseMatrix.value =
+                                              rm * robotPoseMatrix.value;
+                                        }
+                                      },
+                                      child: DisplayRobot(
+                                        size: robotSize,
+                                        color: Colors.blue,
+                                        count: 2,
+                                      ),
+                                    ));
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
