@@ -39,9 +39,9 @@ class OccupancyMap {
    * @return {*}
    */
   Offset idx2xy(Offset occPoint) {
-    double x =
+    double y =
         (height() - occPoint.dy) * mapConfig.resolution + mapConfig.originY;
-    double y = occPoint.dx * mapConfig.resolution + mapConfig.originX;
+    double x = occPoint.dx * mapConfig.resolution + mapConfig.originX;
     return Offset(x, y);
   }
 

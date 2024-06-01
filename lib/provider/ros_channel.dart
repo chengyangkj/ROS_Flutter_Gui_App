@@ -15,6 +15,12 @@ import "package:ros_flutter_gui_app/basic/occupancy_map.dart";
 import 'package:ros_flutter_gui_app/basic/tf.dart';
 import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 
+class LaserData {
+  RobotPose robotPose;
+  List<Offset> laserPoseBaseLink;
+  LaserData({required this.robotPose, required this.laserPoseBaseLink});
+}
+
 class RosChannel extends ChangeNotifier {
   late Ros ros;
   late Topic mapChannel_;
@@ -34,6 +40,8 @@ class RosChannel extends ChangeNotifier {
   List<Offset> laserPoint_ = [];
   List<Offset> localPath_ = [];
   List<Offset> globalPath_ = [];
+  LaserData laserPointData_ =
+      LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []);
   RosChannel() {
     //启动定时器 获取机器人实时坐标
 
@@ -47,14 +55,18 @@ class RosChannel extends ChangeNotifier {
     });
   }
 
-  List<Offset> get laserPointScene {
-    return laserPoint_;
+  LaserData get laserPointData {
+    return laserPointData_;
   }
 
   RobotPose get robotPoseScene {
     Offset poseScene =
         map_.value.xy2idx(Offset(currRobotPose_.x, currRobotPose_.y));
     return RobotPose(poseScene.dx, poseScene.dy, currRobotPose_.theta);
+  }
+
+  RobotPose get robotPoseMap {
+    return currRobotPose_;
   }
 
   List<Offset> get localPathScene {
@@ -238,9 +250,10 @@ class RosChannel extends ChangeNotifier {
   Future<void> laserCallback(Map<String, dynamic> msg) async {
     // print("${json.encode(msg)}");
     LaserScan laser = LaserScan.fromJson(msg);
-    RobotPose laserPoseMap = RobotPose(0, 0, 0);
+    RobotPose laserPoseBase = RobotPose(0, 0, 0);
     try {
-      laserPoseMap = tf_.lookUpForTransform("map", laser.header!.frameId!);
+      laserPoseBase =
+          tf_.lookUpForTransform("base_link", laser.header!.frameId!);
     } catch (e) {
       print("not find transform from:map to ${laser.header!.frameId!}");
       return;
@@ -260,10 +273,12 @@ class RosChannel extends ChangeNotifier {
       RobotPose poseLaser = RobotPose(dist * cos(angle), dist * sin(angle), 0);
 
       //转换到map坐标系
-      RobotPose poseMap = absoluteSum(laserPoseMap, poseLaser);
-      Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-      laserPoint_.add(Offset(poseScene.dx, poseScene.dy));
+      RobotPose poseBaseLink = absoluteSum(laserPoseBase, poseLaser);
+
+      laserPoint_.add(Offset(poseBaseLink.x, poseBaseLink.y));
     }
+    laserPointData_ =
+        LaserData(robotPose: currRobotPose_, laserPoseBaseLink: laserPoint_);
     notifyListeners();
   }
 
