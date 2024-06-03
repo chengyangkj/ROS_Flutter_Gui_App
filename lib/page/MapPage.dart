@@ -74,7 +74,6 @@ class _MapPageState extends State<MapPage> {
 
                           //全局路径
                           Transform(
-                            alignment: Alignment.center,
                             transform: globalTransform.value,
                             child: Consumer<RosChannel>(
                               builder: (context, rosChannel, child) {
@@ -90,7 +89,6 @@ class _MapPageState extends State<MapPage> {
                           ),
                           //局部路径
                           Transform(
-                            alignment: Alignment.center,
                             transform: globalTransform.value,
                             child: Consumer<RosChannel>(
                               builder: (context, rosChannel, child) {
@@ -158,9 +156,18 @@ class _MapPageState extends State<MapPage> {
                               builder: (context, rosChannel, child) {
                                 var pose = rosChannel.robotPoseScene;
                                 const double robotSize = 20;
+                                vector.Vector3 globalScale =
+                                    vector.Vector3.zero();
+                                globalTransform.value.decompose(
+                                    vector.Vector3.zero(),
+                                    vector.Quaternion.identity(),
+                                    globalScale);
+                                double robotSizeScaled =
+                                    (robotSize / 2) / globalScale.z;
                                 if (!relocMode_.value) {
                                   robotPoseMatrix.value = Matrix4.identity()
-                                    ..translate(pose.x, pose.y)
+                                    ..translate(pose.x - robotSizeScaled,
+                                        pose.y - robotSizeScaled)
                                     ..rotateZ(-pose.theta);
                                 }
                                 return Transform(

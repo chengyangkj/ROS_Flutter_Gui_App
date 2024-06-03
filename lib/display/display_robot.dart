@@ -74,12 +74,6 @@ class DisplayRobotPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
-    Paint paint = Paint()
-      ..color = Colors.red // 设置颜色为传入的颜色参数
-      ..strokeCap = StrokeCap.butt // 设置画笔的端点为圆形，以便绘制圆形点
-      ..strokeWidth = 1; // 设置画笔的宽度为1个像素
-    canvas.drawPoints(PointMode.points, [Offset(0, 0)], paint);
-
     // //绘制机器人坐标
     double radius = min(size.width / 2, size.height / 2);
     canvas.drawCircle(
@@ -101,8 +95,6 @@ class DisplayRobotPainter extends CustomPainter {
         center: Offset(size.width / 2, size.height / 2), radius: radius);
     canvas.drawArc(rect, -deg2rad(15), deg2rad(30), true, dirPainter);
     canvas.restore();
-    canvas.drawPoints(
-        PointMode.points, [Offset(size.width / 2, size.height / 2)], paint);
   }
 
   @override
