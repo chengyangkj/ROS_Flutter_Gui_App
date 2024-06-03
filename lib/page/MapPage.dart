@@ -121,8 +121,22 @@ class _MapPageState extends State<MapPage> {
                                   //根据机器人的当前位置 做坐标转换
                                   robotPoseMatrix.value.decompose(translation,
                                       rotation, vector.Vector3.zero());
+
+                                  //由于变换在机器人图片中心点 需要根据机器人的图片尺寸及缩放比例 计算实际机器人位置
+                                  const double robotSize = 20;
+                                  vector.Vector3 globalScale =
+                                      vector.Vector3.zero();
+                                  globalTransform.value.decompose(
+                                      vector.Vector3.zero(),
+                                      vector.Quaternion.identity(),
+                                      globalScale);
+                                  double robotSizeScaled =
+                                      (robotSize / 2) / globalScale.z;
+
                                   RobotPose robotPoseScene = RobotPose(
-                                      translation.x, translation.y, rotation.z);
+                                      translation.x + robotSizeScaled,
+                                      translation.y + robotSizeScaled,
+                                      rotation.z);
 
                                   Offset poseMap = rosChannel.map.value.idx2xy(
                                       Offset(
@@ -155,6 +169,8 @@ class _MapPageState extends State<MapPage> {
                             child: Consumer<RosChannel>(
                               builder: (context, rosChannel, child) {
                                 var pose = rosChannel.robotPoseScene;
+
+                                //由于变换在机器人图片中心点 需要根据机器人的图片尺寸及缩放比例 计算实际机器人位置
                                 const double robotSize = 20;
                                 vector.Vector3 globalScale =
                                     vector.Vector3.zero();
@@ -164,6 +180,7 @@ class _MapPageState extends State<MapPage> {
                                     globalScale);
                                 double robotSizeScaled =
                                     (robotSize / 2) / globalScale.z;
+
                                 if (!relocMode_.value) {
                                   robotPoseMatrix.value = Matrix4.identity()
                                     ..translate(pose.x - robotSizeScaled,
