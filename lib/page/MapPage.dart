@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +14,7 @@ import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/display/display_laser.dart';
 import 'package:ros_flutter_gui_app/display/display_path.dart';
 import 'package:ros_flutter_gui_app/display/display_robot.dart';
+import 'package:ros_flutter_gui_app/display/display_robot_reloc.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
@@ -30,6 +34,16 @@ class _MapPageState extends State<MapPage> {
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<Matrix4> robotPoseMatrix =
       ValueNotifier(Matrix4.identity());
+  RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
+  RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
+  double calculateApexAngle(double r, double d) {
+    // 使用余弦定理求顶角的余弦值
+    double cosC = (r * r + r * r - d * d) / (2 * r * r);
+    // 计算顶角弧度
+    double apexAngleRadians = acos(cosC);
+    return apexAngleRadians;
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -49,8 +63,9 @@ class _MapPageState extends State<MapPage> {
                     width: screenSize.width,
                     height: screenSize.height,
                     child: MatrixGestureDetector(
-                      onMatrixUpdate: (m, tm, sm, rm) {
-                        globalTransform.value = m;
+                      onMatrixUpdate:
+                          (matrix, transDelta, scaleDelta, rotateDelta) {
+                        globalTransform.value = matrix;
                       },
                       child: Stack(
                         children: [
@@ -144,9 +159,7 @@ class _MapPageState extends State<MapPage> {
                                   // print(
                                   //     "trans pose map:${poseMap} real:${rosChannel.robotPoseMap}");
                                   robotPoseMap = RobotPose(
-                                      poseMap.dx,
-                                      poseMap.dy,
-                                      rosChannel.robotPoseMap.theta);
+                                      poseMap.dx, poseMap.dy, rotation.z);
                                 }
 
                                 List<Offset> laserPointsScene = [];
@@ -168,7 +181,7 @@ class _MapPageState extends State<MapPage> {
                             transform: globalTransform.value,
                             child: Consumer<RosChannel>(
                               builder: (context, rosChannel, child) {
-                                var pose = rosChannel.robotPoseScene;
+                                var robotPose = rosChannel.robotPoseScene;
 
                                 //由于变换在机器人图片中心点 需要根据机器人的图片尺寸及缩放比例 计算实际机器人位置
                                 const double robotSize = 20;
@@ -183,15 +196,16 @@ class _MapPageState extends State<MapPage> {
 
                                 if (!relocMode_.value) {
                                   robotPoseMatrix.value = Matrix4.identity()
-                                    ..translate(pose.x - robotSizeScaled,
-                                        pose.y - robotSizeScaled)
-                                    ..rotateZ(-pose.theta);
+                                    ..translate(robotPose.x - robotSizeScaled,
+                                        robotPose.y - robotSizeScaled)
+                                    ..rotateZ(-robotPose.theta);
                                 }
                                 return Transform(
                                     alignment: Alignment.center,
                                     transform: robotPoseMatrix.value,
                                     child: MatrixGestureDetector(
-                                      onMatrixUpdate: (m, tm, sm, rm) {
+                                      onMatrixUpdate: (matrix, transDelta,
+                                          scaleDelta, rotateDelta) {
                                         if (relocMode_.value) {
                                           //获取global的scale值
                                           vector.Vector3 globalScale =
@@ -200,29 +214,50 @@ class _MapPageState extends State<MapPage> {
                                               vector.Vector3.zero(),
                                               vector.Quaternion.identity(),
                                               globalScale);
-                                          //获取移动距离的变化量矩阵的距离值
-                                          vector.Vector3 deltaDis =
-                                              vector.Vector3.zero();
-                                          tm.decompose(
-                                              deltaDis,
-                                              vector.Quaternion.identity(),
-                                              vector.Vector3.zero());
+
                                           //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                          Matrix4 deltaMatrix =
-                                              Matrix4.identity()
-                                                ..translate(
-                                                    deltaDis.x / globalScale.x,
-                                                    deltaDis.y / globalScale.y,
-                                                    deltaDis.z / globalScale.z);
+                                          Matrix4 deltaMatrix = Matrix4
+                                              .identity()
+                                            ..translate(
+                                                transDelta.dx / globalScale.x,
+                                                transDelta.dy / globalScale.y);
                                           //坐标变换sum
                                           robotPoseMatrix.value = deltaMatrix *
                                               robotPoseMatrix.value;
                                         }
                                       },
-                                      child: DisplayRobot(
-                                        size: robotSize,
-                                        color: Colors.blue,
-                                        count: 2,
+                                      child: Container(
+                                        height: robotSize + 10,
+                                        width: robotSize + 10,
+                                        // // 设置边框
+                                        // decoration: BoxDecoration(
+                                        //   // 设置边框
+                                        //   border: Border.all(
+                                        //     color: Colors.red, // 边框颜色
+                                        //     width: 1, // 边框宽度
+                                        //   ),
+                                        // ),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            DisplayRobotReloc(
+                                              size: robotSize + 10,
+                                              relocMode: relocMode_.value,
+                                              onRotateCallback: (angle) {
+                                                // robotPoseMatrix.value =
+                                                //     Matrix4.identity()
+                                                //       ..rotateZ(-angle)
+                                                //       ..translate(x);
+                                              },
+                                            ),
+                                            //机器人图标
+                                            DisplayRobot(
+                                              size: robotSize,
+                                              color: Colors.blue,
+                                              count: 2,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ));
                               },
@@ -253,6 +288,11 @@ class _MapPageState extends State<MapPage> {
                           onPressed: () {
                             if (relocMode_.value == false) {
                               relocMode_.value = true;
+                              poseSceneStartReloc = Provider.of<RosChannel>(
+                                      context,
+                                      listen: false)
+                                  .robotPoseScene;
+                              poseSceneOnReloc = poseSceneStartReloc;
                             } else {
                               relocMode_.value = false;
                             }
