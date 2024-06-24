@@ -7,8 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/basic/math.dart';
 import 'package:ros_flutter_gui_app/basic/matrix_gesture_detector.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/display/display_laser.dart';
@@ -34,6 +36,7 @@ class _MapPageState extends State<MapPage> {
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<Matrix4> robotPoseMatrix =
       ValueNotifier(Matrix4.identity());
+
   RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
   RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
   double calculateApexAngle(double r, double d) {
@@ -46,6 +49,7 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+    final _key = GlobalKey<ExpandableFabState>();
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.white,
@@ -128,38 +132,11 @@ class _MapPageState extends State<MapPage> {
 
                                 //重定位模式 从图层坐标转换
                                 if (relocMode_.value) {
-                                  vector.Vector3 translation =
-                                      vector.Vector3.zero();
-                                  vector.Quaternion rotation =
-                                      vector.Quaternion.identity();
-
-                                  //根据机器人的当前位置 做坐标转换
-                                  robotPoseMatrix.value.decompose(translation,
-                                      rotation, vector.Vector3.zero());
-
-                                  //由于变换在机器人图片中心点 需要根据机器人的图片尺寸及缩放比例 计算实际机器人位置
-                                  const double robotSize = 20;
-                                  vector.Vector3 globalScale =
-                                      vector.Vector3.zero();
-                                  globalTransform.value.decompose(
-                                      vector.Vector3.zero(),
-                                      vector.Quaternion.identity(),
-                                      globalScale);
-                                  double robotSizeScaled =
-                                      (robotSize / 2) / globalScale.z;
-
-                                  RobotPose robotPoseScene = RobotPose(
-                                      translation.x + robotSizeScaled,
-                                      translation.y + robotSizeScaled,
-                                      rotation.z);
-
                                   Offset poseMap = rosChannel.map.value.idx2xy(
-                                      Offset(
-                                          robotPoseScene.x, robotPoseScene.y));
-                                  // print(
-                                  //     "trans pose map:${poseMap} real:${rosChannel.robotPoseMap}");
-                                  robotPoseMap = RobotPose(
-                                      poseMap.dx, poseMap.dy, rotation.z);
+                                      Offset(poseSceneOnReloc.x,
+                                          poseSceneOnReloc.y));
+                                  robotPoseMap = RobotPose(poseMap.dx,
+                                      poseMap.dy, poseSceneOnReloc.theta);
                                 }
 
                                 List<Offset> laserPointsScene = [];
@@ -216,14 +193,28 @@ class _MapPageState extends State<MapPage> {
                                               globalScale);
 
                                           //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                          Matrix4 deltaMatrix = Matrix4
-                                              .identity()
-                                            ..translate(
-                                                transDelta.dx / globalScale.x,
-                                                transDelta.dy / globalScale.y);
+                                          double dx =
+                                              transDelta.dx / globalScale.x;
+                                          double dy =
+                                              transDelta.dy / globalScale.y;
+                                          poseSceneOnReloc = absoluteSum(
+                                              poseSceneOnReloc,
+                                              RobotPose(-dx, -dy, 0));
                                           //坐标变换sum
-                                          robotPoseMatrix.value = deltaMatrix *
-                                              robotPoseMatrix.value;
+                                          robotPoseMatrix
+                                              .value = Matrix4.identity()
+                                            ..translate(
+                                                poseSceneOnReloc.x -
+                                                    robotSizeScaled,
+                                                poseSceneOnReloc.y -
+                                                    robotSizeScaled)
+                                            ..rotateZ(-poseSceneOnReloc.theta);
+                                          vector.Vector3 pose =
+                                              vector.Vector3.zero();
+                                          robotPoseMatrix.value.decompose(
+                                              pose,
+                                              vector.Quaternion.identity(),
+                                              vector.Vector3.zero());
                                         }
                                       },
                                       child: Container(
@@ -240,22 +231,38 @@ class _MapPageState extends State<MapPage> {
                                         child: Stack(
                                           alignment: Alignment.center,
                                           children: [
+                                            //重定位旋转框
                                             DisplayRobotReloc(
                                               size: robotSize + 10,
                                               relocMode: relocMode_.value,
                                               onRotateCallback: (angle) {
-                                                // robotPoseMatrix.value =
-                                                //     Matrix4.identity()
-                                                //       ..rotateZ(-angle)
-                                                //       ..translate(x);
+                                                poseSceneOnReloc.theta =
+                                                    poseSceneStartReloc.theta -
+                                                        angle;
+                                                //坐标变换sum
+                                                robotPoseMatrix
+                                                    .value = Matrix4.identity()
+                                                  ..translate(
+                                                      poseSceneOnReloc.x -
+                                                          robotSizeScaled,
+                                                      poseSceneOnReloc.y -
+                                                          robotSizeScaled)
+                                                  ..rotateZ(
+                                                      -poseSceneOnReloc.theta);
                                               },
                                             ),
+
                                             //机器人图标
                                             DisplayRobot(
                                               size: robotSize,
                                               color: Colors.blue,
                                               count: 2,
                                             ),
+                                            // IconButton(
+                                            //   onPressed: () {},
+                                            //   iconSize: robotSize / 2,
+                                            //   icon: Icon(Icons.check),
+                                            // ),
                                           ],
                                         ),
                                       ),
@@ -280,10 +287,8 @@ class _MapPageState extends State<MapPage> {
                 color: Colors.white70,
                 elevation: 10,
                 child: Container(
-                  child: Column(
+                  child: Row(
                     children: [
-                      IconButton(
-                          onPressed: () {}, icon: const Icon(Icons.layers)),
                       IconButton(
                           onPressed: () {
                             if (relocMode_.value == false) {
@@ -303,6 +308,28 @@ class _MapPageState extends State<MapPage> {
                             color:
                                 relocMode_.value ? Colors.blue : Colors.black,
                           )),
+                      Visibility(
+                          visible: relocMode_.value,
+                          child: IconButton(
+                              onPressed: () {
+                                relocMode_.value = false;
+                              },
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.red,
+                              ))),
+                      Visibility(
+                          visible: relocMode_.value,
+                          child: IconButton(
+                              onPressed: () {
+                                relocMode_.value = false;
+                                Provider.of<RosChannel>(context,
+                                        listen: false)
+                                    .sendRelocPoseScene(poseSceneOnReloc);
+                                setState(() {});
+                              },
+                              icon:
+                                  const Icon(Icons.check, color: Colors.green))),
                     ],
                   ),
                 ),

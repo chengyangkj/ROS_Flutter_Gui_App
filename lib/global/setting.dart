@@ -62,9 +62,8 @@ class Setting {
     prefs.setString('relocTopic', topic);
   }
 
-  String get relocTopicTopic {
-    return prefs.getString("relocTopic") ??
-        "/initialpose";
+  String get relocTopic {
+    return prefs.getString("relocTopic") ?? "/initialpose";
   }
 
   void setNavGoalTopic(String topic) {

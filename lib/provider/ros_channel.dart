@@ -14,6 +14,8 @@ import 'package:provider/provider.dart';
 import "package:ros_flutter_gui_app/basic/occupancy_map.dart";
 import 'package:ros_flutter_gui_app/basic/tf.dart';
 import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
+import "package:ros_flutter_gui_app/basic/math.dart";
+import 'package:vector_math/vector_math_64.dart' as vm;
 
 class LaserData {
   RobotPose robotPose;
@@ -175,14 +177,14 @@ class RosChannel extends ChangeNotifier {
 //发布者
     relocChannel_ = Topic(
       ros: ros,
-      name: globalSetting.globalPathTopic,
+      name: globalSetting.relocTopic,
       type: "geometry_msgs/PoseWithCovarianceStamped",
       queueSize: 1,
       reconnectOnClose: true,
     );
     navGoalChannel_ = Topic(
       ros: ros,
-      name: globalSetting.globalPathTopic,
+      name: globalSetting.navGoalTopic,
       type: "move_base_msgs/MoveBaseActionGoal",
       queueSize: 1,
       reconnectOnClose: true,
@@ -192,6 +194,74 @@ class RosChannel extends ChangeNotifier {
   void destroyConnection() async {
     await mapChannel_.unsubscribe();
     await ros.close();
+  }
+
+  Future<void> sendRelocPoseScene(RobotPose pose) async {
+    Offset p = map_.value.idx2xy(Offset(pose.x, pose.y));
+    pose.x = p.dx;
+    pose.y = p.dy;
+    vm.Quaternion quation = eulerToQuaternion(pose.theta, 0, 0);
+    Map<String, dynamic> msg = {
+      "header": {
+        "seq": 0,
+        "stamp": {
+          "secs": DateTime.now().second,
+          "nsecs": DateTime.now().millisecond * 1000000
+        },
+        "frame_id": "map"
+      },
+      "pose": {
+        "pose": {
+          "position": {"x": pose.x, "y": pose.y, "z": 0},
+          "orientation": {
+            "x": quation.x,
+            "y": quation.y,
+            "z": quation.z,
+            "w": quation.w
+          }
+        },
+        "covariance": [
+          0.1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.1
+        ]
+      }
+    };
+    await relocChannel_.publish(msg);
+    print("send reloc pose:${json.encode(msg)}");
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
