@@ -197,9 +197,12 @@ class _MapPageState extends State<MapPage> {
                                               transDelta.dx / globalScale.x;
                                           double dy =
                                               transDelta.dy / globalScale.y;
+                                          double theta = poseSceneOnReloc.theta;
                                           poseSceneOnReloc = absoluteSum(
-                                              poseSceneOnReloc,
-                                              RobotPose(-dx, -dy, 0));
+                                              RobotPose(poseSceneOnReloc.x,
+                                                  poseSceneOnReloc.y, 0),
+                                              RobotPose(dx, dy, 0));
+                                          poseSceneOnReloc.theta = theta;
                                           //坐标变换sum
                                           robotPoseMatrix
                                               .value = Matrix4.identity()
@@ -236,6 +239,7 @@ class _MapPageState extends State<MapPage> {
                                               size: robotSize + 10,
                                               relocMode: relocMode_.value,
                                               onRotateCallback: (angle) {
+                                                print("angle:$angle");
                                                 poseSceneOnReloc.theta =
                                                     poseSceneStartReloc.theta -
                                                         angle;
@@ -313,6 +317,7 @@ class _MapPageState extends State<MapPage> {
                           child: IconButton(
                               onPressed: () {
                                 relocMode_.value = false;
+                                setState(() {});
                               },
                               icon: const Icon(
                                 Icons.close,
@@ -323,13 +328,12 @@ class _MapPageState extends State<MapPage> {
                           child: IconButton(
                               onPressed: () {
                                 relocMode_.value = false;
-                                Provider.of<RosChannel>(context,
-                                        listen: false)
+                                Provider.of<RosChannel>(context, listen: false)
                                     .sendRelocPoseScene(poseSceneOnReloc);
                                 setState(() {});
                               },
-                              icon:
-                                  const Icon(Icons.check, color: Colors.green))),
+                              icon: const Icon(Icons.check,
+                                  color: Colors.green))),
                     ],
                   ),
                 ),

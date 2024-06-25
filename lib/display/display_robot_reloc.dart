@@ -60,11 +60,11 @@ class _DisplayRobotRelocState extends State<DisplayRobotReloc>
         child: Container(
           width: widget.size,
           height: widget.size,
-          decoration: BoxDecoration(
-              border: Border.all(
-            color: Colors.red, // 红色边框
-            width: 1, // 边框宽度
-          )),
+          // decoration: BoxDecoration(
+          //     border: Border.all(
+          //   color: Colors.red, // 红色边框
+          //   width: 1, // 边框宽度
+          // )),
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
@@ -109,12 +109,6 @@ class DisplayRobotRelocPainter extends CustomPainter {
       center.dy + radius * sin(0),
     );
     canvas.drawCircle(pointOffset, 2, pointPaint);
-
-    Paint paint = Paint()
-      ..color = Colors.red // 设置颜色为传入的颜色参数
-      ..strokeCap = StrokeCap.butt // 设置画笔的端点为圆形，以便绘制圆形点
-      ..strokeWidth = 2; // 设置画笔的宽度为1个像素
-    canvas.drawPoints(PointMode.points, [Offset(0, 0), center], paint);
   }
 
   @override
