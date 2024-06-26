@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/page/MapPage.dart';
 import 'package:ros_flutter_gui_app/page/RobotConnectPage.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+import 'package:ros_flutter_gui_app/page/SettingPage.dart';
 // import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 
 void main() {
@@ -28,8 +29,7 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
         providers: [
-          ChangeNotifierProvider<RosChannel>(
-              create: (_) => RosChannel()),
+          ChangeNotifierProvider<RosChannel>(create: (_) => RosChannel()),
           // ChangeNotifierProvider<JoyStickController>(
           //     create: (_) => JoyStickController()),
         ],
@@ -39,6 +39,7 @@ class MyApp extends StatelessWidget {
           routes: {
             "/connect": ((context) => RobotConnectionPage()),
             "/map": ((context) => MapPage()),
+            "/setting": ((context) => SettingsPage()),
             // "/gamepad":((context) => GamepadPage()),
           },
           theme: ThemeData(

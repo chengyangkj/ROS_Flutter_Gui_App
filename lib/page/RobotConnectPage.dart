@@ -48,7 +48,7 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                   EasyButton(
                       type: EasyButtonType.text,
                       idleStateWidget: const Text(
-                        'connect',
+                        '连接',
                         style: TextStyle(
                           color: Colors.blue,
                         ),
@@ -83,6 +83,11 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                           }
                         });
                       }),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, "/setting");
+                      },
+                      child: Text("设置"))
                 ],
               ),
             );

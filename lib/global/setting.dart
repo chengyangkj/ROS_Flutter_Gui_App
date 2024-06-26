@@ -5,9 +5,43 @@ class Setting {
   late SharedPreferences prefs;
   Future<bool> init() async {
     prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey("init")) {
+      setDefaultCfgRos1();
+    }
     return true;
   }
 
+  void setDefaultCfgRos1() {
+    prefs.setString('init', "1");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/move_base/DWAPlannerROS/global_plan");
+    prefs.setString('localPathTopic', "/move_base/DWAPlannerROS/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "move_base_simple/goal");
+    prefs.setString('OdometryTopic', "/odom");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery");
+  }
+
+  void setDefaultCfgRos2() {
+    prefs.setString('init', "1");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/odom");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery");
+  }
+
+  SharedPreferences get config {
+    return prefs;
+  }
+
+  // 设置机器人IP
   void setRobotIp(String ip) {
     prefs.setString('robotIp', ip);
   }
