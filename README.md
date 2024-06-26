@@ -17,11 +17,14 @@
     - [ROS 2](#ros-2)
         - [安装 rosbridgesuite](#安装-rosbridgesuite)
         - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
+- [web端运行指南](#web端运行指南)
 
 <!-- /TOC -->
 
 
 # 一,ROS Bridge WebSocket 安装与运行指南
+
+软件借助ros bridge websoct实现与ros之间的通信，因此需要先在自己的机器人系统上安装ros bridget websocket并运行，这里区分ros1 与 ros2分别介绍安装教程
 
 ## ROS 1
 
@@ -92,3 +95,18 @@
 通过上述步骤，你可以在 ROS 1 和 ROS 2 环境中安装并运行 rosbridge WebSocket 服务器。如果你有任何问题或需要进一步的帮助，请参考 [ROS 官方文档](http://wiki.ros.org/) 或 [ROS 2 官方文档](https://docs.ros.org/en/foxy/index.html)。
 
 ---
+
+# web端运行指南
+从[Release界面](https://github.com/chengyangkj/ROS_Flutter_Gui_App/releases)下载最新的web端版本(ros_flutter_gui_app_web.tar.gz)  
+解压到本地，借助Apache等网站服务器部署即可  
+
+进入压缩包目录：
+```shell
+cd ros_flutter_gui_app_web
+```
+我这里采用python的来搭建一个简单的网站服务器：
+
+```shell
+python -m http.server 8000
+```
+由于这里指定的端口为8000，在浏览器输入`本机ip:8000`即可访问站点
