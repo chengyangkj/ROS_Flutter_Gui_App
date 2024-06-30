@@ -16,6 +16,7 @@ import 'package:ros_flutter_gui_app/basic/tf.dart';
 import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 import "package:ros_flutter_gui_app/basic/math.dart";
 import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:ros_flutter_gui_app/global/setting.dart';
 
 class LaserData {
   RobotPose robotPose;
@@ -33,7 +34,7 @@ class RosChannel extends ChangeNotifier {
   late Topic globalPathChannel_;
   late Topic relocChannel_;
   late Topic navGoalChannel_;
-
+  String url_ = "";
   TF2Dart tf_ = TF2Dart();
   ValueNotifier<OccupancyMap> map_ =
       ValueNotifier<OccupancyMap>(OccupancyMap());
@@ -46,13 +47,17 @@ class RosChannel extends ChangeNotifier {
       LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []);
   RosChannel() {
     //启动定时器 获取机器人实时坐标
-
-    Timer.periodic(const Duration(milliseconds: 50), (timer) {
-      try {
-        currRobotPose_ = tf_.lookUpForTransform("map", "base_link");
-        notifyListeners();
-      } catch (e) {
-        print("get robot pose error:${e}");
+    globalSetting.init().then((success) {
+      if (success) {
+        connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
+        Timer.periodic(const Duration(milliseconds: 50), (timer) {
+          try {
+            currRobotPose_ = tf_.lookUpForTransform("map", "base_link");
+            notifyListeners();
+          } catch (e) {
+            print("get robot pose error:${e}");
+          }
+        });
       }
     });
   }

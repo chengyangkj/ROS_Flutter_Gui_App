@@ -36,7 +36,7 @@ class _MapPageState extends State<MapPage> {
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<Matrix4> robotPoseMatrix =
       ValueNotifier(Matrix4.identity());
-
+  final ValueNotifier<double> globalScale_ = ValueNotifier(1);
   RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
   RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
   double calculateApexAngle(double r, double d) {
@@ -51,6 +51,7 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     final _key = GlobalKey<ExpandableFabState>();
     final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -70,6 +71,10 @@ class _MapPageState extends State<MapPage> {
                       onMatrixUpdate:
                           (matrix, transDelta, scaleDelta, rotateDelta) {
                         globalTransform.value = matrix;
+                        vector.Vector3 scale = vector.Vector3.zero();
+                        globalTransform.value.decompose(vector.Vector3.zero(),
+                            vector.Quaternion.identity(), scale);
+                        globalScale_.value = scale.z;
                       },
                       child: Stack(
                         children: [
@@ -77,7 +82,8 @@ class _MapPageState extends State<MapPage> {
                           Container(
                             color: Colors.white,
                             child: DisplayGrid(
-                              step: 1 / occMap.mapConfig.resolution,
+                              step: (1 / occMap.mapConfig.resolution) *
+                                  globalScale_.value,
                               width: screenSize.width,
                               height: screenSize.height,
                             ),
@@ -239,10 +245,11 @@ class _MapPageState extends State<MapPage> {
                                               size: robotSize + 10,
                                               relocMode: relocMode_.value,
                                               onRotateCallback: (angle) {
-                                                print("angle:$angle");
                                                 poseSceneOnReloc.theta =
                                                     poseSceneStartReloc.theta -
                                                         angle;
+                                                print(
+                                                    "poseSceneStartReloc.theta:${poseSceneStartReloc}");
                                                 //坐标变换sum
                                                 robotPoseMatrix
                                                     .value = Matrix4.identity()
@@ -301,7 +308,9 @@ class _MapPageState extends State<MapPage> {
                                       context,
                                       listen: false)
                                   .robotPoseScene;
+
                               poseSceneOnReloc = poseSceneStartReloc;
+                              setState(() {});
                             } else {
                               relocMode_.value = false;
                             }
