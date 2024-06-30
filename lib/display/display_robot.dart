@@ -69,7 +69,7 @@ class DisplayRobotPainter extends CustomPainter {
   Paint _paint = Paint()..style = PaintingStyle.fill;
 
   DisplayRobotPainter(this.progress,
-      {this.count = 3, this.color = const Color(0xFF0080ff)});
+      {this.count = 3, this.color = Colors.yellow});
 
   @override
   void paint(Canvas canvas, Size size) {

@@ -22,7 +22,7 @@ class DisplayMap extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Colors.black // 设置颜色为传入的颜色参数
+      ..color = Colors.lightBlue[300]! // 设置颜色为传入的颜色参数
       ..strokeCap = StrokeCap.butt // 设置画笔的端点为圆形，以便绘制圆形点
       ..strokeWidth = 1; // 设置画笔的宽度为1个像素
     canvas.drawPoints(PointMode.points, pointList, paint);

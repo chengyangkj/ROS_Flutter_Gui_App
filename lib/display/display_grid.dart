@@ -10,7 +10,7 @@ class DisplayGrid extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: Colors.white,
+      color: Colors.blue[800],
       child: CustomPaint(
         painter: GridPainter(step: step),
       ),
@@ -24,7 +24,8 @@ class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Colors.grey
+      ..color = Colors.grey[50]!
+      ..strokeCap = StrokeCap.round // 设置画笔的端点为圆形，以便绘制圆形点
       ..strokeWidth = 0.2;
 
     for (double x = 0; x <= size.width; x += step) {

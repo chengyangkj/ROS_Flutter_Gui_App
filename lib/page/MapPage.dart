@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-
+import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
+import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/math.dart';
@@ -17,6 +18,7 @@ import 'package:ros_flutter_gui_app/display/display_laser.dart';
 import 'package:ros_flutter_gui_app/display/display_path.dart';
 import 'package:ros_flutter_gui_app/display/display_robot.dart';
 import 'package:ros_flutter_gui_app/display/display_robot_reloc.dart';
+import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
@@ -48,12 +50,17 @@ class _MapPageState extends State<MapPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    globalSetting.init();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final _key = GlobalKey<ExpandableFabState>();
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
           AnimatedBuilder(
@@ -64,7 +71,7 @@ class _MapPageState extends State<MapPage> {
                     Provider.of<RosChannel>(context, listen: false).map,
                 builder: (context, occMap, child) {
                   return Container(
-                    color: Colors.grey,
+                    color: Colors.blue[800],
                     width: screenSize.width,
                     height: screenSize.height,
                     child: MatrixGestureDetector(
@@ -80,7 +87,7 @@ class _MapPageState extends State<MapPage> {
                         children: [
                           //网格
                           Container(
-                            color: Colors.white,
+                            color: Colors.blue[800],
                             child: DisplayGrid(
                               step: (1 / occMap.mapConfig.resolution) *
                                   globalScale_.value,
@@ -121,7 +128,7 @@ class _MapPageState extends State<MapPage> {
                                   child: CustomPaint(
                                     painter: DisplayPath(
                                         pointList: rosChannel.localPathScene,
-                                        color: Colors.yellow),
+                                        color: Colors.yellow[200]!),
                                   ),
                                 );
                               },
@@ -264,7 +271,7 @@ class _MapPageState extends State<MapPage> {
                                             //机器人图标
                                             DisplayRobot(
                                               size: robotSize,
-                                              color: Colors.blue,
+                                              color: Colors.yellow,
                                               count: 2,
                                             ),
                                             // IconButton(
@@ -383,6 +390,44 @@ class _MapPageState extends State<MapPage> {
                       onPressed: () {}, icon: Icon(Icons.location_searching))
                 ],
               ),
+            ),
+          ),
+          Positioned(
+            left: 30,
+            bottom: 10,
+            child: Joystick(
+              mode: JoystickMode.all,
+              listener: (details) {
+                setState(() {
+                  print("detail:${details.x},${details.y}");
+                  double max_vx =
+                      double.parse(globalSetting.getConfig('MaxVx'));
+                  double max_vy =
+                      double.parse(globalSetting.getConfig('MaxVy'));
+                  double max_vw =
+                      double.parse(globalSetting.getConfig('MaxVw'));
+                  double vx = max_vx * details.y * -1;
+                  double vy = max_vy * details.x * -1;
+                  //x决定方向 1-y决定比例
+                  double vw = (1 - details.y.abs()) * max_vw;
+                  if (details.y == 0) {
+                    vw = 0;
+                  }
+
+                  if (details.x > 0) {
+                    if (details.y < 0) {
+                      vw = -vw;
+                    }
+                  } else if (details.x < 0) {
+                    if (details.y > 0) {
+                      vw = -vw;
+                    }
+                  }
+
+                  Provider.of<RosChannel>(context, listen: false)
+                      .sendSpeed(vx, vy, vw);
+                });
+              },
             ),
           )
         ],

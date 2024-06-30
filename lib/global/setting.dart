@@ -5,7 +5,8 @@ class Setting {
   late SharedPreferences prefs;
   Future<bool> init() async {
     prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey("init")) {
+    if (!prefs.containsKey("init") ||
+        (prefs.containsKey("init") && prefs.getString("init") != "1")) {
       setDefaultCfgRos1();
     }
     return true;
@@ -22,19 +23,9 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery");
-  }
-
-  void setDefaultCfgRos2() {
-    prefs.setString('init', "1");
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "scan");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/odom");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery");
+    prefs.setString('MaxVx', "1");
+    prefs.setString('MaxVy', "1");
+    prefs.setString('MaxVw', "0.7");
   }
 
   SharedPreferences get config {
@@ -115,6 +106,11 @@ class Setting {
   String get mapFrame {
     return prefs.getString("mapFrame") ?? "map";
   }
+
+  String getConfig(String key) {
+    return prefs.getString(key) ?? "";
+  }
+  //实列
 }
 
 Setting globalSetting = Setting();

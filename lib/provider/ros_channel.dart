@@ -24,6 +24,13 @@ class LaserData {
   LaserData({required this.robotPose, required this.laserPoseBaseLink});
 }
 
+class RobotSpeed {
+  double vx;
+  double vy;
+  double vw;
+  RobotSpeed({required this.vx, required this.vy, required this.vw});
+}
+
 class RosChannel extends ChangeNotifier {
   late Ros ros;
   late Topic mapChannel_;
@@ -34,6 +41,8 @@ class RosChannel extends ChangeNotifier {
   late Topic globalPathChannel_;
   late Topic relocChannel_;
   late Topic navGoalChannel_;
+  late Topic speedCtrlChannel_;
+  RobotSpeed robotSpeed_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
   String url_ = "";
   TF2Dart tf_ = TF2Dart();
   ValueNotifier<OccupancyMap> map_ =
@@ -194,11 +203,34 @@ class RosChannel extends ChangeNotifier {
       queueSize: 1,
       reconnectOnClose: true,
     );
+    speedCtrlChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.getConfig("SpeedCtrlTopic"),
+      type: "geometry_msgs/Twist",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
   }
 
   void destroyConnection() async {
     await mapChannel_.unsubscribe();
     await ros.close();
+  }
+
+  Future<void> sendSpeed(double vx, double vy, double vw) async {
+    Map<String, dynamic> msg = {
+      "linear": {
+        "x": vx, // 代表线速度x分量
+        "y": vy, // 代表线速度y分量
+        "z": 0.0 // 代表线速度z分量
+      },
+      "angular": {
+        "x": 0.0, // 代表角速度x分量
+        "y": 0.0, // 代表角速度y分量
+        "z": vw // 代表角速度z分量
+      }
+    };
+    await speedCtrlChannel_.publish(msg);
   }
 
   Future<void> sendRelocPoseScene(RobotPose pose) async {

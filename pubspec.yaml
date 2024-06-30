@@ -43,6 +43,8 @@ dependencies:
   roslibdart: ^0.0.1-dev+4
   shared_preferences: ^2.2.3
   flutter_expandable_fab: ^2.0.0
+  flutter_joystick: ^0.2.0
+  web: ^0.5.1
 
 dev_dependencies:
   flutter_test:
