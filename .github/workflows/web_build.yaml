@@ -18,6 +18,5 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.16.5
       - run: flutter pub get
       - run: flutter build web
