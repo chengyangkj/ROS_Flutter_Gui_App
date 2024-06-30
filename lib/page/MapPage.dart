@@ -246,10 +246,8 @@ class _MapPageState extends State<MapPage> {
                                               relocMode: relocMode_.value,
                                               onRotateCallback: (angle) {
                                                 poseSceneOnReloc.theta =
-                                                    poseSceneStartReloc.theta -
-                                                        angle;
-                                                print(
-                                                    "poseSceneStartReloc.theta:${poseSceneStartReloc}");
+                                                    (poseSceneStartReloc.theta -
+                                                        angle);
                                                 //坐标变换sum
                                                 robotPoseMatrix
                                                     .value = Matrix4.identity()
@@ -309,7 +307,10 @@ class _MapPageState extends State<MapPage> {
                                       listen: false)
                                   .robotPoseScene;
 
-                              poseSceneOnReloc = poseSceneStartReloc;
+                              poseSceneOnReloc = Provider.of<RosChannel>(
+                                      context,
+                                      listen: false)
+                                  .robotPoseScene;
                               setState(() {});
                             } else {
                               relocMode_.value = false;
