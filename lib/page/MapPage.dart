@@ -34,6 +34,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   ValueNotifier<bool> relocMode_ = ValueNotifier(false);
+  ValueNotifier<bool> manualCtrlMode_ = ValueNotifier(false);
   final ValueNotifier<Matrix4> globalTransform =
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<Matrix4> robotPoseMatrix =
@@ -71,7 +72,7 @@ class _MapPageState extends State<MapPage> {
                     Provider.of<RosChannel>(context, listen: false).map,
                 builder: (context, occMap, child) {
                   return Container(
-                    color: Colors.blue[800],
+                    color: Colors.blue[400],
                     width: screenSize.width,
                     height: screenSize.height,
                     child: MatrixGestureDetector(
@@ -299,61 +300,85 @@ class _MapPageState extends State<MapPage> {
           Positioned(
               left: 5,
               top: 10,
-              child: Card(
-                color: Colors.white70,
-                elevation: 10,
-                child: Container(
-                  child: Row(
-                    children: [
-                      IconButton(
-                          onPressed: () {
-                            if (relocMode_.value == false) {
-                              relocMode_.value = true;
-                              poseSceneStartReloc = Provider.of<RosChannel>(
-                                      context,
-                                      listen: false)
-                                  .robotPoseScene;
+              child: Column(
+                children: [
+                  Card(
+                    color: Colors.white70,
+                    elevation: 10,
+                    child: Container(
+                      child: Row(
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                if (relocMode_.value == false) {
+                                  relocMode_.value = true;
+                                  poseSceneStartReloc = Provider.of<RosChannel>(
+                                          context,
+                                          listen: false)
+                                      .robotPoseScene;
 
-                              poseSceneOnReloc = Provider.of<RosChannel>(
-                                      context,
-                                      listen: false)
-                                  .robotPoseScene;
-                              setState(() {});
-                            } else {
-                              relocMode_.value = false;
-                            }
-                            setState(() {});
-                          },
-                          icon: Icon(
-                            Icons.location_on_outlined,
-                            color:
-                                relocMode_.value ? Colors.blue : Colors.black,
-                          )),
-                      Visibility(
-                          visible: relocMode_.value,
-                          child: IconButton(
-                              onPressed: () {
-                                relocMode_.value = false;
+                                  poseSceneOnReloc = Provider.of<RosChannel>(
+                                          context,
+                                          listen: false)
+                                      .robotPoseScene;
+                                  setState(() {});
+                                } else {
+                                  relocMode_.value = false;
+                                }
                                 setState(() {});
                               },
-                              icon: const Icon(
-                                Icons.close,
-                                color: Colors.red,
-                              ))),
-                      Visibility(
-                          visible: relocMode_.value,
-                          child: IconButton(
-                              onPressed: () {
-                                relocMode_.value = false;
-                                Provider.of<RosChannel>(context, listen: false)
-                                    .sendRelocPoseScene(poseSceneOnReloc);
-                                setState(() {});
-                              },
-                              icon: const Icon(Icons.check,
-                                  color: Colors.green))),
-                    ],
+                              icon: Icon(
+                                Icons.location_on_outlined,
+                                color: relocMode_.value
+                                    ? Colors.blue
+                                    : Colors.black,
+                              )),
+                          Visibility(
+                              visible: relocMode_.value,
+                              child: IconButton(
+                                  onPressed: () {
+                                    relocMode_.value = false;
+                                    setState(() {});
+                                  },
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.red,
+                                  ))),
+                          Visibility(
+                              visible: relocMode_.value,
+                              child: IconButton(
+                                  onPressed: () {
+                                    relocMode_.value = false;
+                                    Provider.of<RosChannel>(context,
+                                            listen: false)
+                                        .sendRelocPoseScene(poseSceneOnReloc);
+                                    setState(() {});
+                                  },
+                                  icon: const Icon(Icons.check,
+                                      color: Colors.green))),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                  Card(
+                    color: Colors.white70,
+                    elevation: 10,
+                    child: IconButton(
+                      icon: Icon(manualCtrlMode_.value
+                          ? Icons.gamepad
+                          : Icons.gamepad_outlined),
+                      onPressed: () {
+                        if (manualCtrlMode_.value) {
+                          manualCtrlMode_.value = false;
+                          setState(() {});
+                        } else {
+                          manualCtrlMode_.value = true;
+                          setState(() {});
+                        }
+                      },
+                    ),
+                  )
+                ],
               )),
           //右侧菜单栏
           Positioned(
@@ -395,40 +420,49 @@ class _MapPageState extends State<MapPage> {
           Positioned(
             left: 30,
             bottom: 10,
-            child: Joystick(
-              mode: JoystickMode.all,
-              listener: (details) {
-                setState(() {
-                  print("detail:${details.x},${details.y}");
-                  double max_vx =
-                      double.parse(globalSetting.getConfig('MaxVx'));
-                  double max_vy =
-                      double.parse(globalSetting.getConfig('MaxVy'));
-                  double max_vw =
-                      double.parse(globalSetting.getConfig('MaxVw'));
-                  double vx = max_vx * details.y * -1;
-                  double vy = max_vy * details.x * -1;
-                  //x决定方向 1-y决定比例
-                  double vw = (1 - details.y.abs()) * max_vw;
-                  if (details.y == 0) {
-                    vw = 0;
-                  }
+            child: Visibility(
+                visible: manualCtrlMode_.value,
+                child: Joystick(
+                  mode: JoystickMode.all,
+                  listener: (details) {
+                    setState(() {
+                      double max_vx =
+                          double.parse(globalSetting.getConfig('MaxVx'));
+                      double max_vy =
+                          double.parse(globalSetting.getConfig('MaxVy'));
+                      double max_vw =
+                          double.parse(globalSetting.getConfig('MaxVw'));
+                      double vx = max_vx * details.y * -1;
+                      double vy = max_vy * details.x * -1;
+                      //x决定方向 1-y决定比例
+                      double vw = (1 - details.y.abs()) * max_vw;
 
-                  if (details.x > 0) {
-                    if (details.y < 0) {
-                      vw = -vw;
-                    }
-                  } else if (details.x < 0) {
-                    if (details.y > 0) {
-                      vw = -vw;
-                    }
-                  }
-
-                  Provider.of<RosChannel>(context, listen: false)
-                      .sendSpeed(vx, vy, vw);
-                });
-              },
-            ),
+                      if (details.x > 0) {
+                        if (details.y < 0) {
+                          vw = -vw;
+                        }
+                      } else if (details.x < 0) {
+                        if (details.y > 0) {
+                          vw = -vw;
+                        }
+                      }
+                      //y小于一定值 只有w
+                      if (details.y.abs() <= 0.1) {
+                        vx = 0;
+                        if (details.x > 0) {
+                          vw = -vw.abs();
+                        } else {
+                          vw = vw.abs();
+                        }
+                      }
+                      if (details.y == 0) {
+                        vw = 0;
+                      }
+                      Provider.of<RosChannel>(context, listen: false)
+                          .sendSpeed(vx, vy, vw);
+                    });
+                  },
+                )),
           )
         ],
       ),

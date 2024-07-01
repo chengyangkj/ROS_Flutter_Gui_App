@@ -23,8 +23,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery");
-    prefs.setString('MaxVx', "1");
-    prefs.setString('MaxVy', "1");
+    prefs.setString('MaxVx', "0.5");
+    prefs.setString('MaxVy', "0.5");
     prefs.setString('MaxVw', "0.7");
   }
 
