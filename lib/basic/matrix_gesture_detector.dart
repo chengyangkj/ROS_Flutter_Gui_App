@@ -6,7 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 typedef MatrixGestureDetectorCallback = void Function(Matrix4 matrix,
-    Offset translationDelta, double scaleDelta, double rotationDelta);
+    Offset translationDelta, double scaleValue, double rotationDelta);
 
 /// [MatrixGestureDetector] detects translation, scale and rotation gestures
 /// and combines them into [Matrix4] object that can be used by [Transform] widget
@@ -102,10 +102,10 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
   Matrix4 scaleDeltaMatrix = Matrix4.identity();
   Matrix4 rotationDeltaMatrix = Matrix4.identity();
   Matrix4 matrix = Matrix4.identity();
-  double pointerScaleValue_ = 1;
   Offset translationDelta = Offset.zero;
   double scaleDelta = 1;
   double rotationDelta = 0;
+  double scaleValue = 1;
   @override
   void initState() {}
 
@@ -117,20 +117,30 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
         // 监听鼠标滚轮事件进行放大缩小
         onPointerSignal: (event) {
           if (event is PointerScrollEvent) {
+            double delta = 1;
             if (event.scrollDelta.dy < 0) {
-              pointerScaleValue_ += 0.1;
+              delta += 0.05;
             } else {
-              pointerScaleValue_ -= 0.1;
+              delta -= 0.05;
             }
-            if (pointerScaleValue_ < 1) pointerScaleValue_ = 1;
-            if (pointerScaleValue_ > 15) pointerScaleValue_ = 15;
+            if (scaleDelta < 0.1) delta = 0;
+            if (scaleDelta > 15) delta = 0;
+
+            Offset? focalPoint;
+            if (widget.focalPointAlignment != null && context.size != null) {
+              focalPoint = widget.focalPointAlignment!.alongSize(context.size!);
+            } else {
+              RenderObject? renderObject = context.findRenderObject();
+              if (renderObject != null) {
+                RenderBox renderBox = renderObject as RenderBox;
+                focalPoint = renderBox.globalToLocal(event.position);
+              }
+            }
+            scaleValue += (delta - 1);
+            scaleDeltaMatrix = _scale(delta, focalPoint!);
+            matrix = scaleDeltaMatrix * matrix;
             widget.onMatrixUpdate(
-                matrix.scaled(
-                    pointerScaleValue_, pointerScaleValue_, pointerScaleValue_),
-                translationDelta,
-                scaleDelta,
-                rotationDelta);
-            setState(() {});
+                matrix, translationDelta, scaleValue, rotationDelta);
           }
         },
         child: GestureDetector(
@@ -181,7 +191,10 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
 
     // handle matrix scaling
     if (widget.shouldScale && details.scale != 1.0 && focalPoint != null) {
+      print("scale: ${scaleDelta}");
       scaleDelta = scaleUpdater.update(details.scale);
+      print("after scale:${scaleDelta}  details:${details.scale}");
+      scaleValue += (scaleDelta - 1);
       scaleDeltaMatrix = _scale(scaleDelta, focalPoint);
       matrix = scaleDeltaMatrix * matrix;
     }
@@ -199,12 +212,7 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
       }
     }
 
-    widget.onMatrixUpdate(
-        matrix.scaled(
-            pointerScaleValue_, pointerScaleValue_, pointerScaleValue_),
-        translationDelta,
-        scaleDelta,
-        rotationDelta);
+    widget.onMatrixUpdate(matrix, translationDelta, scaleValue, rotationDelta);
   }
 
   Matrix4 _translate(Offset translation) {

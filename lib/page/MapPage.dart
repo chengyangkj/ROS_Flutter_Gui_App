@@ -77,12 +77,10 @@ class _MapPageState extends State<MapPage> {
                     height: screenSize.height,
                     child: MatrixGestureDetector(
                       onMatrixUpdate:
-                          (matrix, transDelta, scaleDelta, rotateDelta) {
+                          (matrix, transDelta, scaleValue, rotateDelta) {
                         globalTransform.value = matrix;
-                        vector.Vector3 scale = vector.Vector3.zero();
-                        globalTransform.value.decompose(vector.Vector3.zero(),
-                            vector.Quaternion.identity(), scale);
-                        globalScale_.value = scale.z;
+                        globalScale_.value = scaleValue;
+                        print("globalScale_:${globalScale_.value}");
                       },
                       child: Stack(
                         children: [
