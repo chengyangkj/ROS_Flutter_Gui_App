@@ -23,9 +23,9 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery");
-    prefs.setString('MaxVx', "0.5");
-    prefs.setString('MaxVy', "0.5");
-    prefs.setString('MaxVw', "0.7");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
   }
 
   SharedPreferences get config {

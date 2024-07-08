@@ -72,7 +72,6 @@ class _MapPageState extends State<MapPage> {
                     Provider.of<RosChannel>(context, listen: false).map,
                 builder: (context, occMap, child) {
                   return Container(
-                    color: Colors.blue[400],
                     width: screenSize.width,
                     height: screenSize.height,
                     child: MatrixGestureDetector(
@@ -80,13 +79,11 @@ class _MapPageState extends State<MapPage> {
                           (matrix, transDelta, scaleValue, rotateDelta) {
                         globalTransform.value = matrix;
                         globalScale_.value = scaleValue;
-                        print("globalScale_:${globalScale_.value}");
                       },
                       child: Stack(
                         children: [
                           //网格
                           Container(
-                            color: Colors.blue[800],
                             child: DisplayGrid(
                               step: (1 / occMap.mapConfig.resolution) *
                                   globalScale_.value,
@@ -174,14 +171,9 @@ class _MapPageState extends State<MapPage> {
 
                                 //由于变换在机器人图片中心点 需要根据机器人的图片尺寸及缩放比例 计算实际机器人位置
                                 const double robotSize = 20;
-                                vector.Vector3 globalScale =
-                                    vector.Vector3.zero();
-                                globalTransform.value.decompose(
-                                    vector.Vector3.zero(),
-                                    vector.Quaternion.identity(),
-                                    globalScale);
+
                                 double robotSizeScaled =
-                                    (robotSize / 2) / globalScale.z;
+                                    (robotSize / 2) / globalScale_.value;
 
                                 if (!relocMode_.value) {
                                   robotPoseMatrix.value = Matrix4.identity()
@@ -197,18 +189,12 @@ class _MapPageState extends State<MapPage> {
                                           scaleDelta, rotateDelta) {
                                         if (relocMode_.value) {
                                           //获取global的scale值
-                                          vector.Vector3 globalScale =
-                                              vector.Vector3.zero();
-                                          globalTransform.value.decompose(
-                                              vector.Vector3.zero(),
-                                              vector.Quaternion.identity(),
-                                              globalScale);
 
                                           //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                          double dx =
-                                              transDelta.dx / globalScale.x;
-                                          double dy =
-                                              transDelta.dy / globalScale.y;
+                                          double dx = transDelta.dx /
+                                              globalScale_.value;
+                                          double dy = transDelta.dy /
+                                              globalScale_.value;
                                           double theta = poseSceneOnReloc.theta;
                                           poseSceneOnReloc = absoluteSum(
                                               RobotPose(poseSceneOnReloc.x,

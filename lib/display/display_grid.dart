@@ -10,7 +10,7 @@ class DisplayGrid extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: Colors.blue[800],
+      color: Colors.blue[900],
       child: CustomPaint(
         painter: GridPainter(step: step),
       ),

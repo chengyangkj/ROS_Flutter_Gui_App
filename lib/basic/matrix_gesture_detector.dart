@@ -118,13 +118,11 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
         onPointerSignal: (event) {
           if (event is PointerScrollEvent) {
             double delta = 1;
-            if (event.scrollDelta.dy < 0) {
-              delta += 0.05;
+            if (event.scrollDelta.dy < 1) {
+              delta += 0.2;
             } else {
-              delta -= 0.05;
+              delta -= 0.2;
             }
-            if (scaleDelta < 0.1) delta = 0;
-            if (scaleDelta > 15) delta = 0;
 
             Offset? focalPoint;
             if (widget.focalPointAlignment != null && context.size != null) {
@@ -193,7 +191,7 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
     if (widget.shouldScale && details.scale != 1.0 && focalPoint != null) {
       print("scale: ${scaleDelta}");
       scaleDelta = scaleUpdater.update(details.scale);
-      print("after scale:${scaleDelta}  details:${details.scale}");
+      print("after scale:${scaleDelta}  scaleValue:${scaleValue}");
       scaleValue += (scaleDelta - 1);
       scaleDeltaMatrix = _scale(scaleDelta, focalPoint);
       matrix = scaleDeltaMatrix * matrix;
