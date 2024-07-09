@@ -34,6 +34,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   ValueNotifier<bool> relocMode_ = ValueNotifier(false);
+  ValueNotifier<bool> setNavGoal_ = ValueNotifier(false);
   ValueNotifier<bool> manualCtrlMode_ = ValueNotifier(false);
   final ValueNotifier<Matrix4> globalTransform =
       ValueNotifier(Matrix4.identity());
@@ -79,6 +80,13 @@ class _MapPageState extends State<MapPage> {
                           (matrix, transDelta, scaleValue, rotateDelta) {
                         globalTransform.value = matrix;
                         globalScale_.value = scaleValue;
+                        //发布点击的导航目标点
+                        // if(setNavGoal_.value){
+                        //   setNavGoal_.value = false;
+                        //   Provider.of<RosChannel>(context, listen: false)
+                        //       .sendRelocPoseScene(poseSceneOnReloc);
+                        //   setState(() {});
+                        // }
                       },
                       child: Stack(
                         children: [
@@ -285,6 +293,7 @@ class _MapPageState extends State<MapPage> {
               left: 5,
               top: 10,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
                     color: Colors.white70,
@@ -312,7 +321,7 @@ class _MapPageState extends State<MapPage> {
                                 setState(() {});
                               },
                               icon: Icon(
-                                Icons.location_on_outlined,
+                                IconData(0xe60f, fontFamily: "Reloc"),
                                 color: relocMode_.value
                                     ? Colors.blue
                                     : Colors.black,
@@ -344,13 +353,35 @@ class _MapPageState extends State<MapPage> {
                       ),
                     ),
                   ),
+                  //设置导航目标点
                   Card(
                     color: Colors.white70,
                     elevation: 10,
                     child: IconButton(
-                      icon: Icon(manualCtrlMode_.value
-                          ? Icons.gamepad
-                          : Icons.gamepad_outlined),
+                      icon: Icon(
+                        IconData(0xeba1, fontFamily: "NavPoint"),
+                        color: setNavGoal_.value ? Colors.green : Colors.black,
+                      ),
+                      onPressed: () {
+                        if (!setNavGoal_.value) {
+                          setNavGoal_.value = true;
+                          setState(() {});
+                        } else {
+                          setNavGoal_.value = false;
+                          setState(() {});
+                        }
+                      },
+                    ),
+                  ),
+                  //手动控制
+                  Card(
+                    color: Colors.white70,
+                    elevation: 10,
+                    child: IconButton(
+                      icon: Icon(const IconData(0xea45, fontFamily: "GamePad"),
+                          color: manualCtrlMode_.value
+                              ? Colors.green
+                              : Colors.black),
                       onPressed: () {
                         if (manualCtrlMode_.value) {
                           manualCtrlMode_.value = false;
@@ -406,45 +437,45 @@ class _MapPageState extends State<MapPage> {
             bottom: 10,
             child: Visibility(
                 visible: manualCtrlMode_.value,
+                maintainState: true,
                 child: Joystick(
                   mode: JoystickMode.all,
                   listener: (details) {
-                    setState(() {
-                      double max_vx =
-                          double.parse(globalSetting.getConfig('MaxVx'));
-                      double max_vy =
-                          double.parse(globalSetting.getConfig('MaxVy'));
-                      double max_vw =
-                          double.parse(globalSetting.getConfig('MaxVw'));
-                      double vx = max_vx * details.y * -1;
-                      double vy = max_vy * details.x * -1;
-                      //x决定方向 1-y决定比例
-                      double vw = (1 - details.y.abs()) * max_vw;
+                    if (!manualCtrlMode_.value) return;
+                    double max_vx =
+                        double.parse(globalSetting.getConfig('MaxVx'));
+                    double max_vy =
+                        double.parse(globalSetting.getConfig('MaxVy'));
+                    double max_vw =
+                        double.parse(globalSetting.getConfig('MaxVw'));
+                    double vx = max_vx * details.y * -1;
+                    double vy = max_vy * details.x * -1;
+                    //x决定方向 1-y决定比例
+                    double vw = (1 - details.y.abs()) * max_vw;
 
+                    if (details.x > 0) {
+                      if (details.y < 0) {
+                        vw = -vw;
+                      }
+                    } else if (details.x < 0) {
+                      if (details.y > 0) {
+                        vw = -vw;
+                      }
+                    }
+                    //y小于一定值 只有w
+                    if (details.y.abs() <= 0.1) {
+                      vx = 0;
                       if (details.x > 0) {
-                        if (details.y < 0) {
-                          vw = -vw;
-                        }
-                      } else if (details.x < 0) {
-                        if (details.y > 0) {
-                          vw = -vw;
-                        }
+                        vw = -vw.abs();
+                      } else {
+                        vw = vw.abs();
                       }
-                      //y小于一定值 只有w
-                      if (details.y.abs() <= 0.1) {
-                        vx = 0;
-                        if (details.x > 0) {
-                          vw = -vw.abs();
-                        } else {
-                          vw = vw.abs();
-                        }
-                      }
-                      if (details.y == 0) {
-                        vw = 0;
-                      }
-                      Provider.of<RosChannel>(context, listen: false)
-                          .sendSpeed(vx, vy, vw);
-                    });
+                    }
+                    if (details.y == 0) {
+                      vw = 0;
+                    }
+                    Provider.of<RosChannel>(context, listen: false)
+                        .sendSpeed(vx, vy, vw);
                   },
                 )),
           )

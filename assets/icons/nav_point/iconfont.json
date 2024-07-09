@@ -1,0 +1,37 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "486798",
+      "name": "导航",
+      "font_class": "daohang",
+      "unicode": "e613",
+      "unicode_decimal": 58899
+    },
+    {
+      "icon_id": "34210316",
+      "name": "导航显示",
+      "font_class": "daohangxianshi",
+      "unicode": "e60f",
+      "unicode_decimal": 58895
+    },
+    {
+      "icon_id": "35702949",
+      "name": "导航1",
+      "font_class": "daohang1",
+      "unicode": "eba1",
+      "unicode_decimal": 60321
+    },
+    {
+      "icon_id": "39713157",
+      "name": "导航",
+      "font_class": "daohang2",
+      "unicode": "e686",
+      "unicode_decimal": 59014
+    }
+  ]
+}

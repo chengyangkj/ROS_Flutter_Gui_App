@@ -96,7 +96,7 @@ class Setting {
   }
 
   String get navGoalTopic {
-    return prefs.getString("navGoalTopic") ?? "/move_base/goal";
+    return prefs.getString("navGoalTopic") ?? "/move_base_simple/goal";
   }
 
   void setMapFrame(String frame) {

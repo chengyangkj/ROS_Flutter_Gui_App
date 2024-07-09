@@ -199,7 +199,7 @@ class RosChannel extends ChangeNotifier {
     navGoalChannel_ = Topic(
       ros: ros,
       name: globalSetting.navGoalTopic,
-      type: "move_base_msgs/MoveBaseActionGoal",
+      type: "geometry_msgs/PoseStamped",
       queueSize: 1,
       reconnectOnClose: true,
     );
@@ -210,6 +210,39 @@ class RosChannel extends ChangeNotifier {
       queueSize: 1,
       reconnectOnClose: true,
     );
+  }
+
+  Future<void> sendNavigationGoal(RobotPose pose) async {
+    Offset p = map_.value.idx2xy(Offset(pose.x, pose.y));
+    pose.x = p.dx;
+    pose.y = p.dy;
+    vm.Quaternion quaternion = eulerToQuaternion(pose.theta, 0, 0);
+    Map<String, dynamic> msg = {
+      "header": {
+        "seq": 0,
+        "stamp": {
+          "secs": DateTime.now().second,
+          "nsecs": DateTime.now().millisecond * 1000000
+        },
+        "frame_id": "map"
+      },
+      "pose": {
+        "position": {"x": pose.x, "y": pose.y, "z": 0},
+        "orientation": {
+          "x": quaternion.x,
+          "y": quaternion.y,
+          "z": quaternion.z,
+          "w": quaternion.w
+        }
+      }
+    };
+
+    // Assuming `channel` is a pre-configured MethodChannel connected to ROS
+    try {
+      await navGoalChannel_.publish(msg);
+    } catch (e) {
+      print("Failed to send navigation goal: $e");
+    }
   }
 
   void destroyConnection() async {
@@ -297,8 +330,11 @@ class RosChannel extends ChangeNotifier {
         ]
       }
     };
-    await relocChannel_.publish(msg);
-    print("send reloc pose:${json.encode(msg)}");
+    try {
+      await relocChannel_.publish(msg);
+    } catch (e) {
+      print("send reloc pose error:$e");
+    }
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
