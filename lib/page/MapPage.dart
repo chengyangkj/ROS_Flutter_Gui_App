@@ -321,7 +321,7 @@ class _MapPageState extends State<MapPage> {
                                 setState(() {});
                               },
                               icon: Icon(
-                                IconData(0xe60f, fontFamily: "Reloc"),
+                                const IconData(0xe60f, fontFamily: "Reloc"),
                                 color: relocMode_.value
                                     ? Colors.blue
                                     : Colors.black,
@@ -359,7 +359,7 @@ class _MapPageState extends State<MapPage> {
                     elevation: 10,
                     child: IconButton(
                       icon: Icon(
-                        IconData(0xeba1, fontFamily: "NavPoint"),
+                        const IconData(0xeba1, fontFamily: "NavPoint"),
                         color: setNavGoal_.value ? Colors.green : Colors.black,
                       ),
                       onPressed: () {
