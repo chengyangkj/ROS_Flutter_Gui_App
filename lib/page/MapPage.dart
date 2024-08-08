@@ -34,13 +34,19 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   ValueNotifier<bool> relocMode_ = ValueNotifier(false);
+  ValueNotifier<Offset> clickPose_ = ValueNotifier(Offset.zero);
   ValueNotifier<bool> setNavGoal_ = ValueNotifier(false);
   ValueNotifier<bool> manualCtrlMode_ = ValueNotifier(false);
+  ValueNotifier<List<RobotPose>> navPointList_ =
+      ValueNotifier<List<RobotPose>>([]);
   final ValueNotifier<Matrix4> globalTransform =
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<Matrix4> robotPoseMatrix =
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<double> globalScale_ = ValueNotifier(1);
+
+  double navPoseSize = 10;
+  double robotSize = 20;
   RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
   RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
   double calculateApexAngle(double r, double d) {
@@ -87,6 +93,33 @@ class _MapPageState extends State<MapPage> {
                         //       .sendRelocPoseScene(poseSceneOnReloc);
                         //   setState(() {});
                         // }
+                      },
+                      onClick: (pose) {
+                        if (setNavGoal_.value) {
+                          // RenderObject? renderObject =
+                          //     context.findRenderObject();
+                          // if (renderObject != null) {
+                          //   RenderBox renderBox = renderObject as RenderBox;
+                          //   focalPoint =
+                          //       renderBox.globalToLocal(pose!);
+                          // }
+                          //pose 为全局坐标 需转换为map下的局部坐标
+                          //点击的全局坐标
+                          RobotPose poseClicked =
+                              RobotPose(pose!.dx, pose.dy, 0);
+
+                          //地图坐标变换坐标
+                          RobotPose transformPose =
+                              GetRobotPoseFromMatrix(globalTransform.value);
+
+                          //计算在地图中的坐标
+                          RobotPose poseInMap =
+                              absoluteDifference(poseClicked, transformPose);
+
+                          navPointList_.value.add(RobotPose(
+                              poseInMap.x, poseInMap.y, transformPose.theta));
+                          setState(() {});
+                        }
                       },
                       child: Stack(
                         children: [
@@ -176,9 +209,9 @@ class _MapPageState extends State<MapPage> {
                             child: Consumer<RosChannel>(
                               builder: (context, rosChannel, child) {
                                 var robotPose = rosChannel.robotPoseScene;
-
+                                print(
+                                    "globalScale_.value${globalScale_.value}");
                                 //由于变换在机器人图片中心点 需要根据机器人的图片尺寸及缩放比例 计算实际机器人位置
-                                const double robotSize = 20;
 
                                 double robotSizeScaled =
                                     (robotSize / 2) / globalScale_.value;
@@ -279,6 +312,25 @@ class _MapPageState extends State<MapPage> {
                               },
                             ),
                           ),
+                          //导航点
+                          ...navPointList_.value.map((pose) {
+                            return Transform(
+                              transform: globalTransform.value,
+                              child: Transform(
+                                transform: Matrix4.identity()
+                                  ..translate(pose.x / globalScale_.value,
+                                      pose.y / globalScale_.value),
+                                child: IconButton(
+                                  iconSize: navPoseSize,
+                                  icon: Icon(
+                                    Icons.golf_course_sharp,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () {},
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ],
                       ),
                     ),

@@ -51,3 +51,13 @@ RobotPose absoluteDifference(RobotPose p1, RobotPose p2) {
 double deg2rad(double deg) => deg * pi / 180;
 
 double rad2deg(double rad) => rad * 180 / pi;
+
+RobotPose GetRobotPoseFromMatrix(Matrix4 matrix) {
+  // 提取平移量 (x, y)
+  double x = matrix.storage[12];
+  double y = matrix.storage[13];
+  // 提取旋转角度 theta（弧度）
+  double theta = atan2(matrix.storage[1], matrix.storage[0]); // 计算 theta
+
+  return RobotPose(x, y, theta);
+}

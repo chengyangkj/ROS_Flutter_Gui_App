@@ -18,6 +18,7 @@ class MatrixGestureDetector extends StatefulWidget {
   /// [Matrix4] change notification callback
   ///
   final MatrixGestureDetectorCallback onMatrixUpdate;
+  final void Function(Offset? pose)? onClick;
 
   /// The [child] contained by this detector.
   ///
@@ -57,6 +58,7 @@ class MatrixGestureDetector extends StatefulWidget {
     Key? key,
     required this.onMatrixUpdate,
     required this.child,
+    this.onClick,
     this.shouldTranslate = true,
     this.shouldScale = true,
     this.shouldRotate = true,
@@ -134,6 +136,7 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
                 focalPoint = renderBox.globalToLocal(event.position);
               }
             }
+
             scaleValue += (delta - 1);
             scaleDeltaMatrix = _scale(delta, focalPoint!);
             matrix = scaleDeltaMatrix * matrix;
@@ -141,9 +144,33 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
                 matrix, translationDelta, scaleValue, rotationDelta);
           }
         },
+        onPointerDown: (PointerDownEvent event) {
+          if (event.kind == PointerDeviceKind.mouse) {
+            Offset? focalPoint;
+            if (widget.focalPointAlignment != null && context.size != null) {
+              focalPoint = widget.focalPointAlignment!.alongSize(context.size!);
+            } else {
+              RenderObject? renderObject = context.findRenderObject();
+              if (renderObject != null) {
+                RenderBox renderBox = renderObject as RenderBox;
+                focalPoint = renderBox.globalToLocal(event.position);
+              }
+            }
+            if (widget.onClick != null) {
+              widget.onClick!(focalPoint);
+            }
+          }
+        },
         child: GestureDetector(
           onScaleStart: onScaleStart,
           onScaleUpdate: onScaleUpdate,
+          onTapDown: (TapDownDetails details) {
+            Offset localPosition = details.localPosition;
+            // Offset globalPosition = details.globalPosition;
+            if (widget.onClick != null) {
+              widget.onClick!(localPosition);
+            }
+          },
           child: child,
         ));
   }
@@ -189,9 +216,7 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
 
     // handle matrix scaling
     if (widget.shouldScale && details.scale != 1.0 && focalPoint != null) {
-      print("scale: ${scaleDelta}");
       scaleDelta = scaleUpdater.update(details.scale);
-      print("after scale:${scaleDelta}  scaleValue:${scaleValue}");
       scaleValue += (scaleDelta - 1);
       scaleDeltaMatrix = _scale(scaleDelta, focalPoint);
       matrix = scaleDeltaMatrix * matrix;
