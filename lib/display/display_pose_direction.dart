@@ -2,33 +2,41 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 
-class DisplayRobotReloc extends StatefulWidget {
+class DisplayPoseDirection extends StatefulWidget {
   late double size;
-  bool relocMode = false;
+  bool resetAngle = false;
+  double initAngle = 0;
   void Function(double) onRotateCallback;
   late Color color = const Color(0xFF0080ff);
-  DisplayRobotReloc(
+  DisplayPoseDirection(
       {required this.size,
-      required this.relocMode,
-      required this.onRotateCallback});
+      required this.resetAngle,
+      required this.onRotateCallback,
+      this.initAngle = 0});
 
   @override
-  _DisplayRobotRelocState createState() => _DisplayRobotRelocState();
+  _DisplayPoseDirectionState createState() => _DisplayPoseDirectionState();
 }
 
-class _DisplayRobotRelocState extends State<DisplayRobotReloc>
+class _DisplayPoseDirectionState extends State<DisplayPoseDirection>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  double _angle = 0.0;
+  double _angle = 0;
+
   @override
   void initState() {
     _controller =
         AnimationController(vsync: this, duration: Duration(milliseconds: 2000))
           ..repeat();
     super.initState();
+    _angle = widget.initAngle;
+    if (widget.resetAngle) {
+      _angle = 0;
+    }
   }
 
   @override
@@ -50,9 +58,6 @@ class _DisplayRobotRelocState extends State<DisplayRobotReloc>
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.relocMode) {
-      _angle = 0;
-    }
     return GestureDetector(
         onPanUpdate: (details) {
           _updatePosition(details.localPosition);
@@ -60,17 +65,16 @@ class _DisplayRobotRelocState extends State<DisplayRobotReloc>
         child: Container(
           width: widget.size,
           height: widget.size,
-          // decoration: BoxDecoration(
-          //     border: Border.all(
-          //   color: Colors.red, // 红色边框
-          //   width: 1, // 边框宽度
-          // )),
+          decoration: BoxDecoration(
+              border: Border.all(
+            color: Colors.red, // 红色边框
+            width: 1, // 边框宽度
+          )),
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
               return CustomPaint(
-                painter: DisplayRobotRelocPainter(
-                    angle: _angle, relocMode: widget.relocMode),
+                painter: DisplayPoseDirectionPainter(angle: _angle),
               );
             },
           ),
@@ -78,15 +82,13 @@ class _DisplayRobotRelocState extends State<DisplayRobotReloc>
   }
 }
 
-class DisplayRobotRelocPainter extends CustomPainter {
-  bool relocMode = false;
+class DisplayPoseDirectionPainter extends CustomPainter {
   Paint _paint = Paint()..style = PaintingStyle.fill;
   double angle = 0;
-  DisplayRobotRelocPainter({this.angle = 0, this.relocMode = false});
+  DisplayPoseDirectionPainter({this.angle = 0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (!relocMode) return;
     // //绘制机器人坐标
     Offset center = Offset(size.width / 2, size.height / 2);
     final circlePaint = Paint()

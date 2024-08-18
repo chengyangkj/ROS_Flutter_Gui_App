@@ -18,6 +18,7 @@
         - [安装 rosbridgesuite](#安装-rosbridgesuite)
         - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
 - [web端运行指南](#web端运行指南)
+- [引用](#引用)
 
 <!-- /TOC -->
 
@@ -110,3 +111,9 @@ cd ros_flutter_gui_app_web
 python -m http.server 8000
 ```
 由于这里指定的端口为8000，在浏览器输入`本机ip:8000`即可访问站点
+
+# 引用
+
+- 部分UI界面效果参考自[ros_navigation_command_app](https://github.com/Rongix/ros_navigation_command_app)，仅参考UI显示效果，本仓库的代码的实现均为原创
+- [roslibdart](https://pub.dev/packages/roslibdart)，实现flutter 中的ros bridge websocket的通信，借助此库可以直接与ros进行端对端通信
+- [matrix_gesture_detector](https://pub.dev/packages/matrix_gesture_detector) 软件的手势识别在此pub包的基础上做更改

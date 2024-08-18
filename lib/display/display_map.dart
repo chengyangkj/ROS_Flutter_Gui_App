@@ -1,14 +1,48 @@
+import 'dart:math';
 import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
-import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 
-class DisplayMap extends CustomPainter {
+import 'package:flutter/material.dart';
+import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+
+class DisplayMap extends StatefulWidget {
+  late OccupancyMap map;
+
+  DisplayMap({required this.map});
+
+  @override
+  _DisplayMapState createState() => _DisplayMapState();
+}
+
+class _DisplayMapState extends State<DisplayMap>
+    with SingleTickerProviderStateMixin {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: widget.map.width().toDouble(),
+      height: widget.map.height().toDouble(),
+      child: CustomPaint(
+        painter: DisplayMapPainter(map: widget.map),
+      ),
+    );
+  }
+}
+
+class DisplayMapPainter extends CustomPainter {
   late OccupancyMap map;
   List<Offset> occPointList = [];
   List<Offset> freePointList = [];
-  DisplayMap({required this.map}) {
+  DisplayMapPainter({required this.map}) {
     for (int i = 0; i < map.Cols(); i++)
       // ignore: curly_braces_in_flow_control_structures
       for (int j = 0; j < map.Rows(); j++) {
@@ -22,12 +56,14 @@ class DisplayMap extends CustomPainter {
         }
       }
   }
+
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
       ..color = Colors.lightBlue[600]! // 设置颜色为传入的颜色参数
-      ..strokeCap = StrokeCap.butt // 设置画笔的端点为圆形，以便绘制圆形点
-      ..strokeWidth = 1.2; // 设置画笔的宽度为1个像素
+      ..strokeCap = StrokeCap.butt
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 1; // 设置画笔的宽度为1个像素
     canvas.drawPoints(PointMode.points, occPointList, paint);
 
     paint.color = Colors.blue[100]!;

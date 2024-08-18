@@ -18,7 +18,6 @@ class MatrixGestureDetector extends StatefulWidget {
   /// [Matrix4] change notification callback
   ///
   final MatrixGestureDetectorCallback onMatrixUpdate;
-  final void Function(Offset? pose)? onClick;
 
   /// The [child] contained by this detector.
   ///
@@ -58,7 +57,6 @@ class MatrixGestureDetector extends StatefulWidget {
     Key? key,
     required this.onMatrixUpdate,
     required this.child,
-    this.onClick,
     this.shouldTranslate = true,
     this.shouldScale = true,
     this.shouldRotate = true,
@@ -121,9 +119,9 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
           if (event is PointerScrollEvent) {
             double delta = 1;
             if (event.scrollDelta.dy < 1) {
-              delta += 0.2;
+              delta += 0.1;
             } else {
-              delta -= 0.2;
+              delta -= 0.1;
             }
 
             Offset? focalPoint;
@@ -137,40 +135,18 @@ class _MatrixGestureDetectorState extends State<MatrixGestureDetector> {
               }
             }
 
-            scaleValue += (delta - 1);
-            scaleDeltaMatrix = _scale(delta, focalPoint!);
-            matrix = scaleDeltaMatrix * matrix;
-            widget.onMatrixUpdate(
-                matrix, translationDelta, scaleValue, rotationDelta);
-          }
-        },
-        onPointerDown: (PointerDownEvent event) {
-          if (event.kind == PointerDeviceKind.mouse) {
-            Offset? focalPoint;
-            if (widget.focalPointAlignment != null && context.size != null) {
-              focalPoint = widget.focalPointAlignment!.alongSize(context.size!);
-            } else {
-              RenderObject? renderObject = context.findRenderObject();
-              if (renderObject != null) {
-                RenderBox renderBox = renderObject as RenderBox;
-                focalPoint = renderBox.globalToLocal(event.position);
-              }
-            }
-            if (widget.onClick != null) {
-              widget.onClick!(focalPoint);
+            if (widget.shouldScale && delta != 1.0 && focalPoint != null) {
+              scaleDeltaMatrix = _scale(delta, focalPoint);
+              scaleValue += (delta - 1);
+              matrix = scaleDeltaMatrix * matrix;
+              widget.onMatrixUpdate(
+                  matrix, translationDelta, scaleValue, rotationDelta);
             }
           }
         },
         child: GestureDetector(
           onScaleStart: onScaleStart,
           onScaleUpdate: onScaleUpdate,
-          onTapDown: (TapDownDetails details) {
-            Offset localPosition = details.localPosition;
-            // Offset globalPosition = details.globalPosition;
-            if (widget.onClick != null) {
-              widget.onClick!(localPosition);
-            }
-          },
           child: child,
         ));
   }
