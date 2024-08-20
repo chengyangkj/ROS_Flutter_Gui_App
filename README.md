@@ -23,6 +23,36 @@
 <!-- /TOC -->
 
 
+功能/TODO:
+  
+| 功能                        | 状态 | 备注                 |
+| --------------------------- | ---- | -------------------- |
+| ROS1/ROS2通信               | ✅    |                      |
+| 全局/局部地图显示           | ❎    |                      |
+| 机器人实时位置显示          | ✅    |                      |
+| 机器人速度仪表盘            | ❎    |                      |
+| 机器人手动控制              | ✅    |                      |
+| 机器人重定位                | ✅    |                      |
+| 机器人单点/多点导航         | ❎    |                      |
+| 机器人全局/局部规划轨迹显示 | ✅    |                      |
+| 机器人拓扑地图功能          | ❎    |                      |
+| 电池电量显示                | ❎    |                      |
+| 地图编辑功能                | ❎    |                      |
+| 机器人导航任务链            |❎    |               |
+| 地图加载                    | ❎    |                      |
+| 地图保存                    | ❎    |                      |
+| 相机图像显示                | ❎    |  |
+| 机器人车身轮廓显示          | ❎    | 支持配置异形车身     |
+
+
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chengyangkj/Ros_Flutter_Gui_App&type=Timeline&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=chengyangkj/Ros_Flutter_Gui_App&type=Timeline" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=chengyangkj/Ros_Flutter_Gui_App&type=Timeline" width="75%" />
+  </picture>
+
+
+
 # 一,ROS Bridge WebSocket 安装与运行指南
 
 软件借助ros bridge websoct实现与ros之间的通信，因此需要先在自己的机器人系统上安装ros bridget websocket并运行，这里区分ros1 与 ros2分别介绍安装教程

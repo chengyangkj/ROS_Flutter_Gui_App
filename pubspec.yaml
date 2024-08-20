@@ -45,6 +45,7 @@ dependencies:
   flutter_expandable_fab: ^2.0.0
   flutter_joystick: ^0.2.0
   web: ^0.5.1
+  win32: ^5.5.4
 
 dev_dependencies:
 
