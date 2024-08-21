@@ -29,8 +29,8 @@ class _DisplayMapState extends State<DisplayMap>
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: widget.map.width().toDouble(),
-      height: widget.map.height().toDouble(),
+      width: widget.map.width().toDouble() + 1,
+      height: widget.map.height().toDouble() + 1,
       child: CustomPaint(
         painter: DisplayMapPainter(map: widget.map),
       ),
@@ -63,7 +63,7 @@ class DisplayMapPainter extends CustomPainter {
       ..color = Colors.lightBlue[600]! // 设置颜色为传入的颜色参数
       ..strokeCap = StrokeCap.butt
       ..style = PaintingStyle.fill
-      ..strokeWidth = 1; // 设置画笔的宽度为1个像素
+      ..strokeWidth = 1.3; // 设置画笔的宽度为1个像素
     canvas.drawPoints(PointMode.points, occPointList, paint);
 
     paint.color = Colors.blue[100]!;
