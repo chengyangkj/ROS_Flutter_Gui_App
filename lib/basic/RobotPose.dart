@@ -8,6 +8,12 @@ class RobotPose {
 
   RobotPose(this.x, this.y, this.theta);
 
+  RobotPose.zero()
+      : x = 0,
+        y = 0,
+        theta = 0;
+
+  // 从JSON解析
   // 构造函数
   RobotPose.fromJson(Map<String, dynamic> json)
       : x = json['x'],

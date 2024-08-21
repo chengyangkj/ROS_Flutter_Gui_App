@@ -48,10 +48,12 @@ class _MapPageState extends State<MapPage> {
       ValueNotifier(Matrix4.identity());
   final ValueNotifier<RobotPose> robotPose_ = ValueNotifier(RobotPose(0, 0, 0));
   final ValueNotifier<double> globalScale_ = ValueNotifier(1);
+  OverlayEntry? _overlayEntry;
+  RobotPose currentNavGoal_ = RobotPose.zero();
 
-  int poseDirectionSwellSize = 10;
-  double navPoseSize = 15;
-  double robotSize = 20;
+  int poseDirectionSwellSize = 10; //机器人方向旋转控件膨胀的大小
+  double navPoseSize = 15; //导航点的大小
+  double robotSize = 20; //机器人坐标的大小
   RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
   RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
   double calculateApexAngle(double r, double d) {
@@ -66,6 +68,59 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     globalSetting.init();
+  }
+
+  void _showContextMenu(BuildContext context, Offset position) {
+    final overlay =
+        Overlay.of(context)?.context.findRenderObject() as RenderBox;
+    final menuOverlay = Overlay.of(context);
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: position.dx,
+        top: position.dy,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 300,
+            height: 300,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    TextButton(onPressed: () {}, child: Text("确定")),
+                    TextButton(
+                        onPressed: () {
+                          _hideContextMenu();
+                        },
+                        child: Text("取消"))
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    menuOverlay?.insert(_overlayEntry!);
+  }
+
+  void _hideContextMenu() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
   }
 
   @override
@@ -196,8 +251,12 @@ class _MapPageState extends State<MapPage> {
                                     alignment: Alignment.center,
                                     transform: Matrix4.identity()
                                       ..translate(
-                                          robotPose_.value.x - robotSize / 2,
-                                          robotPose_.value.y - robotSize / 2)
+                                          robotPose_.value.x -
+                                              robotSize / 2 -
+                                              poseDirectionSwellSize / 2,
+                                          robotPose_.value.y -
+                                              robotSize / 2 -
+                                              poseDirectionSwellSize / 2)
                                       ..rotateZ(-robotPose_.value.theta),
                                     child: MatrixGestureDetector(
                                       onMatrixUpdate: (matrix, transDelta,
@@ -225,14 +284,6 @@ class _MapPageState extends State<MapPage> {
                                             robotSize + poseDirectionSwellSize,
                                         width:
                                             robotSize + poseDirectionSwellSize,
-                                        // // 设置边框
-                                        // decoration: BoxDecoration(
-                                        //   // 设置边框
-                                        //   border: Border.all(
-                                        //     color: Colors.red, // 边框颜色
-                                        //     width: 1, // 边框宽度
-                                        //   ),
-                                        // ),
                                         child: Stack(
                                           alignment: Alignment.center,
                                           children: [
@@ -333,11 +384,31 @@ class _MapPageState extends State<MapPage> {
                                                     setState(() {});
                                                   },
                                                 )),
-                                            DisplayWayPoint(
-                                              size: navPoseSize,
-                                              color: Colors.green,
-                                              count: 4,
-                                            ),
+                                            GestureDetector(
+                                                onTapDown: (details) {
+                                                  if (mode_.value ==
+                                                      Mode.noraml) {
+                                                    // _showContextMenu(context,
+                                                    //     details.globalPosition);
+                                                    Provider.of<RosChannel>(
+                                                            context,
+                                                            listen: false)
+                                                        .sendNavigationGoal(
+                                                            RobotPose(
+                                                                pose.x,
+                                                                pose.y,
+                                                                pose.theta));
+                                                    currentNavGoal_ = pose;
+                                                    setState(() {});
+                                                  }
+                                                },
+                                                child: DisplayWayPoint(
+                                                  size: navPoseSize,
+                                                  color: currentNavGoal_ == pose
+                                                      ? Colors.pink
+                                                      : Colors.green,
+                                                  count: 4,
+                                                )),
                                           ],
                                         ),
                                       ))),

@@ -65,11 +65,11 @@ class _DisplayPoseDirectionState extends State<DisplayPoseDirection>
         child: Container(
           width: widget.size,
           height: widget.size,
-          decoration: BoxDecoration(
-              border: Border.all(
-            color: Colors.red, // 红色边框
-            width: 1, // 边框宽度
-          )),
+          // decoration: BoxDecoration(
+          //     border: Border.all(
+          //   color: Colors.red, // 红色边框
+          //   width: 1, // 边框宽度
+          // )),
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
