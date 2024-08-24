@@ -23,6 +23,7 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
 import 'package:ros_flutter_gui_app/display/display_grid.dart';
+import 'package:toast/toast.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:ros_flutter_gui_app/display/display_waypoint.dart';
 
@@ -47,8 +48,10 @@ class _MapPageState extends State<MapPage> {
       ValueNotifier<List<RobotPose>>([]);
   final ValueNotifier<Matrix4> gestureTransform =
       ValueNotifier(Matrix4.identity());
-  final ValueNotifier<Matrix4> poseFixedTransform =
-      ValueNotifier(Matrix4.identity());
+
+  Matrix4 cameraFixedTransform = Matrix4.identity(); //固定相机视角(以机器人为中心)
+  double cameraFixedScaleValue_ = 1; //固定相机视角时的缩放值
+
   final ValueNotifier<RobotPose> robotPose_ = ValueNotifier(RobotPose(0, 0, 0));
   final ValueNotifier<double> globalScale_ = ValueNotifier(1);
   OverlayEntry? _overlayEntry;
@@ -71,16 +74,6 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     globalSetting.init();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 从Provider中获取数据，并更新到类内变量
-    final rosData = Provider.of<RosChannel>(context);
-    poseFixedTransform.value = Matrix4.zero()
-      ..translate(-rosData.robotPoseScene.x, -rosData.robotPoseScene.y)
-      ..rotateZ(-rosData.robotPoseScene.theta);
   }
 
   void _showContextMenu(BuildContext context, Offset position) {
@@ -138,6 +131,7 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+    ToastContext().init(context);
     final _key = GlobalKey<ExpandableFabState>();
     final screenSize = MediaQuery.of(context).size;
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
@@ -158,311 +152,382 @@ class _MapPageState extends State<MapPage> {
                       child: MatrixGestureDetector(
                         onMatrixUpdate:
                             (matrix, transDelta, scaleValue, rotateDelta) {
+                          if (mode_.value == Mode.robotFixedCenter) {
+                            Toast.show("相机视角固定时不可调整图层！",
+                                duration: Toast.lengthShort,
+                                gravity: Toast.bottom);
+                          }
                           if (!(mode_.value == Mode.robotFixedCenter)) {
                             gestureTransform.value = matrix;
                             globalScale_.value = scaleValue;
                           }
                         },
-                        child: Stack(
-                          children: [
-                            //网格
-                            Container(
-                              child: DisplayGrid(
-                                step: (1 / occMap.mapConfig.resolution) *
-                                    (globalScale_.value > 0.5
-                                        ? globalScale_.value
-                                        : 0.5),
-                                width: screenSize.width,
-                                height: screenSize.height,
+                        child: Consumer<RosChannel>(
+                            builder: (context, rosChannel, child) {
+                          cameraFixedTransform = Matrix4.identity()
+                            ..translate(
+                                screenCenter.dx - rosChannel.robotPoseScene.x,
+                                screenCenter.dy - rosChannel.robotPoseScene.y)
+                            ..rotateZ(
+                                rosChannel.robotPoseScene.theta - deg2rad(90))
+                            ..scale(cameraFixedScaleValue_);
+                          return Stack(
+                            children: [
+                              //网格
+                              Container(
+                                child: DisplayGrid(
+                                  step: (1 / occMap.mapConfig.resolution) *
+                                      (globalScale_.value > 0.5
+                                          ? globalScale_.value
+                                          : 0.5),
+                                  width: screenSize.width,
+                                  height: screenSize.height,
+                                ),
                               ),
-                            ),
-                            //地图
-                            Transform(
-                              transform: mode_.value == Mode.robotFixedCenter
-                                  ? poseFixedTransform.value
-                                  : gestureTransform.value,
-                              child: GestureDetector(
-                                child: DisplayMap(map: occMap),
-                                onTapDown: (details) {
-                                  if (mode_.value == Mode.addNavPoint) {
-                                    navPointList_.value.add(RobotPose(
-                                        details.localPosition.dx,
-                                        details.localPosition.dy,
-                                        0));
-                                    setState(() {});
-                                  }
-                                },
+                              //地图
+                              Transform(
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(rosChannel.robotPoseScene.x,
+                                        rosChannel.robotPoseScene.y)
+                                    : Offset.zero,
+                                child: GestureDetector(
+                                  child: DisplayMap(map: occMap),
+                                  onTapDown: (details) {
+                                    if (mode_.value == Mode.addNavPoint) {
+                                      navPointList_.value.add(RobotPose(
+                                          details.localPosition.dx,
+                                          details.localPosition.dy,
+                                          0));
+                                      setState(() {});
+                                    }
+                                  },
+                                ),
                               ),
-                            ),
 
-                            //全局路径
-                            Transform(
-                              transform: gestureTransform.value,
-                              child: Consumer<RosChannel>(
-                                builder: (context, rosChannel, child) {
-                                  return Container(
-                                    child: CustomPaint(
-                                      painter: DisplayPath(
-                                          pointList: rosChannel.globalPathScene,
-                                          color: Colors.green),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            //局部路径
-                            Transform(
-                              transform: gestureTransform.value,
-                              child: Consumer<RosChannel>(
-                                builder: (context, rosChannel, child) {
-                                  return Container(
-                                    child: CustomPaint(
-                                      painter: DisplayPath(
-                                          pointList: rosChannel.localPathScene,
-                                          color: Colors.yellow[200]!),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-
-                            //激光
-                            Transform(
-                              transform: gestureTransform.value,
-                              child: Consumer<RosChannel>(
+                              //全局路径
+                              Transform(
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(rosChannel.robotPoseScene.x,
+                                        rosChannel.robotPoseScene.y)
+                                    : Offset.zero,
+                                child: Consumer<RosChannel>(
                                   builder: (context, rosChannel, child) {
-                                LaserData laserData = rosChannel.laserPointData;
-                                RobotPose robotPoseMap = laserData.robotPose;
+                                    return Container(
+                                      child: CustomPaint(
+                                        painter: DisplayPath(
+                                            pointList:
+                                                rosChannel.globalPathScene,
+                                            color: Colors.green),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              //局部路径
+                              Transform(
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(rosChannel.robotPoseScene.x,
+                                        rosChannel.robotPoseScene.y)
+                                    : Offset.zero,
+                                child: Consumer<RosChannel>(
+                                  builder: (context, rosChannel, child) {
+                                    return Container(
+                                      child: CustomPaint(
+                                        painter: DisplayPath(
+                                            pointList:
+                                                rosChannel.localPathScene,
+                                            color: Colors.yellow[200]!),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
 
-                                //重定位模式 从图层坐标转换
-                                if (mode_.value == Mode.reloc) {
-                                  Offset poseMap = rosChannel.map.value.idx2xy(
-                                      Offset(poseSceneOnReloc.x,
-                                          poseSceneOnReloc.y));
-                                  robotPoseMap = RobotPose(poseMap.dx,
-                                      poseMap.dy, poseSceneOnReloc.theta);
-                                }
+                              //激光
+                              Transform(
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(rosChannel.robotPoseScene.x,
+                                        rosChannel.robotPoseScene.y)
+                                    : Offset.zero,
+                                child: Consumer<RosChannel>(
+                                    builder: (context, rosChannel, child) {
+                                  LaserData laserData =
+                                      rosChannel.laserPointData;
+                                  RobotPose robotPoseMap = laserData.robotPose;
 
-                                List<Offset> laserPointsScene = [];
-                                for (var point in laserData.laserPoseBaseLink) {
-                                  RobotPose pointMap = absoluteSum(robotPoseMap,
-                                      RobotPose(point.dx, point.dy, 0));
-                                  Offset pointScene = rosChannel.map.value
-                                      .xy2idx(Offset(pointMap.x, pointMap.y));
-                                  laserPointsScene.add(pointScene);
-                                }
-                                return IgnorePointer(
-                                    ignoring: true,
-                                    child: DisplayLaser(
-                                        pointList: laserPointsScene));
-                              }),
-                            ),
-                            //机器人位置（固定视角）
-                            Visibility(
+                                  //重定位模式 从图层坐标转换
+                                  if (mode_.value == Mode.reloc) {
+                                    Offset poseMap = rosChannel.map.value
+                                        .idx2xy(Offset(poseSceneOnReloc.x,
+                                            poseSceneOnReloc.y));
+                                    robotPoseMap = RobotPose(poseMap.dx,
+                                        poseMap.dy, poseSceneOnReloc.theta);
+                                  }
+
+                                  List<Offset> laserPointsScene = [];
+                                  for (var point
+                                      in laserData.laserPoseBaseLink) {
+                                    RobotPose pointMap = absoluteSum(
+                                        robotPoseMap,
+                                        RobotPose(point.dx, point.dy, 0));
+                                    Offset pointScene = rosChannel.map.value
+                                        .xy2idx(Offset(pointMap.x, pointMap.y));
+                                    laserPointsScene.add(pointScene);
+                                  }
+                                  return IgnorePointer(
+                                      ignoring: true,
+                                      child: DisplayLaser(
+                                          pointList: laserPointsScene));
+                                }),
+                              ),
+                              //导航点
+                              ...navPointList_.value.map((pose) {
+                                return Transform(
+                                  transform:
+                                      mode_.value == Mode.robotFixedCenter
+                                          ? cameraFixedTransform
+                                          : gestureTransform.value,
+                                  origin: mode_.value == Mode.robotFixedCenter
+                                      ? Offset(rosChannel.robotPoseScene.x,
+                                          rosChannel.robotPoseScene.y)
+                                      : Offset.zero,
+                                  child: Transform(
+                                      alignment: Alignment.center,
+                                      transform: Matrix4.identity()
+                                        ..translate(
+                                            pose.x -
+                                                navPoseSize / 2 -
+                                                poseDirectionSwellSize / 2,
+                                            pose.y -
+                                                navPoseSize / 2 -
+                                                poseDirectionSwellSize / 2)
+                                        ..rotateZ(-pose.theta),
+                                      child: MatrixGestureDetector(
+                                          onMatrixUpdate: (matrix, transDelta,
+                                              scaleDelta, rotateDelta) {
+                                            // print("transDelta:${transDelta}");
+                                            if (mode_.value ==
+                                                Mode.addNavPoint) {
+                                              //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
+                                              double dx = transDelta.dx /
+                                                  globalScale_.value;
+                                              double dy = transDelta.dy /
+                                                  globalScale_.value;
+                                              double tmpTheta = pose.theta;
+                                              pose = absoluteSum(
+                                                  RobotPose(pose.x, pose.y,
+                                                      pose.theta),
+                                                  RobotPose(dx, dy, 0));
+                                              pose.theta = tmpTheta;
+                                              print("trans pose:${pose}");
+                                              setState(() {});
+                                            }
+                                          },
+                                          child: Container(
+                                            height: navPoseSize +
+                                                poseDirectionSwellSize,
+                                            width: navPoseSize +
+                                                poseDirectionSwellSize,
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Visibility(
+                                                    visible: mode_.value ==
+                                                        Mode.addNavPoint,
+                                                    child: DisplayPoseDirection(
+                                                      size: navPoseSize +
+                                                          poseDirectionSwellSize,
+                                                      initAngle: -pose.theta,
+                                                      resetAngle: false,
+                                                      onRotateCallback:
+                                                          (angle) {
+                                                        pose.theta = -angle;
+                                                        setState(() {});
+                                                      },
+                                                    )),
+                                                GestureDetector(
+                                                    onTapDown: (details) {
+                                                      if (mode_.value ==
+                                                          Mode.noraml) {
+                                                        // _showContextMenu(context,
+                                                        //     details.globalPosition);
+                                                        Provider.of<RosChannel>(
+                                                                context,
+                                                                listen: false)
+                                                            .sendNavigationGoal(
+                                                                RobotPose(
+                                                                    pose.x,
+                                                                    pose.y,
+                                                                    pose.theta));
+                                                        currentNavGoal_ = pose;
+                                                        setState(() {});
+                                                      }
+                                                    },
+                                                    child: DisplayWayPoint(
+                                                      size: navPoseSize,
+                                                      color: currentNavGoal_ ==
+                                                              pose
+                                                          ? Colors.pink
+                                                          : Colors.green,
+                                                      count: 4,
+                                                    )),
+                                              ],
+                                            ),
+                                          ))),
+                                );
+                              }).toList(),
+                              //机器人位置（固定视角）
+                              Visibility(
                                 visible: mode_.value == Mode.robotFixedCenter,
                                 child: Positioned(
-                                  left: screenCenter.dx - robotSize / 2,
-                                  top: screenCenter.dy - robotSize / 2,
-                                  child: Transform.scale(
-                                    scale: globalScale_.value,
+                                  left: screenCenter.dx -
+                                      (robotSize / 2 * cameraFixedScaleValue_),
+                                  top: screenCenter.dy -
+                                      (robotSize / 2 * cameraFixedScaleValue_),
+                                  child: Transform(
+                                    transform: Matrix4.identity()
+                                      ..scale(cameraFixedScaleValue_),
                                     child: DisplayRobot(
+                                      direction: deg2rad(-90),
                                       size: robotSize,
                                       color: Colors.yellow,
                                       count: 2,
                                     ),
                                   ),
-                                )),
-                            //机器人位置(不固定视角)
-                            Visibility(
-                                visible: mode_.value != Mode.robotFixedCenter,
-                                child: Transform(
-                                  transform: gestureTransform.value,
-                                  child: Consumer<RosChannel>(
-                                    builder: (context, rosChannel, child) {
-                                      if (!(mode_.value == Mode.reloc)) {
-                                        robotPose_.value =
-                                            rosChannel.robotPoseScene;
-                                      }
+                                ),
+                              ),
+                              //机器人位置(不固定视角)
+                              Visibility(
+                                  visible: mode_.value != Mode.robotFixedCenter,
+                                  child: Transform(
+                                    transform:
+                                        mode_.value == Mode.robotFixedCenter
+                                            ? cameraFixedTransform
+                                            : gestureTransform.value,
+                                    child: Consumer<RosChannel>(
+                                      builder: (context, rosChannel, child) {
+                                        if (!(mode_.value == Mode.reloc)) {
+                                          robotPose_.value =
+                                              rosChannel.robotPoseScene;
+                                        }
 
-                                      return Transform(
-                                          alignment: Alignment.center,
-                                          transform: Matrix4.identity()
-                                            ..translate(
-                                                robotPose_.value.x -
-                                                    robotSize / 2 -
-                                                    poseDirectionSwellSize / 2,
-                                                robotPose_.value.y -
-                                                    robotSize / 2 -
-                                                    poseDirectionSwellSize / 2)
-                                            ..rotateZ(-robotPose_.value.theta),
-                                          child: MatrixGestureDetector(
-                                            onMatrixUpdate: (matrix, transDelta,
-                                                scaleDelta, rotateDelta) {
-                                              if (mode_.value == Mode.reloc) {
-                                                //获取global的scale值
-
-                                                //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                                double dx = transDelta.dx /
-                                                    globalScale_.value;
-                                                double dy = transDelta.dy /
-                                                    globalScale_.value;
-                                                double theta =
-                                                    poseSceneOnReloc.theta;
-                                                poseSceneOnReloc = absoluteSum(
-                                                    RobotPose(
-                                                        poseSceneOnReloc.x,
-                                                        poseSceneOnReloc.y,
-                                                        0),
-                                                    RobotPose(dx, dy, 0));
-                                                poseSceneOnReloc.theta = theta;
-                                                //坐标变换sum
-                                                robotPose_.value =
-                                                    poseSceneOnReloc;
-                                              }
-                                            },
-                                            child: Container(
-                                              height: robotSize +
-                                                  poseDirectionSwellSize,
-                                              width: robotSize +
-                                                  poseDirectionSwellSize,
-                                              child: Stack(
-                                                alignment: Alignment.center,
-                                                children: [
-                                                  //重定位旋转框
-                                                  Visibility(
-                                                    visible: mode_.value ==
-                                                        Mode.reloc,
-                                                    child: DisplayPoseDirection(
-                                                      size: robotSize +
-                                                          poseDirectionSwellSize,
-                                                      resetAngle: mode_.value !=
-                                                          Mode.reloc,
-                                                      onRotateCallback:
-                                                          (angle) {
-                                                        poseSceneOnReloc.theta =
-                                                            (poseSceneStartReloc
-                                                                    .theta -
-                                                                angle);
-                                                        //坐标变换sum
-                                                        robotPose_.value =
-                                                            RobotPose(
-                                                                poseSceneOnReloc
-                                                                    .x,
-                                                                poseSceneOnReloc
-                                                                    .y,
-                                                                poseSceneOnReloc
-                                                                    .theta);
-                                                      },
-                                                    ),
-                                                  ),
-
-                                                  //机器人图标
-                                                  DisplayRobot(
-                                                    size: robotSize,
-                                                    color: Colors.yellow,
-                                                    count: 2,
-                                                  ),
-                                                  // IconButton(
-                                                  //   onPressed: () {},
-                                                  //   iconSize: robotSize / 2,
-                                                  //   icon: Icon(Icons.check),
-                                                  // ),
-                                                ],
-                                              ),
-                                            ),
-                                          ));
-                                    },
-                                  ),
-                                )),
-                            //导航点
-                            ...navPointList_.value.map((pose) {
-                              return Transform(
-                                transform: gestureTransform.value,
-                                child: Transform(
-                                    alignment: Alignment.center,
-                                    transform: Matrix4.identity()
-                                      ..translate(
-                                          pose.x -
-                                              navPoseSize / 2 -
-                                              poseDirectionSwellSize / 2,
-                                          pose.y -
-                                              navPoseSize / 2 -
-                                              poseDirectionSwellSize / 2)
-                                      ..rotateZ(-pose.theta),
-                                    child: MatrixGestureDetector(
-                                        onMatrixUpdate: (matrix, transDelta,
-                                            scaleDelta, rotateDelta) {
-                                          // print("transDelta:${transDelta}");
-                                          if (mode_.value == Mode.addNavPoint) {
-                                            //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                            double dx = transDelta.dx /
-                                                globalScale_.value;
-                                            double dy = transDelta.dy /
-                                                globalScale_.value;
-                                            double tmpTheta = pose.theta;
-                                            pose = absoluteSum(
-                                                RobotPose(
-                                                    pose.x, pose.y, pose.theta),
-                                                RobotPose(dx, dy, 0));
-                                            pose.theta = tmpTheta;
-                                            print("trans pose:${pose}");
-                                            setState(() {});
-                                          }
-                                        },
-                                        child: Container(
-                                          height: navPoseSize +
-                                              poseDirectionSwellSize,
-                                          width: navPoseSize +
-                                              poseDirectionSwellSize,
-                                          child: Stack(
+                                        return Transform(
                                             alignment: Alignment.center,
-                                            children: [
-                                              Visibility(
-                                                  visible: mode_.value ==
-                                                      Mode.addNavPoint,
-                                                  child: DisplayPoseDirection(
-                                                    size: navPoseSize +
-                                                        poseDirectionSwellSize,
-                                                    initAngle: -pose.theta,
-                                                    resetAngle: false,
-                                                    onRotateCallback: (angle) {
-                                                      pose.theta = -angle;
-                                                      setState(() {});
-                                                    },
-                                                  )),
-                                              GestureDetector(
-                                                  onTapDown: (details) {
-                                                    if (mode_.value ==
-                                                        Mode.noraml) {
-                                                      // _showContextMenu(context,
-                                                      //     details.globalPosition);
-                                                      Provider.of<RosChannel>(
-                                                              context,
-                                                              listen: false)
-                                                          .sendNavigationGoal(
+                                            transform: Matrix4.identity()
+                                              ..translate(
+                                                  robotPose_.value.x -
+                                                      robotSize / 2 -
+                                                      poseDirectionSwellSize /
+                                                          2,
+                                                  robotPose_.value.y -
+                                                      robotSize / 2 -
+                                                      poseDirectionSwellSize /
+                                                          2)
+                                              ..rotateZ(
+                                                  -robotPose_.value.theta),
+                                            child: MatrixGestureDetector(
+                                              onMatrixUpdate: (matrix,
+                                                  transDelta,
+                                                  scaleDelta,
+                                                  rotateDelta) {
+                                                if (mode_.value == Mode.reloc) {
+                                                  //获取global的scale值
+
+                                                  //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
+                                                  double dx = transDelta.dx /
+                                                      globalScale_.value;
+                                                  double dy = transDelta.dy /
+                                                      globalScale_.value;
+                                                  double theta =
+                                                      poseSceneOnReloc.theta;
+                                                  poseSceneOnReloc =
+                                                      absoluteSum(
+                                                          RobotPose(
+                                                              poseSceneOnReloc
+                                                                  .x,
+                                                              poseSceneOnReloc
+                                                                  .y,
+                                                              0),
+                                                          RobotPose(dx, dy, 0));
+                                                  poseSceneOnReloc.theta =
+                                                      theta;
+                                                  //坐标变换sum
+                                                  robotPose_.value =
+                                                      poseSceneOnReloc;
+                                                }
+                                              },
+                                              child: Container(
+                                                height: robotSize +
+                                                    poseDirectionSwellSize,
+                                                width: robotSize +
+                                                    poseDirectionSwellSize,
+                                                child: Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    //重定位旋转框
+                                                    Visibility(
+                                                      visible: mode_.value ==
+                                                          Mode.reloc,
+                                                      child:
+                                                          DisplayPoseDirection(
+                                                        size: robotSize +
+                                                            poseDirectionSwellSize,
+                                                        resetAngle:
+                                                            mode_.value !=
+                                                                Mode.reloc,
+                                                        onRotateCallback:
+                                                            (angle) {
+                                                          poseSceneOnReloc
+                                                                  .theta =
+                                                              (poseSceneStartReloc
+                                                                      .theta -
+                                                                  angle);
+                                                          //坐标变换sum
+                                                          robotPose_.value =
                                                               RobotPose(
-                                                                  pose.x,
-                                                                  pose.y,
-                                                                  pose.theta));
-                                                      currentNavGoal_ = pose;
-                                                      setState(() {});
-                                                    }
-                                                  },
-                                                  child: DisplayWayPoint(
-                                                    size: navPoseSize,
-                                                    color:
-                                                        currentNavGoal_ == pose
-                                                            ? Colors.pink
-                                                            : Colors.green,
-                                                    count: 4,
-                                                  )),
-                                            ],
-                                          ),
-                                        ))),
-                              );
-                            }).toList(),
-                          ],
-                        ),
+                                                                  poseSceneOnReloc
+                                                                      .x,
+                                                                  poseSceneOnReloc
+                                                                      .y,
+                                                                  poseSceneOnReloc
+                                                                      .theta);
+                                                        },
+                                                      ),
+                                                    ),
+
+                                                    //机器人图标
+                                                    DisplayRobot(
+                                                      size: robotSize,
+                                                      color: Colors.yellow,
+                                                      count: 2,
+                                                    ),
+                                                    // IconButton(
+                                                    //   onPressed: () {},
+                                                    //   iconSize: robotSize / 2,
+                                                    //   icon: Icon(Icons.check),
+                                                    // ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ));
+                                      },
+                                    ),
+                                  )),
+                            ],
+                          );
+                        }),
                       ));
                 },
               );
@@ -606,9 +671,24 @@ class _MapPageState extends State<MapPage> {
             child: Container(
               child: Row(
                 children: [
-                  IconButton(onPressed: () {}, icon: const Icon(Icons.zoom_in)),
                   IconButton(
-                      onPressed: () {}, icon: const Icon(Icons.zoom_out)),
+                      onPressed: () {
+                        if (mode_.value == Mode.robotFixedCenter) {
+                          cameraFixedScaleValue_ += 0.3;
+                        } else {}
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.zoom_in, color: Colors.grey)),
+                  IconButton(
+                      onPressed: () {
+                        setState(() {
+                          cameraFixedScaleValue_ -= 0.3;
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.zoom_out,
+                        color: Colors.grey,
+                      )),
                   IconButton(
                       onPressed: () {
                         if (mode_.value == Mode.robotFixedCenter) {

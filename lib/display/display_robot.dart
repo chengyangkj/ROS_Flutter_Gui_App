@@ -9,7 +9,12 @@ class DisplayRobot extends StatefulWidget {
   late double size;
   late Color color = const Color(0xFF0080ff);
   int count = 2;
-  DisplayRobot({required this.size, required this.color, required this.count});
+  double direction = 0; //方向默认0度 车头朝向右侧
+  DisplayRobot(
+      {required this.size,
+      required this.color,
+      required this.count,
+      this.direction = 0});
 
   @override
   _DisplayRobotState createState() => _DisplayRobotState();
@@ -53,7 +58,9 @@ class _DisplayRobotState extends State<DisplayRobot>
         builder: (context, child) {
           return CustomPaint(
             painter: DisplayRobotPainter(_controller.value,
-                count: widget.count, color: widget.color),
+                count: widget.count,
+                color: widget.color,
+                direction: widget.direction),
           );
         },
       ),
@@ -65,11 +72,15 @@ class DisplayRobotPainter extends CustomPainter {
   final double progress;
   final int count;
   final Color color;
-
+  final double direction;
   Paint _paint = Paint()..style = PaintingStyle.fill;
 
-  DisplayRobotPainter(this.progress,
-      {this.count = 3, this.color = Colors.yellow});
+  DisplayRobotPainter(
+    this.progress, {
+    this.count = 3,
+    this.color = Colors.yellow,
+    this.direction = 0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -95,7 +106,10 @@ class DisplayRobotPainter extends CustomPainter {
     dirPainter.color = color.withOpacity(0.3);
     Rect rect = Rect.fromCircle(
         center: Offset(size.width / 2, size.height / 2), radius: radius);
-    canvas.drawArc(rect, -deg2rad(15), deg2rad(30), true, dirPainter);
+
+    //方向
+    canvas.drawArc(
+        rect, direction - deg2rad(15), deg2rad(30), true, dirPainter);
     canvas.restore();
   }
 
