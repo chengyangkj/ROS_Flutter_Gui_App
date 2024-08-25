@@ -578,7 +578,7 @@ class _MapPageState extends State<MapPage> {
                             color: Colors.amber[300],
                           ), // 图标放在文本前
                           label: Text(
-                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).robotSpeed.vw).toStringAsFixed(2)} deg/s'),
+                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).battery).toStringAsFixed(2)} %'),
                         ),
                       ),
                     ],

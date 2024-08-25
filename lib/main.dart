@@ -73,9 +73,16 @@ class _MyAppState extends State<MyApp> {
         cardColor: Color.fromRGBO(230, 230, 230, 1),
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: AppBarTheme(elevation: 0),
-        chipTheme: ThemeData.light()
-            .chipTheme
-            .copyWith(backgroundColor: Color.fromRGBO(230, 230, 230, 1)),
+        chipTheme: ThemeData.light().chipTheme.copyWith(
+              backgroundColor: Colors.white,
+              elevation: 10.0,
+              shape: StadiumBorder(
+                side: BorderSide(
+                  color: Colors.grey[300]!, // 设置边框颜色
+                  width: 1.0, // 设置边框宽度
+                ),
+              ),
+            ),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
@@ -99,9 +106,16 @@ class _MyAppState extends State<MyApp> {
         iconTheme: IconThemeData(
           color: Colors.white, // 设置全局图标颜色为绿色
         ),
-        chipTheme: ThemeData.dark()
-            .chipTheme
-            .copyWith(backgroundColor: Color.fromRGBO(50, 50, 50, 1)),
+        chipTheme: ThemeData.dark().chipTheme.copyWith(
+              backgroundColor: Color.fromRGBO(60, 60, 60, 1),
+              elevation: 10.0,
+              shape: StadiumBorder(
+                side: BorderSide(
+                  color: Colors.white, // 设置边框颜色
+                  width: 1.0, // 设置边框宽度
+                ),
+              ),
+            ),
       ),
       home: RobotConnectionPage(),
     );
