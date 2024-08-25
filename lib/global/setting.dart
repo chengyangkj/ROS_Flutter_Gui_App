@@ -95,6 +95,14 @@ class Setting {
     prefs.setString('navGoalTopic', topic);
   }
 
+  String get batteryTopic {
+    return prefs.getString("batteryTopic") ?? "/battery_state";
+  }
+
+  void setBatteryTopic(String topic) {
+    prefs.setString('batteryTopic', topic);
+  }
+
   String get navGoalTopic {
     return prefs.getString("navGoalTopic") ?? "/move_base_simple/goal";
   }
@@ -109,6 +117,14 @@ class Setting {
 
   String getConfig(String key) {
     return prefs.getString(key) ?? "";
+  }
+
+  String get odomTopic {
+    return prefs.getString("OdomTopic") ?? "/odom";
+  }
+
+  void set odomTopic(String topic) {
+    prefs.setString('OdomTopic', topic);
   }
   //实列
 }

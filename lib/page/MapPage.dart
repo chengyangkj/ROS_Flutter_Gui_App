@@ -53,7 +53,7 @@ class _MapPageState extends State<MapPage> {
   double cameraFixedScaleValue_ = 1; //固定相机视角时的缩放值
 
   final ValueNotifier<RobotPose> robotPose_ = ValueNotifier(RobotPose(0, 0, 0));
-  final ValueNotifier<double> globalScale_ = ValueNotifier(1);
+  final ValueNotifier<double> gestureScaleValue_ = ValueNotifier(1);
   OverlayEntry? _overlayEntry;
   RobotPose currentNavGoal_ = RobotPose.zero();
 
@@ -135,6 +135,8 @@ class _MapPageState extends State<MapPage> {
     final _key = GlobalKey<ExpandableFabState>();
     final screenSize = MediaQuery.of(context).size;
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: Stack(
@@ -159,27 +161,30 @@ class _MapPageState extends State<MapPage> {
                           }
                           if (!(mode_.value == Mode.robotFixedCenter)) {
                             gestureTransform.value = matrix;
-                            globalScale_.value = scaleValue;
+                            gestureScaleValue_.value = scaleValue;
                           }
                         },
                         child: Consumer<RosChannel>(
                             builder: (context, rosChannel, child) {
+                          double scaleValue = gestureScaleValue_.value;
+                          if (mode_.value == Mode.robotFixedCenter) {
+                            scaleValue = cameraFixedScaleValue_;
+                          }
                           cameraFixedTransform = Matrix4.identity()
                             ..translate(
                                 screenCenter.dx - rosChannel.robotPoseScene.x,
                                 screenCenter.dy - rosChannel.robotPoseScene.y)
                             ..rotateZ(
                                 rosChannel.robotPoseScene.theta - deg2rad(90))
-                            ..scale(cameraFixedScaleValue_);
+                            ..scale(scaleValue);
+
                           return Stack(
                             children: [
                               //网格
                               Container(
                                 child: DisplayGrid(
                                   step: (1 / occMap.mapConfig.resolution) *
-                                      (globalScale_.value > 0.5
-                                          ? globalScale_.value
-                                          : 0.5),
+                                      (scaleValue > 0.5 ? scaleValue : 0.5),
                                   width: screenSize.width,
                                   height: screenSize.height,
                                 ),
@@ -321,10 +326,10 @@ class _MapPageState extends State<MapPage> {
                                             if (mode_.value ==
                                                 Mode.addNavPoint) {
                                               //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                              double dx = transDelta.dx /
-                                                  globalScale_.value;
-                                              double dy = transDelta.dy /
-                                                  globalScale_.value;
+                                              double dx =
+                                                  transDelta.dx / scaleValue;
+                                              double dy =
+                                                  transDelta.dy / scaleValue;
                                               double tmpTheta = pose.theta;
                                               pose = absoluteSum(
                                                   RobotPose(pose.x, pose.y,
@@ -447,9 +452,9 @@ class _MapPageState extends State<MapPage> {
 
                                                   //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
                                                   double dx = transDelta.dx /
-                                                      globalScale_.value;
+                                                      scaleValue;
                                                   double dy = transDelta.dy /
-                                                      globalScale_.value;
+                                                      scaleValue;
                                                   double theta =
                                                       poseSceneOnReloc.theta;
                                                   poseSceneOnReloc =
@@ -534,15 +539,60 @@ class _MapPageState extends State<MapPage> {
             },
           ),
 
-          //左侧菜单栏
+          //菜单栏
           Positioned(
               left: 5,
-              top: 10,
+              top: 1,
+              child: Container(
+                height: 50,
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal, // 水平滚动
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: RawChip(
+                          avatar: Icon(
+                            const IconData(0xe606, fontFamily: "Speed"),
+                            color: Colors.green[400],
+                          ), // 图标放在文本前
+                          label: Text(
+                              '${(Provider.of<RosChannel>(context, listen: true).robotSpeed.vx).toStringAsFixed(2)} m/s'),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: RawChip(
+                          avatar: Icon(const IconData(0xe680,
+                              fontFamily: "Speed")), // 图标放在文本前
+                          label: Text(
+                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).robotSpeed.vw).toStringAsFixed(2)} deg/s'),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: RawChip(
+                          avatar: Icon(
+                            const IconData(0xe995, fontFamily: "Battery"),
+                            color: Colors.amber[300],
+                          ), // 图标放在文本前
+                          label: Text(
+                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).robotSpeed.vw).toStringAsFixed(2)} deg/s'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+          //左侧工具栏
+          Positioned(
+              left: 5,
+              top: 60,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
-                    color: Colors.white70,
                     elevation: 10,
                     child: Container(
                       child: Row(
@@ -569,8 +619,8 @@ class _MapPageState extends State<MapPage> {
                               icon: Icon(
                                 const IconData(0xe60f, fontFamily: "Reloc"),
                                 color: mode_.value == Mode.reloc
-                                    ? Colors.blue
-                                    : Colors.black,
+                                    ? Colors.green
+                                    : theme.iconTheme.color,
                               )),
                           Visibility(
                               visible: mode_.value == Mode.reloc,
@@ -601,14 +651,13 @@ class _MapPageState extends State<MapPage> {
                   ),
                   //设置导航目标点
                   Card(
-                    color: Colors.white70,
                     elevation: 10,
                     child: IconButton(
                       icon: Icon(
                         const IconData(0xeba1, fontFamily: "NavPoint"),
                         color: (mode_.value == Mode.addNavPoint)
                             ? Colors.green
-                            : Colors.black,
+                            : theme.iconTheme.color,
                       ),
                       onPressed: () {
                         if (!(mode_.value == Mode.addNavPoint)) {
@@ -623,13 +672,12 @@ class _MapPageState extends State<MapPage> {
                   ),
                   //手动控制
                   Card(
-                    color: Colors.white70,
                     elevation: 10,
                     child: IconButton(
                       icon: Icon(const IconData(0xea45, fontFamily: "GamePad"),
                           color: manualCtrlMode_.value
                               ? Colors.green
-                              : Colors.black),
+                              : theme.iconTheme.color),
                       onPressed: () {
                         if (manualCtrlMode_.value) {
                           manualCtrlMode_.value = false;
@@ -643,27 +691,27 @@ class _MapPageState extends State<MapPage> {
                   )
                 ],
               )),
-          //右侧菜单栏
-          Positioned(
-              right: 5,
-              top: 10,
-              child: Card(
-                color: Colors.white70,
-                elevation: 10,
-                child: Container(
-                  child: Column(
-                    children: [
-                      IconButton(
-                          onPressed: () {}, icon: const Icon(Icons.layers)),
-                      IconButton(
-                          onPressed: () {}, icon: const Icon(Icons.podcasts)),
-                      IconButton(
-                          onPressed: () {},
-                          icon: Icon(Icons.location_on_outlined))
-                    ],
-                  ),
-                ),
-              )),
+          //左侧顶部状态栏
+          // Positioned(
+          //     right: 5,
+          //     top: 10,
+          //     child: Card(
+          //       color: Colors.white70,
+          //       elevation: 10,
+          //       child: Container(
+          //         child: Column(
+          //           children: [
+          //             IconButton(
+          //                 onPressed: () {}, icon: const Icon(Icons.layers)),
+          //             IconButton(
+          //                 onPressed: () {}, icon: const Icon(Icons.podcasts)),
+          //             IconButton(
+          //                 onPressed: () {},
+          //                 icon: Icon(Icons.location_on_outlined))
+          //           ],
+          //         ),
+          //       ),
+          //     )),
           //右下方菜单栏
           Positioned(
             right: 5,
@@ -678,7 +726,7 @@ class _MapPageState extends State<MapPage> {
                         } else {}
                         setState(() {});
                       },
-                      icon: const Icon(Icons.zoom_in, color: Colors.grey)),
+                      icon: const Icon(Icons.zoom_in)),
                   IconButton(
                       onPressed: () {
                         setState(() {
@@ -687,7 +735,6 @@ class _MapPageState extends State<MapPage> {
                       },
                       icon: const Icon(
                         Icons.zoom_out,
-                        color: Colors.grey,
                       )),
                   IconButton(
                       onPressed: () {
@@ -701,7 +748,7 @@ class _MapPageState extends State<MapPage> {
                       icon: Icon(Icons.location_searching,
                           color: mode_.value == Mode.robotFixedCenter
                               ? Colors.green
-                              : Colors.grey))
+                              : theme.iconTheme.color))
                 ],
               ),
             ),

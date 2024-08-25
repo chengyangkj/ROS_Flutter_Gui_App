@@ -7,12 +7,15 @@ class DisplayGrid extends StatelessWidget {
   double height = 300;
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Container(
       width: width,
       height: height,
-      color: Colors.blue[900],
+      color: theme.scaffoldBackgroundColor,
       child: CustomPaint(
-        painter: GridPainter(step: step),
+        painter: GridPainter(
+            step: step, color: isDarkMode ? Colors.white : Colors.black),
       ),
     );
   }
@@ -20,11 +23,12 @@ class DisplayGrid extends StatelessWidget {
 
 class GridPainter extends CustomPainter {
   late double step = 20;
-  GridPainter({required this.step});
+  Color color = Colors.black;
+  GridPainter({required this.step, required this.color});
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Colors.grey[50]!
+      ..color = color
       ..strokeCap = StrokeCap.round // 设置画笔的端点为圆形，以便绘制圆形点
       ..strokeWidth = 0.2;
 

@@ -42,6 +42,9 @@ class RosChannel extends ChangeNotifier {
   late Topic relocChannel_;
   late Topic navGoalChannel_;
   late Topic speedCtrlChannel_;
+  late Topic odomChannel_;
+  late Topic batteryChannel_;
+  double battery_ = 0;
   RobotSpeed robotSpeed_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
   String url_ = "";
   TF2Dart tf_ = TF2Dart();
@@ -69,6 +72,14 @@ class RosChannel extends ChangeNotifier {
         });
       }
     });
+  }
+
+  RobotSpeed get robotSpeed {
+    return robotSpeed_;
+  }
+
+  double get battery {
+    return battery_;
   }
 
   LaserData get laserPointData {
@@ -187,6 +198,25 @@ class RosChannel extends ChangeNotifier {
       reconnectOnClose: true,
     );
     globalPathChannel_.subscribe(globalPathCallback);
+
+    odomChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.odomTopic,
+      type: 'nav_msgs/Odometry',
+      queueSize: 10,
+      queueLength: 10,
+    );
+    odomChannel_.subscribe(odomCallback);
+
+    batteryChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.batteryTopic, // ROS 中的电池电量话题名称
+      type: 'sensor_msgs/BatteryState', // 消息类型
+      queueSize: 10,
+      queueLength: 10,
+    );
+
+    batteryChannel_.subscribe(batteryCallback);
 
 //发布者
     relocChannel_ = Topic(
@@ -335,6 +365,24 @@ class RosChannel extends ChangeNotifier {
     } catch (e) {
       print("send reloc pose error:$e");
     }
+  }
+
+  Future<void> batteryCallback(Map<String, dynamic> message) async {
+    battery_ = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
+    notifyListeners();
+  }
+
+  Future<void> odomCallback(Map<String, dynamic> message) async {
+    // 解析线速度 (vx, vy)
+    double vx = message['twist']['twist']['linear']['x'];
+    double vy = message['twist']['twist']['linear']['y'];
+
+    // 解析角速度 (vw)
+    double vw = message['twist']['twist']['angular']['z'];
+    robotSpeed_.vx = vx;
+    robotSpeed_.vy = vy;
+    robotSpeed_.vw = vw;
+    notifyListeners();
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {

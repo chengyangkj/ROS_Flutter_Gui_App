@@ -28,11 +28,16 @@ class _DisplayMapState extends State<DisplayMap>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Container(
       width: widget.map.width().toDouble() + 1,
       height: widget.map.height().toDouble() + 1,
       child: CustomPaint(
-        painter: DisplayMapPainter(map: widget.map),
+        painter: DisplayMapPainter(
+            map: widget.map,
+            freeColor: theme.colorScheme.surface.withAlpha(98),
+            occColor: isDarkMode ? Colors.white : Colors.black),
       ),
     );
   }
@@ -42,7 +47,10 @@ class DisplayMapPainter extends CustomPainter {
   late OccupancyMap map;
   List<Offset> occPointList = [];
   List<Offset> freePointList = [];
-  DisplayMapPainter({required this.map}) {
+  Color freeColor = Colors.white;
+  Color occColor = Colors.black;
+  DisplayMapPainter(
+      {required this.map, required this.freeColor, required this.occColor}) {
     for (int i = 0; i < map.Cols(); i++)
       // ignore: curly_braces_in_flow_control_structures
       for (int j = 0; j < map.Rows(); j++) {
@@ -60,13 +68,13 @@ class DisplayMapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Colors.lightBlue[600]! // 设置颜色为传入的颜色参数
+      ..color = occColor // 设置颜色为传入的颜色参数
       ..strokeCap = StrokeCap.butt
       ..style = PaintingStyle.fill
-      ..strokeWidth = 1.3; // 设置画笔的宽度为1个像素
+      ..strokeWidth = 1; // 设置画笔的宽度为1个像素
     canvas.drawPoints(PointMode.points, occPointList, paint);
 
-    paint.color = Colors.blue[100]!;
+    paint.color = freeColor;
     canvas.drawPoints(PointMode.points, freePointList, paint);
   }
 

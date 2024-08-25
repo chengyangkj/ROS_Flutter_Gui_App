@@ -20,8 +20,20 @@ class _SettingsPageState extends State<SettingsPage> {
     final keys = prefs.getKeys();
     final Map<String, TextEditingController> newControllers = {};
     for (String key in keys) {
-      newControllers[key] =
-          TextEditingController(text: prefs.getString(key) ?? '');
+      final dynamic value = prefs.get(key); // 获取任何类型的值
+      String stringValue;
+      if (value is String) {
+        stringValue = value;
+      } else if (value is int) {
+        stringValue = value.toString();
+      } else if (value is double) {
+        stringValue = value.toString();
+      } else if (value is bool) {
+        stringValue = value ? 'true' : 'false';
+      } else {
+        stringValue = 'Unsupported type';
+      }
+      newControllers[key] = TextEditingController(text: stringValue);
     }
     setState(() {
       _controllers.addAll(newControllers);
@@ -30,6 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _saveSettings(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
+    // 这里仅作为示例，实际使用时应确保保存的类型与读取的类型一致
     await prefs.setString(key, value);
   }
 

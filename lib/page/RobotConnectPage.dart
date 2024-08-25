@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:toast/toast.dart';
 
 class RobotConnectionPage extends StatefulWidget {
@@ -87,7 +88,41 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                       onPressed: () {
                         Navigator.pushNamed(context, "/setting");
                       },
-                      child: Text("设置"))
+                      child: Text("设置")),
+                  Spacer(),
+                  Row(
+                    children: [
+                      Spacer(),
+                      ToggleButtons(
+                        isSelected: [
+                          Provider.of<ThemeProvider>(context).themeMode ==
+                              ThemeMode.system,
+                          Provider.of<ThemeProvider>(context).themeMode ==
+                              ThemeMode.light,
+                          Provider.of<ThemeProvider>(context).themeMode ==
+                              ThemeMode.dark,
+                        ],
+                        onPressed: (int index) {
+                          Provider.of<ThemeProvider>(context, listen: false)
+                              .updateThemeMode(index);
+                        },
+                        children: const [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text('自动'),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text('浅色'),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text('深色'),
+                          ),
+                        ],
+                      )
+                    ],
+                  )
                 ],
               ),
             );
