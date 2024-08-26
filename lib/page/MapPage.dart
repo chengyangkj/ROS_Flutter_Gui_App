@@ -41,7 +41,7 @@ enum Mode {
   robotFixedCenter, //机器人固定屏幕中心模式
 }
 
-class _MapPageState extends State<MapPage> {
+class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   ValueNotifier<Mode> mode_ = ValueNotifier(Mode.noraml);
   ValueNotifier<bool> manualCtrlMode_ = ValueNotifier(false);
   ValueNotifier<List<RobotPose>> navPointList_ =
@@ -51,6 +51,9 @@ class _MapPageState extends State<MapPage> {
 
   Matrix4 cameraFixedTransform = Matrix4.identity(); //固定相机视角(以机器人为中心)
   double cameraFixedScaleValue_ = 1; //固定相机视角时的缩放值
+
+  late AnimationController animationController;
+  late Animation<double> animationValue;
 
   final ValueNotifier<RobotPose> robotPose_ = ValueNotifier(RobotPose(0, 0, 0));
   final ValueNotifier<double> gestureScaleValue_ = ValueNotifier(1);
@@ -74,6 +77,21 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     globalSetting.init();
+    // 初始化 AnimationController
+    animationController = AnimationController(
+      duration: const Duration(seconds: 2), // 动画持续 1 秒
+      vsync: this,
+    );
+
+    // 初始化 Tween，从 1.0 到 2.0
+    animationValue =
+        Tween<double>(begin: 1.0, end: 4.0).animate(animationController)
+          ..addListener(() {
+            setState(() {
+              cameraFixedScaleValue_ =
+                  animationValue.value; // 更新 cameraFixedScaleValue_
+            });
+          });
   }
 
   void _showContextMenu(BuildContext context, Offset position) {
@@ -93,7 +111,7 @@ class _MapPageState extends State<MapPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
                   color: Colors.black26,
                   blurRadius: 10,
@@ -407,7 +425,7 @@ class _MapPageState extends State<MapPage> {
                                     child: DisplayRobot(
                                       direction: deg2rad(-90),
                                       size: robotSize,
-                                      color: Colors.yellow,
+                                      color: Colors.blue,
                                       count: 2,
                                     ),
                                   ),
@@ -515,7 +533,7 @@ class _MapPageState extends State<MapPage> {
                                                     //机器人图标
                                                     DisplayRobot(
                                                       size: robotSize,
-                                                      color: Colors.yellow,
+                                                      color:  Colors.blue,
                                                       count: 2,
                                                     ),
                                                     // IconButton(
@@ -545,7 +563,7 @@ class _MapPageState extends State<MapPage> {
               top: 1,
               child: Container(
                 height: 50,
-                padding: EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal, // 水平滚动
                   child: Row(
@@ -564,8 +582,8 @@ class _MapPageState extends State<MapPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: RawChip(
-                          avatar: Icon(const IconData(0xe680,
-                              fontFamily: "Speed")), // 图标放在文本前
+                          avatar: const Icon(
+                              IconData(0xe680, fontFamily: "Speed")), // 图标放在文本前
                           label: Text(
                               '${rad2deg(Provider.of<RosChannel>(context, listen: true).robotSpeed.vw).toStringAsFixed(2)} deg/s'),
                         ),
@@ -740,9 +758,14 @@ class _MapPageState extends State<MapPage> {
                       onPressed: () {
                         if (mode_.value == Mode.robotFixedCenter) {
                           mode_.value = Mode.noraml;
+                          cameraFixedScaleValue_ = 1;
                         } else {
                           mode_.value = Mode.robotFixedCenter;
                         }
+                        if (animationController.isAnimating) return; // 防止多次触发动画
+
+                        animationController.reset(); // 重置动画控制器
+                        animationController.forward(); // 启动动画
                         setState(() {});
                       },
                       icon: Icon(Icons.location_searching,

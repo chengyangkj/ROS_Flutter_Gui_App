@@ -46,6 +46,14 @@ dependencies:
   flutter_joystick: ^0.2.0
   web: ^0.5.1
   win32: ^5.5.4
+  flutter_launcher_icons: ^0.13.1
+
+# flutter_icons:
+#   android: true
+#   ios: true
+#   image_path: "assets/icon/app_icon.png" # 你的图标路径
+#   adaptive_icon_background: "#ffffff" # 可选，设置 Android 自适应图标的背景色
+#   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
 dev_dependencies:
 
