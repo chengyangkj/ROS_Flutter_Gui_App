@@ -21,7 +21,6 @@ class _DisplayMapState extends State<DisplayMap> {
   }
 
   void _processMapData(OccupancyMap map) {
-    print("process map");
     occPointList.clear();
     freePointList.clear();
     for (int i = 0; i < map.Cols(); i++) {
@@ -74,7 +73,6 @@ class DisplayMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    print("on paint");
     Paint paint = Paint()
       ..color = occColor
       ..strokeCap = StrokeCap.butt

@@ -467,8 +467,19 @@ class RosChannel extends ChangeNotifier {
         robotPose: currRobotPose_.value, laserPoseBaseLink: laserPoint_.value);
   }
 
+  DateTime? _lastMapCallbackTime;
+
   Future<void> mapCallback(Map<String, dynamic> msg) async {
-    // print("recv ${json.encode(msg)}");
+    DateTime currentTime = DateTime.now(); // 获取当前时间
+
+    if (_lastMapCallbackTime != null) {
+      Duration difference = currentTime.difference(_lastMapCallbackTime!);
+      if (difference.inSeconds < 5) {
+        return;
+      }
+    }
+
+    _lastMapCallbackTime = currentTime; // 更新上一次回调时间
 
     OccupancyMap map = OccupancyMap();
     map.mapConfig.resolution = msg["info"]["resolution"];
@@ -491,7 +502,6 @@ class RosChannel extends ChangeNotifier {
     }
     map.setFlip();
     map_.value = map;
-    print("recv map");
   }
 
   String msgReceived = '';
