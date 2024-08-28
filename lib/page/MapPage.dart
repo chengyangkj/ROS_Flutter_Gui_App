@@ -162,38 +162,34 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           AnimatedBuilder(
             animation: gestureTransform,
             builder: (ctx, child) {
-              return ValueListenableBuilder<OccupancyMap>(
-                valueListenable:
-                    Provider.of<RosChannel>(context, listen: false).map,
-                builder: (context, occMap, child) {
-                  return Container(
-                      width: screenSize.width,
-                      height: screenSize.height,
-                      child: MatrixGestureDetector(
-                        onMatrixUpdate:
-                            (matrix, transDelta, scaleValue, rotateDelta) {
-                          if (mode_.value == Mode.robotFixedCenter) {
-                            Toast.show("相机视角固定时不可调整图层！",
-                                duration: Toast.lengthShort,
-                                gravity: Toast.bottom);
-                          }
-                          if (!(mode_.value == Mode.robotFixedCenter)) {
-                            gestureTransform.value = matrix;
-                            gestureScaleValue_.value = scaleValue;
-                          }
-                        },
-                        child: Consumer<RosChannel>(
-                            builder: (context, rosChannel, child) {
+              return Container(
+                  width: screenSize.width,
+                  height: screenSize.height,
+                  child: MatrixGestureDetector(
+                    onMatrixUpdate:
+                        (matrix, transDelta, scaleValue, rotateDelta) {
+                      if (mode_.value == Mode.robotFixedCenter) {
+                        Toast.show("相机视角固定时不可调整图层！",
+                            duration: Toast.lengthShort, gravity: Toast.bottom);
+                      }
+                      if (!(mode_.value == Mode.robotFixedCenter)) {
+                        gestureTransform.value = matrix;
+                        gestureScaleValue_.value = scaleValue;
+                      }
+                    },
+                    child: ValueListenableBuilder<RobotPose>(
+                        valueListenable:
+                            Provider.of<RosChannel>(context, listen: false)
+                                .robotPoseScene,
+                        builder: (context, robotPoseScene, child) {
                           double scaleValue = gestureScaleValue_.value;
                           if (mode_.value == Mode.robotFixedCenter) {
                             scaleValue = cameraFixedScaleValue_;
                           }
                           cameraFixedTransform = Matrix4.identity()
-                            ..translate(
-                                screenCenter.dx - rosChannel.robotPoseScene.x,
-                                screenCenter.dy - rosChannel.robotPoseScene.y)
-                            ..rotateZ(
-                                rosChannel.robotPoseScene.theta - deg2rad(90))
+                            ..translate(screenCenter.dx - robotPoseScene.x,
+                                screenCenter.dy - robotPoseScene.y)
+                            ..rotateZ(robotPoseScene.theta - deg2rad(90))
                             ..scale(scaleValue);
 
                           return Stack(
@@ -201,7 +197,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               //网格
                               Container(
                                 child: DisplayGrid(
-                                  step: (1 / occMap.mapConfig.resolution) *
+                                  step: (1 /
+                                          Provider.of<RosChannel>(context)
+                                              .map
+                                              .value
+                                              .mapConfig
+                                              .resolution) *
                                       (scaleValue > 0.5 ? scaleValue : 0.5),
                                   width: screenSize.width,
                                   height: screenSize.height,
@@ -213,11 +214,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     ? cameraFixedTransform
                                     : gestureTransform.value,
                                 origin: mode_.value == Mode.robotFixedCenter
-                                    ? Offset(rosChannel.robotPoseScene.x,
-                                        rosChannel.robotPoseScene.y)
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
                                     : Offset.zero,
                                 child: GestureDetector(
-                                  child: DisplayMap(map: occMap),
+                                  child: const DisplayMap(),
                                   onTapDown: (details) {
                                     if (mode_.value == Mode.addNavPoint) {
                                       navPointList_.value.add(RobotPose(
@@ -236,8 +236,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     ? cameraFixedTransform
                                     : gestureTransform.value,
                                 origin: mode_.value == Mode.robotFixedCenter
-                                    ? Offset(rosChannel.robotPoseScene.x,
-                                        rosChannel.robotPoseScene.y)
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
                                     : Offset.zero,
                                 child: Consumer<RosChannel>(
                                   builder: (context, rosChannel, child) {
@@ -258,8 +257,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     ? cameraFixedTransform
                                     : gestureTransform.value,
                                 origin: mode_.value == Mode.robotFixedCenter
-                                    ? Offset(rosChannel.robotPoseScene.x,
-                                        rosChannel.robotPoseScene.y)
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
                                     : Offset.zero,
                                 child: Consumer<RosChannel>(
                                   builder: (context, rosChannel, child) {
@@ -281,8 +279,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     ? cameraFixedTransform
                                     : gestureTransform.value,
                                 origin: mode_.value == Mode.robotFixedCenter
-                                    ? Offset(rosChannel.robotPoseScene.x,
-                                        rosChannel.robotPoseScene.y)
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
                                     : Offset.zero,
                                 child: Consumer<RosChannel>(
                                     builder: (context, rosChannel, child) {
@@ -323,8 +320,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                           ? cameraFixedTransform
                                           : gestureTransform.value,
                                   origin: mode_.value == Mode.robotFixedCenter
-                                      ? Offset(rosChannel.robotPoseScene.x,
-                                          rosChannel.robotPoseScene.y)
+                                      ? Offset(
+                                          robotPoseScene.x, robotPoseScene.y)
                                       : Offset.zero,
                                   child: Transform(
                                       alignment: Alignment.center,
@@ -442,8 +439,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     child: Consumer<RosChannel>(
                                       builder: (context, rosChannel, child) {
                                         if (!(mode_.value == Mode.reloc)) {
-                                          robotPose_.value =
-                                              rosChannel.robotPoseScene;
+                                          robotPose_.value = robotPoseScene;
                                         }
 
                                         return Transform(
@@ -533,7 +529,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                     //机器人图标
                                                     DisplayRobot(
                                                       size: robotSize,
-                                                      color:  Colors.blue,
+                                                      color: Colors.blue,
                                                       count: 2,
                                                     ),
                                                     // IconButton(
@@ -551,9 +547,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             ],
                           );
                         }),
-                      ));
-                },
-              );
+                  ));
             },
           ),
 
@@ -622,12 +616,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   poseSceneStartReloc = Provider.of<RosChannel>(
                                           context,
                                           listen: false)
-                                      .robotPoseScene;
+                                      .robotPoseScene
+                                      .value;
 
                                   poseSceneOnReloc = Provider.of<RosChannel>(
                                           context,
                                           listen: false)
-                                      .robotPoseScene;
+                                      .robotPoseScene
+                                      .value;
                                   setState(() {});
                                 } else {
                                   mode_.value = Mode.noraml;

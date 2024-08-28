@@ -44,19 +44,21 @@ class RosChannel extends ChangeNotifier {
   late Topic speedCtrlChannel_;
   late Topic odomChannel_;
   late Topic batteryChannel_;
-  double battery_ = 0;
-  RobotSpeed robotSpeed_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
+  ValueNotifier<double> battery_ = ValueNotifier(0);
+  ValueNotifier<RobotSpeed> robotSpeed_ =
+      ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
   String url_ = "";
   TF2Dart tf_ = TF2Dart();
   ValueNotifier<OccupancyMap> map_ =
       ValueNotifier<OccupancyMap>(OccupancyMap());
   Status rosConnectState_ = Status.none;
-  RobotPose currRobotPose_ = RobotPose(0, 0, 0);
-  List<Offset> laserPoint_ = [];
-  List<Offset> localPath_ = [];
-  List<Offset> globalPath_ = [];
-  LaserData laserPointData_ =
-      LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []);
+  ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
+  ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
+  ValueNotifier<List<Offset>> laserPoint_ = ValueNotifier([]);
+  ValueNotifier<List<Offset>> localPath_ = ValueNotifier([]);
+  ValueNotifier<List<Offset>> globalPath_ = ValueNotifier([]);
+  ValueNotifier<LaserData> laserPointData_ = ValueNotifier(
+      LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
   RosChannel() {
     //启动定时器 获取机器人实时坐标
     globalSetting.init().then((success) {
@@ -64,8 +66,11 @@ class RosChannel extends ChangeNotifier {
         connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
           try {
-            currRobotPose_ = tf_.lookUpForTransform("map", "base_link");
-            notifyListeners();
+            currRobotPose_.value = tf_.lookUpForTransform("map", "base_link");
+            Offset poseScene = map_.value
+                .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
+            robotPoseScene.value = RobotPose(
+                poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
           } catch (e) {
             print("get robot pose error:${e}");
           }
@@ -75,33 +80,27 @@ class RosChannel extends ChangeNotifier {
   }
 
   RobotSpeed get robotSpeed {
-    return robotSpeed_;
+    return robotSpeed_.value;
   }
 
   double get battery {
-    return battery_;
+    return battery_.value;
   }
 
   LaserData get laserPointData {
-    return laserPointData_;
-  }
-
-  RobotPose get robotPoseScene {
-    Offset poseScene =
-        map_.value.xy2idx(Offset(currRobotPose_.x, currRobotPose_.y));
-    return RobotPose(poseScene.dx, poseScene.dy, currRobotPose_.theta);
+    return laserPointData_.value;
   }
 
   RobotPose get robotPoseMap {
-    return currRobotPose_;
+    return currRobotPose_.value;
   }
 
   List<Offset> get localPathScene {
-    return localPath_;
+    return localPath_.value;
   }
 
   List<Offset> get globalPathScene {
-    return globalPath_;
+    return globalPath_.value;
   }
 
   Future<bool> connect(String url) async {
@@ -368,8 +367,7 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> batteryCallback(Map<String, dynamic> message) async {
-    battery_ = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
-    notifyListeners();
+    battery_.value = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
   }
 
   Future<void> odomCallback(Map<String, dynamic> message) async {
@@ -379,10 +377,9 @@ class RosChannel extends ChangeNotifier {
 
     // 解析角速度 (vw)
     double vw = message['twist']['twist']['angular']['z'];
-    robotSpeed_.vx = vx;
-    robotSpeed_.vy = vy;
-    robotSpeed_.vw = vw;
-    notifyListeners();
+    robotSpeed_.value.vx = vx;
+    robotSpeed_.value.vy = vy;
+    robotSpeed_.value.vw = vw;
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
@@ -392,7 +389,7 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
-    localPath_.clear();
+    localPath_.value.clear();
     // print("${json.encode(msg)}");
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
@@ -410,13 +407,12 @@ class RosChannel extends ChangeNotifier {
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-      localPath_.add(Offset(poseScene.dx, poseScene.dy));
+      localPath_.value.add(Offset(poseScene.dx, poseScene.dy));
     }
-    notifyListeners();
   }
 
   Future<void> globalPathCallback(Map<String, dynamic> msg) async {
-    globalPath_.clear();
+    globalPath_.value.clear();
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
     RobotPose transPose = RobotPose(0, 0, 0);
@@ -433,9 +429,8 @@ class RosChannel extends ChangeNotifier {
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-      globalPath_.add(Offset(poseScene.dx, poseScene.dy));
+      globalPath_.value.add(Offset(poseScene.dx, poseScene.dy));
     }
-    notifyListeners();
   }
 
   Future<void> laserCallback(Map<String, dynamic> msg) async {
@@ -453,7 +448,7 @@ class RosChannel extends ChangeNotifier {
     double angleMin = laser.angleMin!.toDouble();
     double angleMax = laser.angleMax!.toDouble();
     double angleIncrement = laser.angleIncrement!;
-    laserPoint_.clear();
+    laserPoint_.value.clear();
     for (int i = 0; i < laser.ranges!.length; i++) {
       double angle = angleMin + i * angleIncrement;
       // print("${laser.ranges![i]}");
@@ -466,11 +461,10 @@ class RosChannel extends ChangeNotifier {
       //转换到map坐标系
       RobotPose poseBaseLink = absoluteSum(laserPoseBase, poseLaser);
 
-      laserPoint_.add(Offset(poseBaseLink.x, poseBaseLink.y));
+      laserPoint_.value.add(Offset(poseBaseLink.x, poseBaseLink.y));
     }
-    laserPointData_ =
-        LaserData(robotPose: currRobotPose_, laserPoseBaseLink: laserPoint_);
-    notifyListeners();
+    laserPointData_.value = LaserData(
+        robotPose: currRobotPose_.value, laserPoseBaseLink: laserPoint_.value);
   }
 
   Future<void> mapCallback(Map<String, dynamic> msg) async {
@@ -497,6 +491,7 @@ class RosChannel extends ChangeNotifier {
     }
     map.setFlip();
     map_.value = map;
+    print("recv map");
   }
 
   String msgReceived = '';
