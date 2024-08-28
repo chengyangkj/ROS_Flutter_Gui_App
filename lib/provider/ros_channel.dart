@@ -55,9 +55,9 @@ class RosChannel extends ChangeNotifier {
   ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
   ValueNotifier<List<Offset>> laserPoint_ = ValueNotifier([]);
-  ValueNotifier<List<Offset>> localPath_ = ValueNotifier([]);
-  ValueNotifier<List<Offset>> globalPath_ = ValueNotifier([]);
-  ValueNotifier<LaserData> laserPointData_ = ValueNotifier(
+  ValueNotifier<List<Offset>> localPath = ValueNotifier([]);
+  ValueNotifier<List<Offset>> globalPath = ValueNotifier([]);
+  ValueNotifier<LaserData> laserPointData = ValueNotifier(
       LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
   RosChannel() {
     //启动定时器 获取机器人实时坐标
@@ -87,21 +87,11 @@ class RosChannel extends ChangeNotifier {
     return battery_.value;
   }
 
-  LaserData get laserPointData {
-    return laserPointData_.value;
-  }
 
   RobotPose get robotPoseMap {
     return currRobotPose_.value;
   }
 
-  List<Offset> get localPathScene {
-    return localPath_.value;
-  }
-
-  List<Offset> get globalPathScene {
-    return globalPath_.value;
-  }
 
   Future<bool> connect(String url) async {
     rosConnectState_ = Status.none;
@@ -389,7 +379,7 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
-    localPath_.value.clear();
+    localPath.value.clear();
     // print("${json.encode(msg)}");
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
@@ -407,12 +397,12 @@ class RosChannel extends ChangeNotifier {
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-      localPath_.value.add(Offset(poseScene.dx, poseScene.dy));
+      localPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
   }
 
   Future<void> globalPathCallback(Map<String, dynamic> msg) async {
-    globalPath_.value.clear();
+    globalPath.value.clear();
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
     RobotPose transPose = RobotPose(0, 0, 0);
@@ -429,7 +419,7 @@ class RosChannel extends ChangeNotifier {
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-      globalPath_.value.add(Offset(poseScene.dx, poseScene.dy));
+      globalPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
   }
 
@@ -463,7 +453,7 @@ class RosChannel extends ChangeNotifier {
 
       laserPoint_.value.add(Offset(poseBaseLink.x, poseBaseLink.y));
     }
-    laserPointData_.value = LaserData(
+    laserPointData.value = LaserData(
         robotPose: currRobotPose_.value, laserPoseBaseLink: laserPoint_.value);
   }
 

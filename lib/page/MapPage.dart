@@ -238,13 +238,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 origin: mode_.value == Mode.robotFixedCenter
                                     ? Offset(robotPoseScene.x, robotPoseScene.y)
                                     : Offset.zero,
-                                child: Consumer<RosChannel>(
-                                  builder: (context, rosChannel, child) {
+                                child: ValueListenableBuilder<List<Offset>>(
+                                  valueListenable: Provider.of<RosChannel>(
+                                          context,
+                                          listen: false)
+                                      .globalPath,
+                                  builder: (context, path, child) {
                                     return Container(
                                       child: CustomPaint(
                                         painter: DisplayPath(
-                                            pointList:
-                                                rosChannel.globalPathScene,
+                                            pointList: path,
                                             color: Colors.green),
                                       ),
                                     );
@@ -259,13 +262,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 origin: mode_.value == Mode.robotFixedCenter
                                     ? Offset(robotPoseScene.x, robotPoseScene.y)
                                     : Offset.zero,
-                                child: Consumer<RosChannel>(
-                                  builder: (context, rosChannel, child) {
+                                child: ValueListenableBuilder<List<Offset>>(
+                                  valueListenable: Provider.of<RosChannel>(
+                                          context,
+                                          listen: false)
+                                      .localPath,
+                                  builder: (context, path, child) {
                                     return Container(
                                       child: CustomPaint(
                                         painter: DisplayPath(
-                                            pointList:
-                                                rosChannel.localPathScene,
+                                            pointList: path,
                                             color: Colors.yellow[200]!),
                                       ),
                                     );
@@ -281,36 +287,42 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 origin: mode_.value == Mode.robotFixedCenter
                                     ? Offset(robotPoseScene.x, robotPoseScene.y)
                                     : Offset.zero,
-                                child: Consumer<RosChannel>(
-                                    builder: (context, rosChannel, child) {
-                                  LaserData laserData =
-                                      rosChannel.laserPointData;
-                                  RobotPose robotPoseMap = laserData.robotPose;
-
-                                  //重定位模式 从图层坐标转换
-                                  if (mode_.value == Mode.reloc) {
-                                    Offset poseMap = rosChannel.map.value
-                                        .idx2xy(Offset(poseSceneOnReloc.x,
+                                child: ValueListenableBuilder<LaserData>(
+                                    valueListenable: Provider.of<RosChannel>(
+                                            context,
+                                            listen: false)
+                                        .laserPointData,
+                                    builder: (context, laserData, child) {
+                                      RobotPose robotPoseMap =
+                                          laserData.robotPose;
+                                      var map = Provider.of<RosChannel>(context,
+                                              listen: false)
+                                          .map
+                                          .value;
+                                      //重定位模式 从图层坐标转换
+                                      if (mode_.value == Mode.reloc) {
+                                        Offset poseMap = map.idx2xy(Offset(
+                                            poseSceneOnReloc.x,
                                             poseSceneOnReloc.y));
-                                    robotPoseMap = RobotPose(poseMap.dx,
-                                        poseMap.dy, poseSceneOnReloc.theta);
-                                  }
+                                        robotPoseMap = RobotPose(poseMap.dx,
+                                            poseMap.dy, poseSceneOnReloc.theta);
+                                      }
 
-                                  List<Offset> laserPointsScene = [];
-                                  for (var point
-                                      in laserData.laserPoseBaseLink) {
-                                    RobotPose pointMap = absoluteSum(
-                                        robotPoseMap,
-                                        RobotPose(point.dx, point.dy, 0));
-                                    Offset pointScene = rosChannel.map.value
-                                        .xy2idx(Offset(pointMap.x, pointMap.y));
-                                    laserPointsScene.add(pointScene);
-                                  }
-                                  return IgnorePointer(
-                                      ignoring: true,
-                                      child: DisplayLaser(
-                                          pointList: laserPointsScene));
-                                }),
+                                      List<Offset> laserPointsScene = [];
+                                      for (var point
+                                          in laserData.laserPoseBaseLink) {
+                                        RobotPose pointMap = absoluteSum(
+                                            robotPoseMap,
+                                            RobotPose(point.dx, point.dy, 0));
+                                        Offset pointScene = map.xy2idx(
+                                            Offset(pointMap.x, pointMap.y));
+                                        laserPointsScene.add(pointScene);
+                                      }
+                                      return IgnorePointer(
+                                          ignoring: true,
+                                          child: DisplayLaser(
+                                              pointList: laserPointsScene));
+                                    }),
                               ),
                               //导航点
                               ...navPointList_.value.map((pose) {
