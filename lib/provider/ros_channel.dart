@@ -1,6 +1,9 @@
 import 'dart:math';
-
+import 'dart:typed_data';
+import 'dart:ui';
+import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/robot_path.dart';
@@ -44,7 +47,12 @@ class RosChannel extends ChangeNotifier {
   late Topic speedCtrlChannel_;
   late Topic odomChannel_;
   late Topic batteryChannel_;
+  late Topic imageTopic_;
+  Timer? cmdVelTimer;
+  bool manualCtrlMode_ = false;
   ValueNotifier<double> battery_ = ValueNotifier(0);
+  ValueNotifier<Uint8List> imageData = ValueNotifier(Uint8List(0));
+  RobotSpeed cmdVel_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
   ValueNotifier<RobotSpeed> robotSpeed_ =
       ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
   String url_ = "";
@@ -87,11 +95,9 @@ class RosChannel extends ChangeNotifier {
     return battery_.value;
   }
 
-
   RobotPose get robotPoseMap {
     return currRobotPose_.value;
   }
-
 
   Future<bool> connect(String url) async {
     rosConnectState_ = Status.none;
@@ -207,6 +213,7 @@ class RosChannel extends ChangeNotifier {
 
     batteryChannel_.subscribe(batteryCallback);
 
+
 //发布者
     relocChannel_ = Topic(
       ros: ros,
@@ -267,6 +274,32 @@ class RosChannel extends ChangeNotifier {
   void destroyConnection() async {
     await mapChannel_.unsubscribe();
     await ros.close();
+  }
+
+  void setVx(double vx) {
+    cmdVel_.vx = vx;
+  }
+
+  void setVy(double vy) {
+    cmdVel_.vy = vy;
+  }
+
+  void setVw(double vw) {
+    cmdVel_.vw = vw;
+  }
+
+  void startMunalCtrl() {
+    cmdVelTimer =
+        Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+      await sendSpeed(cmdVel_.vx, cmdVel_.vy, cmdVel_.vw);
+    });
+  }
+
+  void stopMunalCtrl() {
+    if (cmdVelTimer != null) {
+      cmdVelTimer!.cancel();
+      cmdVelTimer = null;
+    }
   }
 
   Future<void> sendSpeed(double vx, double vy, double vw) async {
@@ -359,6 +392,17 @@ class RosChannel extends ChangeNotifier {
   Future<void> batteryCallback(Map<String, dynamic> message) async {
     battery_.value = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
   }
+
+  // 将十六进制字符串转换为 Uint8List
+  Uint8List _hexToBytes(String hex) {
+    final length = hex.length;
+    final buffer = Uint8List(length ~/ 2);
+    for (int i = 0; i < length; i += 2) {
+      buffer[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
+    }
+    return buffer;
+  }
+
 
   Future<void> odomCallback(Map<String, dynamic> message) async {
     // 解析线速度 (vx, vy)

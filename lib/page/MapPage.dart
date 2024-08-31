@@ -18,6 +18,7 @@ import 'package:ros_flutter_gui_app/display/display_laser.dart';
 import 'package:ros_flutter_gui_app/display/display_path.dart';
 import 'package:ros_flutter_gui_app/display/display_robot.dart';
 import 'package:ros_flutter_gui_app/display/display_pose_direction.dart';
+import 'package:ros_flutter_gui_app/display/stream_image.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
@@ -613,7 +614,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           Positioned(
               left: 5,
               top: 60,
-              child: Column(
+              child: FittedBox(
+                  child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
@@ -707,16 +709,20 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       onPressed: () {
                         if (manualCtrlMode_.value) {
                           manualCtrlMode_.value = false;
+                          Provider.of<RosChannel>(context, listen: false)
+                              .stopMunalCtrl();
                           setState(() {});
                         } else {
                           manualCtrlMode_.value = true;
+                          Provider.of<RosChannel>(context, listen: false)
+                              .startMunalCtrl();
                           setState(() {});
                         }
                       },
                     ),
                   )
                 ],
-              )),
+              ))),
           //左侧顶部状态栏
           // Positioned(
           //     right: 5,
@@ -738,12 +744,20 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           //         ),
           //       ),
           //     )),
-          //右下方菜单栏
+          //右方菜单栏
+          Positioned(
+              right: 5,
+              top: 30,
+              child: Container(
+                  child: StreamImage(
+                      url:
+                          'http://192.168.31.85:8080/stream?topic=/camera/rgb/image_raw' // 100ms 间隔获取一次
+                      ))),
           Positioned(
             right: 5,
-            bottom: 10,
-            child: Container(
-              child: Row(
+            top: 30,
+            child: FittedBox(
+              child: Column(
                 children: [
                   IconButton(
                       onPressed: () {
@@ -784,52 +798,54 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
+
+          //左摇杆控制线速度
           Positioned(
             left: 30,
             bottom: 10,
             child: Visibility(
+              visible: manualCtrlMode_.value,
+              maintainState: true,
+              child: Container(
+                  width: screenSize.width * 0.2,
+                  height: screenSize.width * 0.2,
+                  child: Joystick(
+                    mode: JoystickMode.all,
+                    listener: (details) {
+                      if (!manualCtrlMode_.value) return;
+                      double max_vx =
+                          double.parse(globalSetting.getConfig('MaxVx'));
+
+                      double vx = max_vx * details.y * -1;
+                      Provider.of<RosChannel>(context, listen: false).setVx(vx);
+                    },
+                  )),
+            ),
+          ),
+
+          //右摇杆控制角速度
+          Positioned(
+            right: 30,
+            bottom: 10,
+            child: Visibility(
                 visible: manualCtrlMode_.value,
                 maintainState: true,
-                child: Joystick(
-                  mode: JoystickMode.all,
-                  listener: (details) {
-                    if (!manualCtrlMode_.value) return;
-                    double max_vx =
-                        double.parse(globalSetting.getConfig('MaxVx'));
-                    double max_vy =
-                        double.parse(globalSetting.getConfig('MaxVy'));
-                    double max_vw =
-                        double.parse(globalSetting.getConfig('MaxVw'));
-                    double vx = max_vx * details.y * -1;
-                    double vy = max_vy * details.x * -1;
-                    //x决定方向 1-y决定比例
-                    double vw = (1 - details.y.abs()) * max_vw;
+                child: Container(
+                    width: screenSize.width * 0.2,
+                    height: screenSize.width * 0.2,
+                    child: Joystick(
+                      mode: JoystickMode.all,
+                      listener: (details) {
+                        if (!manualCtrlMode_.value) return;
 
-                    if (details.x > 0) {
-                      if (details.y < 0) {
-                        vw = -vw;
-                      }
-                    } else if (details.x < 0) {
-                      if (details.y > 0) {
-                        vw = -vw;
-                      }
-                    }
-                    //y小于一定值 只有w
-                    if (details.y.abs() <= 0.1) {
-                      vx = 0;
-                      if (details.x > 0) {
-                        vw = -vw.abs();
-                      } else {
-                        vw = vw.abs();
-                      }
-                    }
-                    if (details.y == 0) {
-                      vw = 0;
-                    }
-                    Provider.of<RosChannel>(context, listen: false)
-                        .sendSpeed(vx, vy, vw);
-                  },
-                )),
+                        double max_vw =
+                            double.parse(globalSetting.getConfig('MaxVw'));
+
+                        double vw = max_vw * details.x * -1;
+                        Provider.of<RosChannel>(context, listen: false)
+                            .setVw(vw);
+                      },
+                    ))),
           )
         ],
       ),

@@ -91,6 +91,10 @@ class Setting {
     return prefs.getString("relocTopic") ?? "/initialpose";
   }
 
+  String get imageTopic {
+    return prefs.getString("imageTopic") ?? "/camera/rgb/image_raw";
+  }
+
   void setNavGoalTopic(String topic) {
     prefs.setString('navGoalTopic', topic);
   }

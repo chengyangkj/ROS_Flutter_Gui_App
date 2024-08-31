@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:gamepads/gamepads.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toast/toast.dart';
@@ -9,13 +10,15 @@ import 'package:ros_flutter_gui_app/page/MapPage.dart';
 import 'package:ros_flutter_gui_app/page/RobotConnectPage.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/SettingPage.dart';
-// import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
+import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'provider/them_provider.dart';
 
 void main() {
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider<RosChannel>(create: (_) => RosChannel()),
     ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+    ChangeNotifierProvider<JoyStickController>(
+        create: (_) => JoyStickController())
   ], child: MyApp()));
 }
 
