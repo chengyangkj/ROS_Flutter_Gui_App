@@ -48,19 +48,19 @@ class DisplayLaserState extends State<DisplayLaser>
         height = element.dy.toInt();
       }
     });
-    return Container(
-      width: width.toDouble(),
-      height: height.toDouble(),
-      // color: Colors.red,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return CustomPaint(
-            painter: DisplayLaserPainter(pointList: widget.pointList),
-          );
-        },
-      ),
-    );
+    return RepaintBoundary(child: Container(
+        width: width.toDouble(),
+        height: height.toDouble(),
+        // color: Colors.red,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return CustomPaint(
+              painter: DisplayLaserPainter(pointList: widget.pointList),
+            );
+          },
+        ),
+      ) ) ;
   }
 }
 

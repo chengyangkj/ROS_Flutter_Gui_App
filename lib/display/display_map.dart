@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
@@ -14,7 +15,6 @@ class DisplayMap extends StatefulWidget {
 class _DisplayMapState extends State<DisplayMap> {
   List<Offset> occPointList = [];
   List<Offset> freePointList = [];
-
   @override
   void initState() {
     super.initState();
@@ -40,22 +40,23 @@ class _DisplayMapState extends State<DisplayMap> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    return ValueListenableBuilder<OccupancyMap>(
-        valueListenable: Provider.of<RosChannel>(context, listen: false).map,
-        builder: (context, occMap, child) {
-          _processMapData(occMap);
-          return Container(
-            width: occMap.width().toDouble() + 1,
-            height: occMap.height().toDouble() + 1,
-            child: CustomPaint(
-              painter: DisplayMapPainter(
-                  occPointList: occPointList,
-                  freePointList: freePointList,
-                  freeColor: theme.colorScheme.surface.withAlpha(98),
-                  occColor: isDarkMode ? Colors.white : Colors.black),
-            ),
-          );
-        });
+    return RepaintBoundary(
+        child: ValueListenableBuilder<OccupancyMap>(
+            valueListenable: Provider.of<RosChannel>(context, listen: true).map,
+            builder: (context, occMap, child) {
+              _processMapData(occMap);
+              return Container(
+                width: occMap.width().toDouble() + 1,
+                height: occMap.height().toDouble() + 1,
+                child: CustomPaint(
+                  painter: DisplayMapPainter(
+                      occPointList: occPointList,
+                      freePointList: freePointList,
+                      freeColor: theme.colorScheme.surface.withAlpha(98),
+                      occColor: isDarkMode ? Colors.white : Colors.black),
+                ),
+              );
+            }));
   }
 }
 
@@ -86,9 +87,6 @@ class DisplayMapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant DisplayMapPainter oldDelegate) {
-    return occPointList != oldDelegate.occPointList ||
-        freePointList != oldDelegate.freePointList ||
-        freeColor != oldDelegate.freeColor ||
-        occColor != oldDelegate.occColor;
+    return true;
   }
 }

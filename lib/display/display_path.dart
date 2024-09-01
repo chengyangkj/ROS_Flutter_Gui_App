@@ -19,6 +19,5 @@ class DisplayPath extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) =>
-      this != oldDelegate;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

@@ -5,6 +5,7 @@ class DisplayGrid extends StatelessWidget {
   double step = 20;
   double width = 300;
   double height = 300;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -15,29 +16,33 @@ class DisplayGrid extends StatelessWidget {
       color: theme.scaffoldBackgroundColor,
       child: CustomPaint(
         painter: GridPainter(
-            step: step, color: isDarkMode ? Colors.white : Colors.black),
+          step: step,
+          color: isDarkMode
+              ? Colors.white.withAlpha(60)
+              : Colors.black.withAlpha(60),
+        ),
       ),
     );
   }
 }
 
 class GridPainter extends CustomPainter {
-  late double step = 20;
-  Color color = Colors.black;
+  late double step;
+  Color color;
+
   GridPainter({required this.step, required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
       ..color = color
-      ..strokeCap = StrokeCap.round // 设置画笔的端点为圆形，以便绘制圆形点
-      ..strokeWidth = 0.2;
+      ..strokeCap = StrokeCap.round // 圆形端点
+      ..strokeWidth = 2.0; // 点的直径
 
     for (double x = 0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    for (double y = 0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      for (double y = 0; y <= size.height; y += step) {
+        canvas.drawCircle(Offset(x, y), 1.0, paint); // 在网格交界处绘制点
+      }
     }
   }
 

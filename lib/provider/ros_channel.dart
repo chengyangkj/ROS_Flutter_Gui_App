@@ -20,6 +20,7 @@ import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 import "package:ros_flutter_gui_app/basic/math.dart";
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:image/image.dart' as img;
 
 class LaserData {
   RobotPose robotPose;
@@ -213,6 +214,16 @@ class RosChannel extends ChangeNotifier {
 
     batteryChannel_.subscribe(batteryCallback);
 
+    // imageTopic_ = Topic(
+    //   ros: ros,
+    //   name: globalSetting.imageTopic,
+    //   type: "sensor_msgs/Image",
+    //   reconnectOnClose: true,
+    //   queueLength: 10,
+    //   queueSize: 10,
+    // );
+
+    // imageTopic_.subscribe(imageCallback);
 
 //发布者
     relocChannel_ = Topic(
@@ -393,17 +404,6 @@ class RosChannel extends ChangeNotifier {
     battery_.value = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
   }
 
-  // 将十六进制字符串转换为 Uint8List
-  Uint8List _hexToBytes(String hex) {
-    final length = hex.length;
-    final buffer = Uint8List(length ~/ 2);
-    for (int i = 0; i < length; i += 2) {
-      buffer[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
-    }
-    return buffer;
-  }
-
-
   Future<void> odomCallback(Map<String, dynamic> message) async {
     // 解析线速度 (vx, vy)
     double vx = message['twist']['twist']['linear']['x'];
@@ -465,6 +465,38 @@ class RosChannel extends ChangeNotifier {
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       globalPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
+  }
+
+  Uint8List _hexToBytes(String hex) {
+    final length = hex.length;
+    final buffer = Uint8List(length ~/ 2);
+    for (int i = 0; i < length; i += 2) {
+      buffer[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
+    }
+    return buffer;
+  }
+
+  Future<void> imageCallback(Map<String, dynamic> msg) async {
+    int width = msg['width'];
+    int height = msg['height'];
+    String encoding = msg['encoding'];
+    String data = msg['data'].asString();
+
+    // Uint8List bytes = _hexToBytes(data);
+    print(data.length);
+    // Uint8L
+    // Uint8List bytes = Uint8List.fromList(data.cast<int>());
+
+    // img.Image? image;
+    // if (encoding == 'rgb8') {
+    //   image = img.Image.fromBytes(width: width, height: height, bytes: bytes);
+    // } else if (encoding == 'mono8') {
+    //   image = img.Image.fromBytes(width, height, bytes,
+    //       format: img.Format.luminance);
+    // } else {
+    //   print('Unsupported image encoding: $encoding');
+    //   return null;
+    // }
   }
 
   Future<void> laserCallback(Map<String, dynamic> msg) async {

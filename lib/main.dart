@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toast/toast.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ void main() {
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider<RosChannel>(create: (_) => RosChannel()),
     ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+    ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState()),
     ChangeNotifierProvider<JoyStickController>(
         create: (_) => JoyStickController())
   ], child: MyApp()));
