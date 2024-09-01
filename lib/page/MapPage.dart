@@ -623,8 +623,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             const IconData(0xe606, fontFamily: "Speed"),
                             color: Colors.green[400],
                           ), // 图标放在文本前
-                          label: Text(
-                              '${(Provider.of<RosChannel>(context, listen: true).robotSpeed.vx).toStringAsFixed(2)} m/s'),
+                          label: ValueListenableBuilder<RobotSpeed>(
+                              valueListenable:
+                                  Provider.of<RosChannel>(context, listen: true)
+                                      .robotSpeed_,
+                              builder: (context, speed, child) {
+                                return Text(
+                                    '${(speed.vx).toStringAsFixed(2)} m/s');
+                              }),
                         ),
                       ),
                       Padding(
@@ -632,8 +638,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         child: RawChip(
                           avatar: const Icon(
                               IconData(0xe680, fontFamily: "Speed")), // 图标放在文本前
-                          label: Text(
-                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).robotSpeed.vw).toStringAsFixed(2)} deg/s'),
+                          label: ValueListenableBuilder<RobotSpeed>(
+                              valueListenable:
+                                  Provider.of<RosChannel>(context, listen: true)
+                                      .robotSpeed_,
+                              builder: (context, speed, child) {
+                                return Text(
+                                    '${rad2deg(speed.vx).toStringAsFixed(2)} deg/s');
+                              }),
                         ),
                       ),
                       Padding(
@@ -643,8 +655,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             const IconData(0xe995, fontFamily: "Battery"),
                             color: Colors.amber[300],
                           ), // 图标放在文本前
-                          label: Text(
-                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).battery).toStringAsFixed(2)} %'),
+                          label: ValueListenableBuilder<double>(
+                              valueListenable: Provider.of<RosChannel>(context,
+                                      listen: false)
+                                  .battery_,
+                              builder: (context, battery, child) {
+                                return Text(
+                                    '${battery.toStringAsFixed(2)} m/s');
+                              }),
                         ),
                       ),
                     ],

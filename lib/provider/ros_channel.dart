@@ -75,7 +75,8 @@ class RosChannel extends ChangeNotifier {
         connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
           try {
-            currRobotPose_.value = tf_.lookUpForTransform("map", "base_link");
+            currRobotPose_.value = tf_.lookUpForTransform(
+                globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
             Offset poseScene = map_.value
                 .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
             robotPoseScene.value = RobotPose(
@@ -86,14 +87,6 @@ class RosChannel extends ChangeNotifier {
         });
       }
     });
-  }
-
-  RobotSpeed get robotSpeed {
-    return robotSpeed_.value;
-  }
-
-  double get battery {
-    return battery_.value;
   }
 
   RobotPose get robotPoseMap {
@@ -414,12 +407,13 @@ class RosChannel extends ChangeNotifier {
     robotSpeed_.value.vx = vx;
     robotSpeed_.value.vy = vy;
     robotSpeed_.value.vw = vw;
+    notifyListeners();
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
     // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
-    // notifyListeners();
+    notifyListeners();
   }
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
@@ -429,7 +423,7 @@ class RosChannel extends ChangeNotifier {
     String framId = path.header!.frameId!;
     RobotPose transPose = RobotPose(0, 0, 0);
     try {
-      transPose = tf_.lookUpForTransform("map", framId);
+      transPose = tf_.lookUpForTransform(globalSetting.mapFrameName, framId);
     } catch (e) {
       print("not find local path transfrom form:map to:$framId");
       return;
@@ -443,6 +437,7 @@ class RosChannel extends ChangeNotifier {
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       localPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
+    notifyListeners();
   }
 
   Future<void> globalPathCallback(Map<String, dynamic> msg) async {
@@ -465,6 +460,7 @@ class RosChannel extends ChangeNotifier {
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       globalPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
+    notifyListeners();
   }
 
   Uint8List _hexToBytes(String hex) {
@@ -504,8 +500,8 @@ class RosChannel extends ChangeNotifier {
     LaserScan laser = LaserScan.fromJson(msg);
     RobotPose laserPoseBase = RobotPose(0, 0, 0);
     try {
-      laserPoseBase =
-          tf_.lookUpForTransform("base_link", laser.header!.frameId!);
+      laserPoseBase = tf_.lookUpForTransform(
+          globalSetting.baseLinkFrameName, laser.header!.frameId!);
     } catch (e) {
       print("not find transform from:map to ${laser.header!.frameId!}");
       return;
@@ -531,6 +527,7 @@ class RosChannel extends ChangeNotifier {
     }
     laserPointData.value = LaserData(
         robotPose: currRobotPose_.value, laserPoseBaseLink: laserPoint_.value);
+    notifyListeners();
   }
 
   DateTime? _lastMapCallbackTime;
@@ -568,6 +565,7 @@ class RosChannel extends ChangeNotifier {
     }
     map.setFlip();
     map_.value = map;
+    notifyListeners();
   }
 
   String msgReceived = '';
