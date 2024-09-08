@@ -30,7 +30,7 @@
             - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
     - [1.4 软件运行](#14-软件运行)
     - [1.5 引用](#15-引用)
-- [引用](#引用)
+- [引用说明](#引用说明)
 
 <!-- /TOC -->
 
@@ -97,7 +97,7 @@ python -m http.server 8000
 
 ## 1.3 机器人端环境配置
 
-软件借助ros bridge websocket实现与ros之间的通信，因此需要先在自己的机器人系统上安装ros bridget websocket并运行，这里区分ros1 与 ros2分别介绍安装教程
+软件借助ros bridge websocket实现与ros之间的通信，因此需要先在自己的机器人系统上安装ros bridget websocket并运行，由于ROS Bridge websocket的实现兼容ros1与ros2，因此这里区分ros1 与 ros2分别介绍安装教程
  
 ### ROS 1
 
