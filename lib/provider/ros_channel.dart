@@ -54,6 +54,7 @@ class RosChannel extends ChangeNotifier {
   ValueNotifier<double> battery_ = ValueNotifier(0);
   ValueNotifier<Uint8List> imageData = ValueNotifier(Uint8List(0));
   RobotSpeed cmdVel_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
+  double vxLeft_ = 0;
   ValueNotifier<RobotSpeed> robotSpeed_ =
       ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
   String url_ = "";
@@ -280,7 +281,14 @@ class RosChannel extends ChangeNotifier {
     await ros.close();
   }
 
+  void setVxRight(double vx) {
+    if (vxLeft_ == 0) {
+      cmdVel_.vx = vx;
+    }
+  }
+
   void setVx(double vx) {
+    vxLeft_ = vx;
     cmdVel_.vx = vx;
   }
 

@@ -139,7 +139,7 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                       } else if (details.x.abs() < details.y.abs()) {
                         double vx = max_vx * details.y * -1;
                         Provider.of<RosChannel>(context, listen: false)
-                            .setVx(vx);
+                            .setVxRight(vx);
                       }
 
                       if (details.x == 0) {
