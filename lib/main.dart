@@ -11,16 +11,14 @@ import 'package:ros_flutter_gui_app/page/MapPage.dart';
 import 'package:ros_flutter_gui_app/page/RobotConnectPage.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/SettingPage.dart';
-import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'provider/them_provider.dart';
 
 void main() {
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider<RosChannel>(create: (_) => RosChannel()),
     ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
-    ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState()),
-    ChangeNotifierProvider<JoyStickController>(
-        create: (_) => JoyStickController())
+    ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState())
   ], child: MyApp()));
 }
 
@@ -42,6 +40,7 @@ class _MyAppState extends State<MyApp> {
     ]);
     // 关闭系统状态栏的显示
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    WakelockPlus.toggle(enable: true);
   }
 
   @override

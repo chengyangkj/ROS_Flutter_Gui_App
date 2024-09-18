@@ -9,4 +9,5 @@ enum Mode {
 
 class GlobalState extends ChangeNotifier {
    ValueNotifier<Mode> mode = ValueNotifier(Mode.noraml);
+   ValueNotifier<bool> isManualCtrl = ValueNotifier(false);
 }

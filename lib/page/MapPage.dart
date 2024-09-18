@@ -11,6 +11,7 @@ import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/math.dart';
 import 'package:ros_flutter_gui_app/basic/matrix_gesture_detector.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
@@ -21,7 +22,6 @@ import 'package:ros_flutter_gui_app/display/display_pose_direction.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
-import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
 import 'package:ros_flutter_gui_app/display/display_grid.dart';
 import 'package:toast/toast.dart';
@@ -148,7 +148,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-
     return Scaffold(
       body: Stack(
         children: [
@@ -660,8 +659,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                       listen: false)
                                   .battery_,
                               builder: (context, battery, child) {
-                                return Text(
-                                    '${battery.toStringAsFixed(2)} m/s');
+                                return Text('${battery.toStringAsFixed(2)} %');
                               }),
                         ),
                       ),
@@ -800,17 +798,26 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     elevation: 10,
                     child: IconButton(
                       icon: Icon(const IconData(0xea45, fontFamily: "GamePad"),
-                          color: manualCtrlMode_.value
-                              ? Colors.green
-                              : theme.iconTheme.color),
+                          color:
+                              Provider.of<GlobalState>(context, listen: false)
+                                      .isManualCtrl
+                                      .value
+                                  ? Colors.green
+                                  : theme.iconTheme.color),
                       onPressed: () {
-                        if (manualCtrlMode_.value) {
-                          manualCtrlMode_.value = false;
+                        if (Provider.of<GlobalState>(context, listen: false)
+                            .isManualCtrl
+                            .value) {
+                          Provider.of<GlobalState>(context, listen: false)
+                              .isManualCtrl
+                              .value = false;
                           Provider.of<RosChannel>(context, listen: false)
                               .stopMunalCtrl();
                           setState(() {});
                         } else {
-                          manualCtrlMode_.value = true;
+                          Provider.of<GlobalState>(context, listen: false)
+                              .isManualCtrl
+                              .value = true;
                           Provider.of<RosChannel>(context, listen: false)
                               .startMunalCtrl();
                           setState(() {});
@@ -902,54 +909,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
-
-          //左摇杆控制线速度
-          Positioned(
-            left: 30,
-            bottom: 10,
-            child: Visibility(
-              visible: manualCtrlMode_.value,
-              maintainState: true,
-              child: Container(
-                  width: screenSize.width * 0.2,
-                  height: screenSize.width * 0.2,
-                  child: Joystick(
-                    mode: JoystickMode.all,
-                    listener: (details) {
-                      if (!manualCtrlMode_.value) return;
-                      double max_vx =
-                          double.parse(globalSetting.getConfig('MaxVx'));
-
-                      double vx = max_vx * details.y * -1;
-                      Provider.of<RosChannel>(context, listen: false).setVx(vx);
-                    },
-                  )),
-            ),
-          ),
-
-          //右摇杆控制角速度
-          Positioned(
-            right: 30,
-            bottom: 10,
-            child: Visibility(
-                visible: manualCtrlMode_.value,
-                maintainState: true,
-                child: Container(
-                    width: screenSize.width * 0.2,
-                    height: screenSize.width * 0.2,
-                    child: Joystick(
-                      mode: JoystickMode.all,
-                      listener: (details) {
-                        if (!manualCtrlMode_.value) return;
-
-                        double max_vw =
-                            double.parse(globalSetting.getConfig('MaxVw'));
-
-                        double vw = max_vw * details.x * -1;
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVw(vw);
-                      },
-                    ))),
+          Visibility(
+            child: GamepadWidget(),
           )
         ],
       ),

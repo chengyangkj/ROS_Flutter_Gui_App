@@ -1,6 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum KeyName {
+  None,
+  leftAxisX,
+  leftAxisY,
+  rightAxisX,
+  rightAxisY,
+  lS,
+  rS,
+  triggerLeft,
+  triggerRight,
+  buttonUpDown,
+  buttonLeftRight,
+  buttonA,
+  buttonB,
+  buttonX,
+  buttonY,
+  buttonLB,
+  buttonRB,
+}
+
+class JoyStickEvent {
+  late KeyName keyName;
+  bool reverse = false; //是否反转(反转填-1)
+  int maxValue = 32767;
+  int minValue = -32767;
+  double value = 0;
+  JoyStickEvent(this.keyName,
+      {this.reverse = false, this.maxValue = 32767, this.minValue = -32767});
+}
+
+// 定义一个映射关系，将Dart中的类名映射到JavaScript中的类名
+Map<String, JoyStickEvent> axisMapping = {
+  "AXIS_X": JoyStickEvent(KeyName.leftAxisX),
+  "AXIS_Y": JoyStickEvent(KeyName.leftAxisY),
+  "AXIS_Z": JoyStickEvent(KeyName.rightAxisX),
+  "AXIS_RZ": JoyStickEvent(KeyName.rightAxisY),
+  "triggerRight": JoyStickEvent(KeyName.triggerRight),
+  "triggerLeft": JoyStickEvent(KeyName.triggerLeft),
+  "buttonLeftRight": JoyStickEvent(KeyName.buttonLeftRight),
+  "buttonUpDown": JoyStickEvent(KeyName.buttonUpDown),
+};
+Map<String, JoyStickEvent> buttonMapping = {
+  "KEYCODE_BUTTON_A":
+      JoyStickEvent(KeyName.buttonA, maxValue: 1, minValue: 0, reverse: true),
+  "KEYCODE_BUTTON_B":
+      JoyStickEvent(KeyName.buttonB, maxValue: 1, minValue: 0, reverse: true),
+  "KEYCODE_BUTTON_X":
+      JoyStickEvent(KeyName.buttonX, maxValue: 1, minValue: 0, reverse: true),
+  "KEYCODE_BUTTON_Y":
+      JoyStickEvent(KeyName.buttonY, maxValue: 1, minValue: 0, reverse: true),
+  "KEYCODE_BUTTON_L1":
+      JoyStickEvent(KeyName.buttonLB, maxValue: 1, minValue: 0, reverse: true),
+  "KEYCODE_BUTTON_R1":
+      JoyStickEvent(KeyName.buttonRB, maxValue: 1, minValue: 0, reverse: true),
+};
+
+
 class Setting {
   late SharedPreferences prefs;
   Future<bool> init() async {
