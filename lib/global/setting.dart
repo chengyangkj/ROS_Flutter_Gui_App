@@ -7,9 +7,25 @@ class Setting {
     prefs = await SharedPreferences.getInstance();
     if (!prefs.containsKey("init") ||
         (prefs.containsKey("init") && prefs.getString("init") != "1")) {
-      setDefaultCfgRos1();
+      setDefaultCfgRos2();
     }
     return true;
+  }
+
+  void setDefaultCfgRos2() {
+    prefs.setString('init', "2");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/odom");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
   }
 
   void setDefaultCfgRos1() {

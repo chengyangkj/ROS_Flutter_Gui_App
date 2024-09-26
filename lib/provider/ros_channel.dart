@@ -238,7 +238,7 @@ class RosChannel extends ChangeNotifier {
     vm.Quaternion quaternion = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
-        "seq": 0,
+        // "seq": 0,
         "stamp": {
           "secs": DateTime.now().second,
           "nsecs": DateTime.now().millisecond * 1000000
@@ -292,7 +292,7 @@ class RosChannel extends ChangeNotifier {
     vm.Quaternion quation = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
-        "seq": 0,
+        // "seq": 0,
         "stamp": {
           "secs": DateTime.now().second,
           "nsecs": DateTime.now().millisecond * 1000000
