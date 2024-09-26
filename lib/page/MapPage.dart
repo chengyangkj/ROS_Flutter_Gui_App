@@ -19,7 +19,6 @@ import 'package:ros_flutter_gui_app/display/display_path.dart';
 import 'package:ros_flutter_gui_app/display/display_robot.dart';
 import 'package:ros_flutter_gui_app/display/display_pose_direction.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
-import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/hardware/gamepad.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
@@ -35,7 +34,15 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
+enum Mode {
+  noraml,
+  reloc, //重定位模式
+  addNavPoint, //添加导航点模式
+  robotFixedCenter, //机器人固定屏幕中心模式
+}
+
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
+  ValueNotifier<Mode> mode_ = ValueNotifier(Mode.noraml);
   ValueNotifier<bool> manualCtrlMode_ = ValueNotifier(false);
   ValueNotifier<List<RobotPose>> navPointList_ =
       ValueNotifier<List<RobotPose>>([]);
@@ -161,17 +168,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   child: MatrixGestureDetector(
                     onMatrixUpdate:
                         (matrix, transDelta, scaleValue, rotateDelta) {
-                      if (Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value ==
-                          Mode.robotFixedCenter) {
+                      if (mode_.value == Mode.robotFixedCenter) {
                         Toast.show("相机视角固定时不可调整图层！",
                             duration: Toast.lengthShort, gravity: Toast.bottom);
-                        return;
                       }
-
-                      gestureTransform.value = matrix;
-                      gestureScaleValue_.value = scaleValue;
+                      if (!(mode_.value == Mode.robotFixedCenter)) {
+                        gestureTransform.value = matrix;
+                        gestureScaleValue_.value = scaleValue;
+                      }
                     },
                     child: ValueListenableBuilder<RobotPose>(
                         valueListenable:
@@ -179,21 +183,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 .robotPoseScene,
                         builder: (context, robotPoseScene, child) {
                           double scaleValue = gestureScaleValue_.value;
-                          var globalTransform = gestureTransform.value;
-                          var originPose = Offset.zero;
-                          if (Provider.of<GlobalState>(context, listen: false)
-                                  .mode
-                                  .value ==
-                              Mode.robotFixedCenter) {
+                          if (mode_.value == Mode.robotFixedCenter) {
                             scaleValue = cameraFixedScaleValue_;
-                            globalTransform = Matrix4.identity()
-                              ..translate(screenCenter.dx - robotPoseScene.x,
-                                  screenCenter.dy - robotPoseScene.y)
-                              ..rotateZ(robotPoseScene.theta - deg2rad(90))
-                              ..scale(scaleValue);
-                            originPose =
-                                Offset(robotPoseScene.x, robotPoseScene.y);
                           }
+                          cameraFixedTransform = Matrix4.identity()
+                            ..translate(screenCenter.dx - robotPoseScene.x,
+                                screenCenter.dy - robotPoseScene.y)
+                            ..rotateZ(robotPoseScene.theta - deg2rad(90))
+                            ..scale(scaleValue);
 
                           return Stack(
                             children: [
@@ -206,23 +203,23 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                               .value
                                               .mapConfig
                                               .resolution) *
-                                      (scaleValue > 0.8 ? scaleValue : 0.8),
+                                      (scaleValue > 0.5 ? scaleValue : 0.5),
                                   width: screenSize.width,
                                   height: screenSize.height,
                                 ),
                               ),
                               //地图
                               Transform(
-                                transform: globalTransform,
-                                origin: originPose,
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
+                                    : Offset.zero,
                                 child: GestureDetector(
                                   child: const DisplayMap(),
                                   onTapDown: (details) {
-                                    if (Provider.of<GlobalState>(context,
-                                                listen: false)
-                                            .mode
-                                            .value ==
-                                        Mode.addNavPoint) {
+                                    if (mode_.value == Mode.addNavPoint) {
                                       navPointList_.value.add(RobotPose(
                                           details.localPosition.dx,
                                           details.localPosition.dy,
@@ -235,32 +232,37 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
                               //全局路径
                               Transform(
-                                transform: globalTransform,
-                                origin: originPose,
-                                child: RepaintBoundary(
-                                  child: ValueListenableBuilder<List<Offset>>(
-                                    valueListenable: Provider.of<RosChannel>(
-                                            context,
-                                            listen: false)
-                                        .globalPath,
-                                    builder: (context, path, child) {
-                                      return Container(
-                                        child: CustomPaint(
-                                          painter: DisplayPath(
-                                              pointList: path,
-                                              color: Colors.green),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
+                                    : Offset.zero,
+                                child: ValueListenableBuilder<List<Offset>>(
+                                  valueListenable: Provider.of<RosChannel>(
+                                          context,
+                                          listen: false)
+                                      .globalPath,
+                                  builder: (context, path, child) {
+                                    return Container(
+                                      child: CustomPaint(
+                                        painter: DisplayPath(
+                                            pointList: path,
+                                            color: Colors.green),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                               //局部路径
                               Transform(
-                                transform: globalTransform,
-                                origin: originPose,
-                                child: RepaintBoundary(
-                                    child: ValueListenableBuilder<List<Offset>>(
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
+                                    : Offset.zero,
+                                child: ValueListenableBuilder<List<Offset>>(
                                   valueListenable: Provider.of<RosChannel>(
                                           context,
                                           listen: false)
@@ -274,64 +276,65 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                       ),
                                     );
                                   },
-                                )),
+                                ),
                               ),
 
                               //激光
                               Transform(
-                                transform: globalTransform,
-                                origin: originPose,
-                                child: RepaintBoundary(
-                                    child: ValueListenableBuilder<LaserData>(
-                                        valueListenable:
-                                            Provider.of<RosChannel>(context,
-                                                    listen: false)
-                                                .laserPointData,
-                                        builder: (context, laserData, child) {
-                                          RobotPose robotPoseMap =
-                                              laserData.robotPose;
-                                          var map = Provider.of<RosChannel>(
-                                                  context,
-                                                  listen: false)
-                                              .map
-                                              .value;
-                                          //重定位模式 从图层坐标转换
-                                          if (Provider.of<GlobalState>(context,
-                                                      listen: false)
-                                                  .mode
-                                                  .value ==
-                                              Mode.reloc) {
-                                            Offset poseMap = map.idx2xy(Offset(
-                                                poseSceneOnReloc.x,
-                                                poseSceneOnReloc.y));
-                                            robotPoseMap = RobotPose(
-                                                poseMap.dx,
-                                                poseMap.dy,
-                                                poseSceneOnReloc.theta);
-                                          }
+                                transform: mode_.value == Mode.robotFixedCenter
+                                    ? cameraFixedTransform
+                                    : gestureTransform.value,
+                                origin: mode_.value == Mode.robotFixedCenter
+                                    ? Offset(robotPoseScene.x, robotPoseScene.y)
+                                    : Offset.zero,
+                                child: ValueListenableBuilder<LaserData>(
+                                    valueListenable: Provider.of<RosChannel>(
+                                            context,
+                                            listen: false)
+                                        .laserPointData,
+                                    builder: (context, laserData, child) {
+                                      RobotPose robotPoseMap =
+                                          laserData.robotPose;
+                                      var map = Provider.of<RosChannel>(context,
+                                              listen: false)
+                                          .map
+                                          .value;
+                                      //重定位模式 从图层坐标转换
+                                      if (mode_.value == Mode.reloc) {
+                                        Offset poseMap = map.idx2xy(Offset(
+                                            poseSceneOnReloc.x,
+                                            poseSceneOnReloc.y));
+                                        robotPoseMap = RobotPose(poseMap.dx,
+                                            poseMap.dy, poseSceneOnReloc.theta);
+                                      }
 
-                                          List<Offset> laserPointsScene = [];
-                                          for (var point
-                                              in laserData.laserPoseBaseLink) {
-                                            RobotPose pointMap = absoluteSum(
-                                                robotPoseMap,
-                                                RobotPose(
-                                                    point.dx, point.dy, 0));
-                                            Offset pointScene = map.xy2idx(
-                                                Offset(pointMap.x, pointMap.y));
-                                            laserPointsScene.add(pointScene);
-                                          }
-                                          return IgnorePointer(
-                                              ignoring: true,
-                                              child: DisplayLaser(
-                                                  pointList: laserPointsScene));
-                                        })),
+                                      List<Offset> laserPointsScene = [];
+                                      for (var point
+                                          in laserData.laserPoseBaseLink) {
+                                        RobotPose pointMap = absoluteSum(
+                                            robotPoseMap,
+                                            RobotPose(point.dx, point.dy, 0));
+                                        Offset pointScene = map.xy2idx(
+                                            Offset(pointMap.x, pointMap.y));
+                                        laserPointsScene.add(pointScene);
+                                      }
+                                      return IgnorePointer(
+                                          ignoring: true,
+                                          child: DisplayLaser(
+                                              pointList: laserPointsScene));
+                                    }),
                               ),
                               //导航点
                               ...navPointList_.value.map((pose) {
                                 return Transform(
-                                  transform: globalTransform,
-                                  origin: originPose,
+                                  transform:
+                                      mode_.value == Mode.robotFixedCenter
+                                          ? cameraFixedTransform
+                                          : gestureTransform.value,
+                                  origin: mode_.value == Mode.robotFixedCenter
+                                      ? Offset(
+                                          robotPoseScene.x, robotPoseScene.y)
+                                      : Offset.zero,
                                   child: Transform(
                                       alignment: Alignment.center,
                                       transform: Matrix4.identity()
@@ -347,11 +350,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                           onMatrixUpdate: (matrix, transDelta,
                                               scaleDelta, rotateDelta) {
                                             // print("transDelta:${transDelta}");
-                                            if (Provider.of<GlobalState>(
-                                                        context,
-                                                        listen: false)
-                                                    .mode
-                                                    .value ==
+                                            if (mode_.value ==
                                                 Mode.addNavPoint) {
                                               //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
                                               double dx =
@@ -377,14 +376,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                               alignment: Alignment.center,
                                               children: [
                                                 Visibility(
-                                                    visible:
-                                                        Provider.of<GlobalState>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .mode
-                                                                .value ==
-                                                            Mode.addNavPoint,
+                                                    visible: mode_.value ==
+                                                        Mode.addNavPoint,
                                                     child: DisplayPoseDirection(
                                                       size: navPoseSize +
                                                           poseDirectionSwellSize,
@@ -398,11 +391,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                     )),
                                                 GestureDetector(
                                                     onTapDown: (details) {
-                                                      if (Provider.of<GlobalState>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .mode
-                                                              .value ==
+                                                      if (mode_.value ==
                                                           Mode.noraml) {
                                                         // _showContextMenu(context,
                                                         //     details.globalPosition);
@@ -433,11 +422,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               }).toList(),
                               //机器人位置（固定视角）
                               Visibility(
-                                visible: Provider.of<GlobalState>(context,
-                                            listen: false)
-                                        .mode
-                                        .value ==
-                                    Mode.robotFixedCenter,
+                                visible: mode_.value == Mode.robotFixedCenter,
                                 child: Positioned(
                                   left: screenCenter.dx -
                                       (robotSize / 2 * cameraFixedScaleValue_),
@@ -457,26 +442,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               ),
                               //机器人位置(不固定视角)
                               Visibility(
-                                  visible: Provider.of<GlobalState>(context,
-                                              listen: false)
-                                          .mode
-                                          .value !=
-                                      Mode.robotFixedCenter,
+                                  visible: mode_.value != Mode.robotFixedCenter,
                                   child: Transform(
-                                    transform: Provider.of<GlobalState>(context,
-                                                    listen: false)
-                                                .mode
-                                                .value ==
-                                            Mode.robotFixedCenter
-                                        ? cameraFixedTransform
-                                        : gestureTransform.value,
+                                    transform:
+                                        mode_.value == Mode.robotFixedCenter
+                                            ? cameraFixedTransform
+                                            : gestureTransform.value,
                                     child: Consumer<RosChannel>(
                                       builder: (context, rosChannel, child) {
-                                        if (!(Provider.of<GlobalState>(context,
-                                                    listen: false)
-                                                .mode
-                                                .value ==
-                                            Mode.reloc)) {
+                                        if (!(mode_.value == Mode.reloc)) {
                                           robotPose_.value = robotPoseScene;
                                         }
 
@@ -499,12 +473,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                   transDelta,
                                                   scaleDelta,
                                                   rotateDelta) {
-                                                if (Provider.of<GlobalState>(
-                                                            context,
-                                                            listen: false)
-                                                        .mode
-                                                        .value ==
-                                                    Mode.reloc) {
+                                                if (mode_.value == Mode.reloc) {
                                                   //获取global的scale值
 
                                                   //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
@@ -540,26 +509,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                   children: [
                                                     //重定位旋转框
                                                     Visibility(
-                                                      visible:
-                                                          Provider.of<GlobalState>(
-                                                                      context,
-                                                                      listen:
-                                                                          false)
-                                                                  .mode
-                                                                  .value ==
-                                                              Mode.reloc,
+                                                      visible: mode_.value ==
+                                                          Mode.reloc,
                                                       child:
                                                           DisplayPoseDirection(
                                                         size: robotSize +
                                                             poseDirectionSwellSize,
-                                                        resetAngle: Provider.of<
-                                                                        GlobalState>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .mode
-                                                                .value !=
-                                                            Mode.reloc,
+                                                        resetAngle:
+                                                            mode_.value !=
+                                                                Mode.reloc,
                                                         onRotateCallback:
                                                             (angle) {
                                                           poseSceneOnReloc
@@ -623,14 +581,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             const IconData(0xe606, fontFamily: "Speed"),
                             color: Colors.green[400],
                           ), // 图标放在文本前
-                          label: ValueListenableBuilder<RobotSpeed>(
-                              valueListenable:
-                                  Provider.of<RosChannel>(context, listen: true)
-                                      .robotSpeed_,
-                              builder: (context, speed, child) {
-                                return Text(
-                                    '${(speed.vx).toStringAsFixed(2)} m/s');
-                              }),
+                          label: Text(
+                              '${(Provider.of<RosChannel>(context, listen: true).robotSpeed.vx).toStringAsFixed(2)} m/s'),
                         ),
                       ),
                       Padding(
@@ -638,14 +590,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         child: RawChip(
                           avatar: const Icon(
                               IconData(0xe680, fontFamily: "Speed")), // 图标放在文本前
-                          label: ValueListenableBuilder<RobotSpeed>(
-                              valueListenable:
-                                  Provider.of<RosChannel>(context, listen: true)
-                                      .robotSpeed_,
-                              builder: (context, speed, child) {
-                                return Text(
-                                    '${rad2deg(speed.vx).toStringAsFixed(2)} deg/s');
-                              }),
+                          label: Text(
+                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).robotSpeed.vw).toStringAsFixed(2)} deg/s'),
                         ),
                       ),
                       Padding(
@@ -655,14 +601,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             const IconData(0xe995, fontFamily: "Battery"),
                             color: Colors.amber[300],
                           ), // 图标放在文本前
-                          label: ValueListenableBuilder<double>(
-                              valueListenable: Provider.of<RosChannel>(context,
-                                      listen: false)
-                                  .battery_,
-                              builder: (context, battery, child) {
-                                return Text(
-                                    '${battery.toStringAsFixed(2)} m/s');
-                              }),
+                          label: Text(
+                              '${rad2deg(Provider.of<RosChannel>(context, listen: true).battery).toStringAsFixed(2)} %'),
                         ),
                       ),
                     ],
@@ -673,8 +613,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           Positioned(
               left: 5,
               top: 60,
-              child: FittedBox(
-                  child: Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
@@ -684,15 +623,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         children: [
                           IconButton(
                               onPressed: () {
-                                if (!(Provider.of<GlobalState>(context,
-                                            listen: false)
-                                        .mode
-                                        .value ==
-                                    Mode.reloc)) {
-                                  Provider.of<GlobalState>(context,
-                                          listen: false)
-                                      .mode
-                                      .value = Mode.reloc;
+                                if (!(mode_.value == Mode.reloc)) {
+                                  mode_.value = Mode.reloc;
                                   poseSceneStartReloc = Provider.of<RosChannel>(
                                           context,
                                           listen: false)
@@ -706,35 +638,21 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                       .value;
                                   setState(() {});
                                 } else {
-                                  Provider.of<GlobalState>(context,
-                                          listen: false)
-                                      .mode
-                                      .value = Mode.noraml;
+                                  mode_.value = Mode.noraml;
                                 }
                                 setState(() {});
                               },
                               icon: Icon(
                                 const IconData(0xe60f, fontFamily: "Reloc"),
-                                color: Provider.of<GlobalState>(context,
-                                                listen: false)
-                                            .mode
-                                            .value ==
-                                        Mode.reloc
+                                color: mode_.value == Mode.reloc
                                     ? Colors.green
                                     : theme.iconTheme.color,
                               )),
                           Visibility(
-                              visible: Provider.of<GlobalState>(context,
-                                          listen: false)
-                                      .mode
-                                      .value ==
-                                  Mode.reloc,
+                              visible: mode_.value == Mode.reloc,
                               child: IconButton(
                                   onPressed: () {
-                                    Provider.of<GlobalState>(context,
-                                            listen: false)
-                                        .mode
-                                        .value = Mode.noraml;
+                                    mode_.value = Mode.noraml;
                                     setState(() {});
                                   },
                                   icon: const Icon(
@@ -742,17 +660,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     color: Colors.red,
                                   ))),
                           Visibility(
-                              visible: Provider.of<GlobalState>(context,
-                                          listen: false)
-                                      .mode
-                                      .value ==
-                                  Mode.reloc,
+                              visible: mode_.value == Mode.reloc,
                               child: IconButton(
                                   onPressed: () {
-                                    Provider.of<GlobalState>(context,
-                                            listen: false)
-                                        .mode
-                                        .value = Mode.noraml;
+                                    mode_.value = Mode.noraml;
                                     Provider.of<RosChannel>(context,
                                             listen: false)
                                         .sendRelocPoseScene(poseSceneOnReloc);
@@ -770,26 +681,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     child: IconButton(
                       icon: Icon(
                         const IconData(0xeba1, fontFamily: "NavPoint"),
-                        color: (Provider.of<GlobalState>(context, listen: false)
-                                    .mode
-                                    .value ==
-                                Mode.addNavPoint)
+                        color: (mode_.value == Mode.addNavPoint)
                             ? Colors.green
                             : theme.iconTheme.color,
                       ),
                       onPressed: () {
-                        if (!(Provider.of<GlobalState>(context, listen: false)
-                                .mode
-                                .value ==
-                            Mode.addNavPoint)) {
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.addNavPoint;
+                        if (!(mode_.value == Mode.addNavPoint)) {
+                          mode_.value = Mode.addNavPoint;
                           setState(() {});
                         } else {
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.noraml;
+                          mode_.value = Mode.noraml;
                           setState(() {});
                         }
                       },
@@ -806,20 +707,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       onPressed: () {
                         if (manualCtrlMode_.value) {
                           manualCtrlMode_.value = false;
-                          Provider.of<RosChannel>(context, listen: false)
-                              .stopMunalCtrl();
                           setState(() {});
                         } else {
                           manualCtrlMode_.value = true;
-                          Provider.of<RosChannel>(context, listen: false)
-                              .startMunalCtrl();
                           setState(() {});
                         }
                       },
                     ),
                   )
                 ],
-              ))),
+              )),
           //左侧顶部状态栏
           // Positioned(
           //     right: 5,
@@ -841,20 +738,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           //         ),
           //       ),
           //     )),
-          //右方菜单栏
-
+          //右下方菜单栏
           Positioned(
             right: 5,
-            top: 30,
-            child: FittedBox(
-              child: Column(
+            bottom: 10,
+            child: Container(
+              child: Row(
                 children: [
                   IconButton(
                       onPressed: () {
-                        if (Provider.of<GlobalState>(context, listen: false)
-                                .mode
-                                .value ==
-                            Mode.robotFixedCenter) {
+                        if (mode_.value == Mode.robotFixedCenter) {
                           cameraFixedScaleValue_ += 0.3;
                         } else {}
                         setState(() {});
@@ -871,18 +764,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       )),
                   IconButton(
                       onPressed: () {
-                        if (Provider.of<GlobalState>(context, listen: false)
-                                .mode
-                                .value ==
-                            Mode.robotFixedCenter) {
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.noraml;
+                        if (mode_.value == Mode.robotFixedCenter) {
+                          mode_.value = Mode.noraml;
                           cameraFixedScaleValue_ = 1;
                         } else {
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.robotFixedCenter;
+                          mode_.value = Mode.robotFixedCenter;
                         }
                         if (animationController.isAnimating) return; // 防止多次触发动画
 
@@ -891,65 +777,59 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         setState(() {});
                       },
                       icon: Icon(Icons.location_searching,
-                          color:
-                              Provider.of<GlobalState>(context, listen: false)
-                                          .mode
-                                          .value ==
-                                      Mode.robotFixedCenter
-                                  ? Colors.green
-                                  : theme.iconTheme.color))
+                          color: mode_.value == Mode.robotFixedCenter
+                              ? Colors.green
+                              : theme.iconTheme.color))
                 ],
               ),
             ),
           ),
-
-          //左摇杆控制线速度
           Positioned(
             left: 30,
             bottom: 10,
             child: Visibility(
-              visible: manualCtrlMode_.value,
-              maintainState: true,
-              child: Container(
-                  width: screenSize.width * 0.2,
-                  height: screenSize.width * 0.2,
-                  child: Joystick(
-                    mode: JoystickMode.all,
-                    listener: (details) {
-                      if (!manualCtrlMode_.value) return;
-                      double max_vx =
-                          double.parse(globalSetting.getConfig('MaxVx'));
-
-                      double vx = max_vx * details.y * -1;
-                      Provider.of<RosChannel>(context, listen: false).setVx(vx);
-                    },
-                  )),
-            ),
-          ),
-
-          //右摇杆控制角速度
-          Positioned(
-            right: 30,
-            bottom: 10,
-            child: Visibility(
                 visible: manualCtrlMode_.value,
                 maintainState: true,
-                child: Container(
-                    width: screenSize.width * 0.2,
-                    height: screenSize.width * 0.2,
-                    child: Joystick(
-                      mode: JoystickMode.all,
-                      listener: (details) {
-                        if (!manualCtrlMode_.value) return;
+                child: Joystick(
+                  mode: JoystickMode.all,
+                  listener: (details) {
+                    if (!manualCtrlMode_.value) return;
+                    double max_vx =
+                        double.parse(globalSetting.getConfig('MaxVx'));
+                    double max_vy =
+                        double.parse(globalSetting.getConfig('MaxVy'));
+                    double max_vw =
+                        double.parse(globalSetting.getConfig('MaxVw'));
+                    double vx = max_vx * details.y * -1;
+                    double vy = max_vy * details.x * -1;
+                    //x决定方向 1-y决定比例
+                    double vw = (1 - details.y.abs()) * max_vw;
 
-                        double max_vw =
-                            double.parse(globalSetting.getConfig('MaxVw'));
-
-                        double vw = max_vw * details.x * -1;
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVw(vw);
-                      },
-                    ))),
+                    if (details.x > 0) {
+                      if (details.y < 0) {
+                        vw = -vw;
+                      }
+                    } else if (details.x < 0) {
+                      if (details.y > 0) {
+                        vw = -vw;
+                      }
+                    }
+                    //y小于一定值 只有w
+                    if (details.y.abs() <= 0.1) {
+                      vx = 0;
+                      if (details.x > 0) {
+                        vw = -vw.abs();
+                      } else {
+                        vw = vw.abs();
+                      }
+                    }
+                    if (details.y == 0) {
+                      vw = 0;
+                    }
+                    Provider.of<RosChannel>(context, listen: false)
+                        .sendSpeed(vx, vy, vw);
+                  },
+                )),
           )
         ],
       ),

@@ -105,7 +105,7 @@ jobs:
           channel: stable
       - run: flutter build windows
       - run:
-          $sourcePath = "${{ github.workspace }}/build/windows/x64/runner/Release/";
+          $sourcePath = "${{ github.workspace }}/build/windows";
           $destinationPath = "${{ github.workspace }}/windows_release.zip";
           [System.IO.Compression.ZipFile]::CreateFromDirectory($sourcePath, $destinationPath)
       - name: Upload windows Release Asset

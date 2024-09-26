@@ -26,8 +26,6 @@ class Setting {
     prefs.setString('MaxVx', "0.1");
     prefs.setString('MaxVy', "0.1");
     prefs.setString('MaxVw', "0.3");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
   }
 
   SharedPreferences get config {
@@ -93,18 +91,6 @@ class Setting {
     return prefs.getString("relocTopic") ?? "/initialpose";
   }
 
-  String get imageTopic {
-    return prefs.getString("imageTopic") ?? "/camera/rgb/image_raw";
-  }
-
-  String get mapFrameName {
-    return prefs.getString("mapFrameName") ?? "map";
-  }
-
-  String get baseLinkFrameName {
-    return prefs.getString("baseLinkFrameName") ?? "base_link";
-  }
-
   void setNavGoalTopic(String topic) {
     prefs.setString('navGoalTopic', topic);
   }
@@ -119,6 +105,14 @@ class Setting {
 
   String get navGoalTopic {
     return prefs.getString("navGoalTopic") ?? "/move_base_simple/goal";
+  }
+
+  void setMapFrame(String frame) {
+    prefs.setString('mapFrame', frame);
+  }
+
+  String get mapFrame {
+    return prefs.getString("mapFrame") ?? "map";
   }
 
   String getConfig(String key) {
