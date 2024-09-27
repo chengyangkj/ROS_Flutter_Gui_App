@@ -11,6 +11,7 @@
 ![linux](https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/linux_build.yaml/badge.svg)
 ![windows](https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/windows_build.yaml/badge.svg)
 
+
 借助ros bridge websocket实现的跨平台flutter gui 人机交互软件
 本项目已接入CI,保证多环境可用,并自动打包多平台二进制Release版本
 
@@ -213,6 +214,132 @@ python -m http.server 8000
 右侧遥感既可控制机器人速度，又可控制机器人旋转，遥感左上角为正方向，遥感右下角为负方向，左侧为向左旋转，右侧向右旋转，遥感中间为停止。
 
 
+## 1.5 机器人
+
+
+### 1.6.1 walking仿真机器人
+
+#### 相关配置
+
+```
+  void setDefaultCfgRos2() {
+    prefs.setString('init', "2");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/wheel/odometry");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+  }
+```
+
+### 1.6.2 turtlebot4仿真机器人
+
+- turtlebot4话题清单 
+
+```
+$ ros2 topic list
+/battery_state
+/bumper_contact
+/clicked_point
+/client_count
+/clock
+/cmd_audio
+/cmd_lightring
+/cmd_vel
+/connected_clients
+/diffdrive_controller/cmd_vel_unstamped
+/dock_status
+/downsampled_costmap
+/downsampled_costmap_updates
+/dynamic_joint_states
+/function_calls
+/global_costmap/costmap
+/global_costmap/costmap_updates
+/global_costmap/voxel_marked_cloud
+/hazard_detection
+/hmi/buttons
+/hmi/display
+/hmi/display/message
+/hmi/led
+/initialpose
+/interface_buttons
+/ip
+/ir_intensity
+/ir_opcode
+/joint_states
+/joy
+/kidnap_status
+/local_costmap/costmap
+/local_costmap/costmap_updates
+/local_costmap/published_footprint
+/local_costmap/voxel_marked_cloud
+/local_plan
+/map
+/map_metadata
+/map_updates
+/mobile_base/sensors/bumper_pointcloud
+/mouse
+/oakd/rgb/preview/camera_info
+/oakd/rgb/preview/depth
+/oakd/rgb/preview/depth/points
+/oakd/rgb/preview/image_raw
+/odom
+/parameter_events
+/particle_cloud
+/plan
+/pose
+/robot_description
+/rosout
+/scan
+/sim_ground_truth_dock_pose
+/sim_ground_truth_pose
+/slam_toolbox/feedback
+/slam_toolbox/graph_visualization
+/slam_toolbox/scan_visualization
+/slam_toolbox/update
+/slip_status
+/standard_dock_description
+/stop_status
+/tf
+/tf_static
+/waypoints
+/wheel_status
+/wheel_ticks
+/wheel_vels
+```
+
+- 设置配置init为4,即自动加载turtlebot4配置
+
+```
+  void setDefaultCfgRos2TB4() {
+    prefs.setString('init', "4");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/wheel/odometry");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+  }
+```
+
+### 1.6.3 Turtlebot3仿真机器人
 
 # 引用
 

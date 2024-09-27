@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ros_flutter_gui_app/global/setting.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -43,7 +44,15 @@ class _SettingsPageState extends State<SettingsPage> {
   void _saveSettings(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
     // 这里仅作为示例，实际使用时应确保保存的类型与读取的类型一致
-    await prefs.setString(key, value);
+    if (key == "init"){
+      Setting globalSetting = Setting();
+      await prefs.setString(key, value);
+      await initGlobalSetting();
+      _loadSettings();
+    }
+    else{
+      await prefs.setString(key, value);
+    }
   }
 
   @override

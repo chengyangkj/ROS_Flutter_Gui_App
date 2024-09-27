@@ -61,13 +61,64 @@ Map<String, JoyStickEvent> buttonMapping = {
 class Setting {
   late SharedPreferences prefs;
   Future<bool> init() async {
+    //walking 
     prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey("init") ||
-        (prefs.containsKey("init") && prefs.getString("init") != "1")) {
+    if (!prefs.containsKey("init") || (prefs.containsKey("init") && prefs.getString("init") == "2"))
+    {
       setDefaultCfgRos2();
+    }    
+    //turtlebot4
+    else if((prefs.containsKey("init") && prefs.getString("init") == "4")) { 
+      setDefaultCfgRos2TB4();
     }
+    //turtlebot3
+    else if((prefs.containsKey("init") && prefs.getString("init") == "3")) { 
+      setDefaultCfgRos2TB3();
+    }
+    else if((prefs.containsKey("init") && prefs.getString("init") == "1")) {
+      setDefaultCfgRos1();
+    } 
+    else {
+      setDefaultCfgRos2();
+    } 
     return true;
   }
+
+  void setDefaultCfgRos2TB4() {
+    prefs.setString('init', "4");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/odom");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+  }
+
+  void setDefaultCfgRos2TB3() {
+    prefs.setString('init', "3");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/wheel/odometry");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+  }  
 
   void setDefaultCfgRos2() {
     prefs.setString('init', "2");
