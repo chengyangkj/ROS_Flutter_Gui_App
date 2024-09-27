@@ -229,32 +229,33 @@ class Setting {
     return prefs.getString("baseLinkFrameName") ?? "base_link";
   }
 
+  String get navGoalTopic {
+    return prefs.getString("navGoalTopic") ?? "/goal_pose";
+  }
+
   void setNavGoalTopic(String topic) {
     prefs.setString('navGoalTopic', topic);
   }
 
   String get batteryTopic {
-    return prefs.getString("batteryTopic") ?? "/battery_status";
+    return prefs.getString("BatteryTopic") ?? "/battery_status";
   }
 
   void setBatteryTopic(String topic) {
-    prefs.setString('batteryTopic', topic);
+    prefs.setString('BatteryTopic', topic);
   }
 
-  String get navGoalTopic {
-    return prefs.getString("navGoalTopic") ?? "/goal_pose";
-  }
 
   String getConfig(String key) {
     return prefs.getString(key) ?? "";
   }
 
   String get odomTopic {
-    return prefs.getString("OdomTopic") ?? "/wheel/odometry";
+    return prefs.getString("OdometryTopic") ?? "/wheel/odometry";
   }
 
   void setOdomTopic(String topic) {
-    prefs.setString('OdomTopic', topic);
+    prefs.setString('OdometryTopic', topic);
   }
   //实列
 }

@@ -50,25 +50,24 @@ class RosChannel extends ChangeNotifier {
   late Topic batteryChannel_;
   late Topic imageTopic_;
   Timer? cmdVelTimer;
+
   bool manualCtrlMode_ = false;
-  ValueNotifier<double> battery_ = ValueNotifier(0);
-  ValueNotifier<Uint8List> imageData = ValueNotifier(Uint8List(0));
-  RobotSpeed cmdVel_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
-  double vxLeft_ = 0;
-  ValueNotifier<RobotSpeed> robotSpeed_ =
-      ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
-  String url_ = "";
-  TF2Dart tf_ = TF2Dart();
-  ValueNotifier<OccupancyMap> map_ =
-      ValueNotifier<OccupancyMap>(OccupancyMap());
-  Status rosConnectState_ = Status.none;
+  ValueNotifier<double> battery_          = ValueNotifier(0);
+  ValueNotifier<Uint8List> imageData      = ValueNotifier(Uint8List(0));
+  RobotSpeed cmdVel_                      = RobotSpeed(vx: 0, vy: 0, vw: 0);
+  double vxLeft_                          = 0;
+  ValueNotifier<RobotSpeed> robotSpeed_   = ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
+  String url_                             = "";
+  TF2Dart tf_                             = TF2Dart();
+  ValueNotifier<OccupancyMap>        map_ = ValueNotifier<OccupancyMap>(OccupancyMap());
+  Status rosConnectState_                 = Status.none;
   ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
   ValueNotifier<List<Offset>> laserPoint_ = ValueNotifier([]);
-  ValueNotifier<List<Offset>> localPath = ValueNotifier([]);
-  ValueNotifier<List<Offset>> globalPath = ValueNotifier([]);
-  ValueNotifier<LaserData> laserPointData = ValueNotifier(
-      LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
+  ValueNotifier<List<Offset>> localPath   = ValueNotifier([]);
+  ValueNotifier<List<Offset>> globalPath  = ValueNotifier([]);
+  ValueNotifier<LaserData> laserPointData = ValueNotifier(LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
+
   RosChannel() {
     //启动定时器 获取机器人实时坐标
     globalSetting.init().then((success) {

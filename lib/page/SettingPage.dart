@@ -44,6 +44,8 @@ class _SettingsPageState extends State<SettingsPage> {
   void _saveSettings(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
     // 这里仅作为示例，实际使用时应确保保存的类型与读取的类型一致
+    // 设置不同机器人配置文件，通过init字段来自动那个加载对应机器人配置
+    // 1是ros1通用配置，2 是ros2通用配置，3是turtlebot3, 4是turtlebot4
     if (key == "init"){
       Setting globalSetting = Setting();
       await prefs.setString(key, value);
