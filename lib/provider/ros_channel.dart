@@ -1,6 +1,9 @@
 import 'dart:math';
-
+import 'dart:typed_data';
+import 'dart:ui';
+import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/robot_path.dart';
@@ -17,6 +20,7 @@ import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 import "package:ros_flutter_gui_app/basic/math.dart";
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:image/image.dart' as img;
 
 class LaserData {
   RobotPose robotPose;
@@ -44,7 +48,13 @@ class RosChannel extends ChangeNotifier {
   late Topic speedCtrlChannel_;
   late Topic odomChannel_;
   late Topic batteryChannel_;
+  late Topic imageTopic_;
+  Timer? cmdVelTimer;
+  bool manualCtrlMode_ = false;
   ValueNotifier<double> battery_ = ValueNotifier(0);
+  ValueNotifier<Uint8List> imageData = ValueNotifier(Uint8List(0));
+  RobotSpeed cmdVel_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
+  double vxLeft_ = 0;
   ValueNotifier<RobotSpeed> robotSpeed_ =
       ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
   String url_ = "";
@@ -66,7 +76,8 @@ class RosChannel extends ChangeNotifier {
         connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
           try {
-            currRobotPose_.value = tf_.lookUpForTransform("map", "base_link");
+            currRobotPose_.value = tf_.lookUpForTransform(
+                globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
             Offset poseScene = map_.value
                 .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
             robotPoseScene.value = RobotPose(
@@ -79,19 +90,9 @@ class RosChannel extends ChangeNotifier {
     });
   }
 
-  RobotSpeed get robotSpeed {
-    return robotSpeed_.value;
-  }
-
-  double get battery {
-    return battery_.value;
-  }
-
-
   RobotPose get robotPoseMap {
     return currRobotPose_.value;
   }
-
 
   Future<bool> connect(String url) async {
     rosConnectState_ = Status.none;
@@ -207,6 +208,17 @@ class RosChannel extends ChangeNotifier {
 
     batteryChannel_.subscribe(batteryCallback);
 
+    // imageTopic_ = Topic(
+    //   ros: ros,
+    //   name: globalSetting.imageTopic,
+    //   type: "sensor_msgs/Image",
+    //   reconnectOnClose: true,
+    //   queueLength: 10,
+    //   queueSize: 10,
+    // );
+
+    // imageTopic_.subscribe(imageCallback);
+
 //发布者
     relocChannel_ = Topic(
       ros: ros,
@@ -267,6 +279,39 @@ class RosChannel extends ChangeNotifier {
   void destroyConnection() async {
     await mapChannel_.unsubscribe();
     await ros.close();
+  }
+
+  void setVxRight(double vx) {
+    if (vxLeft_ == 0) {
+      cmdVel_.vx = vx;
+    }
+  }
+
+  void setVx(double vx) {
+    vxLeft_ = vx;
+    cmdVel_.vx = vx;
+  }
+
+  void setVy(double vy) {
+    cmdVel_.vy = vy;
+  }
+
+  void setVw(double vw) {
+    cmdVel_.vw = vw;
+  }
+
+  void startMunalCtrl() {
+    cmdVelTimer =
+        Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+      await sendSpeed(cmdVel_.vx, cmdVel_.vy, cmdVel_.vw);
+    });
+  }
+
+  void stopMunalCtrl() {
+    if (cmdVelTimer != null) {
+      cmdVelTimer!.cancel();
+      cmdVelTimer = null;
+    }
   }
 
   Future<void> sendSpeed(double vx, double vy, double vw) async {
@@ -357,7 +402,10 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> batteryCallback(Map<String, dynamic> message) async {
-    battery_.value = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
+    double percentage = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
+    battery_.value = percentage;
+    // print("battery:$percentage");
+    notifyListeners();
   }
 
   Future<void> odomCallback(Map<String, dynamic> message) async {
@@ -370,12 +418,14 @@ class RosChannel extends ChangeNotifier {
     robotSpeed_.value.vx = vx;
     robotSpeed_.value.vy = vy;
     robotSpeed_.value.vw = vw;
+    // print("vx:$vx,vy:$vy,vw:$vw");
+    notifyListeners();
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
     // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
-    // notifyListeners();
+    notifyListeners();
   }
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
@@ -385,7 +435,7 @@ class RosChannel extends ChangeNotifier {
     String framId = path.header!.frameId!;
     RobotPose transPose = RobotPose(0, 0, 0);
     try {
-      transPose = tf_.lookUpForTransform("map", framId);
+      transPose = tf_.lookUpForTransform(globalSetting.mapFrameName, framId);
     } catch (e) {
       print("not find local path transfrom form:map to:$framId");
       return;
@@ -399,6 +449,7 @@ class RosChannel extends ChangeNotifier {
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       localPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
+    notifyListeners();
   }
 
   Future<void> globalPathCallback(Map<String, dynamic> msg) async {
@@ -421,6 +472,39 @@ class RosChannel extends ChangeNotifier {
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       globalPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
+    notifyListeners();
+  }
+
+  Uint8List _hexToBytes(String hex) {
+    final length = hex.length;
+    final buffer = Uint8List(length ~/ 2);
+    for (int i = 0; i < length; i += 2) {
+      buffer[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
+    }
+    return buffer;
+  }
+
+  Future<void> imageCallback(Map<String, dynamic> msg) async {
+    int width = msg['width'];
+    int height = msg['height'];
+    String encoding = msg['encoding'];
+    String data = msg['data'].asString();
+
+    // Uint8List bytes = _hexToBytes(data);
+    print(data.length);
+    // Uint8L
+    // Uint8List bytes = Uint8List.fromList(data.cast<int>());
+
+    // img.Image? image;
+    // if (encoding == 'rgb8') {
+    //   image = img.Image.fromBytes(width: width, height: height, bytes: bytes);
+    // } else if (encoding == 'mono8') {
+    //   image = img.Image.fromBytes(width, height, bytes,
+    //       format: img.Format.luminance);
+    // } else {
+    //   print('Unsupported image encoding: $encoding');
+    //   return null;
+    // }
   }
 
   Future<void> laserCallback(Map<String, dynamic> msg) async {
@@ -428,8 +512,8 @@ class RosChannel extends ChangeNotifier {
     LaserScan laser = LaserScan.fromJson(msg);
     RobotPose laserPoseBase = RobotPose(0, 0, 0);
     try {
-      laserPoseBase =
-          tf_.lookUpForTransform("base_link", laser.header!.frameId!);
+      laserPoseBase = tf_.lookUpForTransform(
+          globalSetting.baseLinkFrameName, laser.header!.frameId!);
     } catch (e) {
       print("not find transform from:map to ${laser.header!.frameId!}");
       return;
@@ -455,6 +539,7 @@ class RosChannel extends ChangeNotifier {
     }
     laserPointData.value = LaserData(
         robotPose: currRobotPose_.value, laserPoseBaseLink: laserPoint_.value);
+    notifyListeners();
   }
 
   DateTime? _lastMapCallbackTime;
@@ -492,6 +577,7 @@ class RosChannel extends ChangeNotifier {
     }
     map.setFlip();
     map_.value = map;
+    notifyListeners();
   }
 
   String msgReceived = '';
