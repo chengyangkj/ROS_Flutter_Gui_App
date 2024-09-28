@@ -43,7 +43,7 @@
 ![light](./doc/image/white.png)
 
 ![main.gif](./doc/image/main.gif)
-
+![mapping.gif](./doc/image/mapping.gif)
 
 功能/TODO:
   
