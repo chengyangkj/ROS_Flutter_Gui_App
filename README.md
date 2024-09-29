@@ -243,6 +243,36 @@ python -m http.server 8000
 
 ### 1.6.2 turtlebot4仿真机器人
 
+- 针对ignition仿真机器人，请源码安装rosbridge_suite最新版本
+- 需要保证Durability: VOLATILE，如果是Durability: TRANSIENT_LOCAL可能是apt的版本，需要源码安装rosbridge_suite
+
+```
+ros2 topic info /tf --verbose
+
+Node name: rosbridge_websocket
+Node namespace: /
+Topic type: tf2_msgs/msg/TFMessage
+Endpoint type: SUBSCRIPTION
+GID: 01.0f.d8.82.58.3b.ad.2f.00.00.00.00.00.00.15.04.00.00.00.00.00.00.00.00
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+```
+- 利用RCM源码安装rosbridge_suite
+
+```
+#安装rcm
+curl https://www.ncnynl.com/rcm.sh | bash -
+#安装rosbridge_suite
+rcm -s install_ros2_rosbridge_suite
+```
+
+
 - turtlebot4话题清单 
 
 ```
@@ -340,6 +370,236 @@ $ ros2 topic list
 ```
 
 ### 1.6.3 Turtlebot3仿真机器人
+
+-- Turtlebot3话题清单
+
+```
+$ ros2 topic list
+/amcl/transition_event
+/amcl_pose
+/behavior_server/transition_event
+/behavior_tree_log
+/bond
+/bt_navigator/transition_event
+/camera/camera_info
+/camera/depth/camera_info
+/camera/depth/image_raw
+/camera/depth/image_raw/compressed
+/camera/depth/image_raw/compressedDepth
+/camera/depth/image_raw/theora
+/camera/image_raw
+/camera/image_raw/compressed
+/camera/image_raw/compressedDepth
+/camera/image_raw/theora
+/camera/points
+/clicked_point
+/client_count
+/clock
+/cmd_vel
+/cmd_vel_nav
+/connected_clients
+/constraint_list
+/controller_server/transition_event
+/cost_cloud
+/diagnostics
+/downsampled_costmap
+/downsampled_costmap_updates
+/evaluation
+/global_costmap/clearing_endpoints
+/global_costmap/costmap
+/global_costmap/costmap_raw
+/global_costmap/costmap_updates
+/global_costmap/footprint
+/global_costmap/global_costmap/transition_event
+/global_costmap/published_footprint
+/global_costmap/voxel_grid
+/global_costmap/voxel_marked_cloud
+/goal_pose
+/imu
+/initialpose
+/joint_states
+/landmark_poses_list
+/local_costmap/clearing_endpoints
+/local_costmap/costmap
+/local_costmap/costmap_raw
+/local_costmap/costmap_updates
+/local_costmap/footprint
+/local_costmap/local_costmap/transition_event
+/local_costmap/published_footprint
+/local_costmap/voxel_grid
+/local_costmap/voxel_marked_cloud
+/local_plan
+/map
+/map_server/transition_event
+/map_updates
+/marker
+/mobile_base/sensors/bumper_pointcloud
+/odom
+/parameter_events
+/particle_cloud
+/performance_metrics
+/plan
+/plan_smoothed
+/planner_server/transition_event
+/received_global_plan
+/robot_description
+/rosout
+/scan
+/scan_matched_points2
+/smoother_server/transition_event
+/speed_limit
+/submap_list
+/tf
+/tf_static
+/trajectory_node_list
+/transformed_global_plan
+/velocity_smoother/transition_event
+/waypoint_follower/transition_event
+/waypoints
+```
+
+- 设置配置init为3,即自动加载turtlebot3配置
+
+```
+  void setDefaultCfgRos2TB3() {
+    prefs.setString('init', "3");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/odom");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+  } 
+```
+### 1.6.4 jackal仿真机器人
+
+- jackal话题清单
+
+```
+$ ros2 topic list
+/FootprintApproach
+/behavior_server/transition_event
+/behavior_tree_log
+/bond
+/bt_navigator/transition_event
+/clicked_point
+/clock
+/cmd_vel
+/cmd_vel_nav
+/cmd_vel_smoothed
+/cmd_vel_teleop
+/collision_monitor/transition_event
+/controller_selector
+/controller_server/transition_event
+/detected_dock_pose
+/diagnostics
+/dock_pose
+/docking_server/transition_event
+/filtered_dock_pose
+/global_costmap/clearing_endpoints
+/global_costmap/costmap
+/global_costmap/costmap_raw
+/global_costmap/costmap_updates
+/global_costmap/footprint
+/global_costmap/global_costmap/transition_event
+/global_costmap/published_footprint
+/goal_pose
+/initialpose
+/joint_state_broadcaster/transition_event
+/joy_teleop/cmd_vel
+/joy_teleop/emergency_stop
+/joy_teleop/joy
+/joy_teleop/joy/set_feedback
+/local_costmap/clearing_endpoints
+/local_costmap/costmap
+/local_costmap/costmap_raw
+/local_costmap/costmap_updates
+/local_costmap/footprint
+/local_costmap/local_costmap/transition_event
+/local_costmap/published_footprint
+/map
+/map_metadata
+/map_saver/transition_event
+/map_updates
+/odom
+/parameter_events
+/plan
+/plan_smoothed
+/planner_selector
+/planner_server/transition_event
+/platform/cmd_vel_unstamped
+/platform/dynamic_joint_states
+/platform/joint_states
+/platform/odom
+/platform/odom/filtered
+/platform_velocity_controller/transition_event
+/pose
+/preempt_teleop
+/rc_teleop/cmd_vel
+/robot_description
+/rosout
+/sensors/camera_0/camera_info
+/sensors/camera_0/color/image
+/sensors/camera_0/depth/image
+/sensors/camera_0/depth_image/compressed
+/sensors/camera_0/depth_image/compressedDepth
+/sensors/camera_0/depth_image/theora
+/sensors/camera_0/image/compressed
+/sensors/camera_0/image/compressedDepth
+/sensors/camera_0/image/theora
+/sensors/camera_0/points
+/sensors/gps_0/fix
+/sensors/imu_0/data
+/sensors/imu_0/data_raw
+/sensors/imu_1/data
+/sensors/lidar_0/points
+/sensors/lidar_0/scan
+/set_pose
+/slam_toolbox/feedback
+/slam_toolbox/graph_visualization
+/slam_toolbox/scan_visualization
+/slam_toolbox/update
+/smoother_server/transition_event
+/speed_limit
+/staging_pose
+/tf
+/tf_static
+/trajectories
+/transformed_global_plan
+/unsmoothed_plan
+/velocity_smoother/transition_event
+/waypoint_follower/transition_event
+/waypoints
+
+- 设置配置init为5,即自动加载Jackal配置
+
+```
+  void setDefaultCfgRos2Jackal() {
+    prefs.setString('init', "5");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "/sensors/lidar_0/scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/platform/odom/filtered");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+  } 
+```
 
 # 引用
 

@@ -75,12 +75,9 @@ class RosChannel extends ChangeNotifier {
         connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
           try {
-            currRobotPose_.value = tf_.lookUpForTransform(
-                globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
-            Offset poseScene = map_.value
-                .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
-            robotPoseScene.value = RobotPose(
-                poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
+            currRobotPose_.value = tf_.lookUpForTransform(globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
+            Offset poseScene = map_.value.xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
+            robotPoseScene.value = RobotPose(poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
           } catch (e) {
             print("get robot pose error:${e}");
           }
@@ -158,7 +155,7 @@ class RosChannel extends ChangeNotifier {
       queueSize: 1,
       reconnectOnClose: true,
     );
-    tfStaticChannel_.subscribe(tfCallback);
+    tfStaticChannel_.subscribe(tfStaticCallback);
 
     laserChannel_ = Topic(
       ros: ros,
@@ -422,10 +419,16 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
-    // print("${json.encode(msg)}");
+    print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
     notifyListeners();
   }
+
+  Future<void> tfStaticCallback(Map<String, dynamic> msg) async {
+    // print("${json.encode(msg)}");
+    tf_.updateTF(TF.fromJson(msg));
+    notifyListeners();
+  }  
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
     localPath.value.clear();

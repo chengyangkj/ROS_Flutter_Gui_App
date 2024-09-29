@@ -66,7 +66,11 @@ class Setting {
     if (!prefs.containsKey("init") || (prefs.containsKey("init") && prefs.getString("init") == "2"))
     {
       setDefaultCfgRos2();
-    }    
+    }
+    //jackal   
+    else if((prefs.containsKey("init") && prefs.getString("init") == "5")) { 
+      setDefaultCfgRos2Jackal();
+    }     
     //turtlebot4
     else if((prefs.containsKey("init") && prefs.getString("init") == "4")) { 
       setDefaultCfgRos2TB4();
@@ -83,6 +87,24 @@ class Setting {
     } 
     return true;
   }
+
+  void setDefaultCfgRos2Jackal() {
+    prefs.setString('init', "5");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "/sensors/lidar_0/scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/platform/odom/filtered");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+  }  
 
   void setDefaultCfgRos2TB4() {
     prefs.setString('init', "4");
@@ -110,7 +132,7 @@ class Setting {
     prefs.setString('localPathTopic', "/local_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/wheel/odometry");
+    prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
     prefs.setString('MaxVx', "0.1");
