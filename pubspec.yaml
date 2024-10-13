@@ -50,6 +50,7 @@ dependencies:
   wakelock_plus: ^1.2.8
   flame: ^1.19.0
   package_info_plus: ^8.0.2
+  flutter_mjpeg: ^2.0.4
 
 # flutter_icons:
 #   android: true

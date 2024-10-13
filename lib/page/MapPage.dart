@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
+import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
@@ -41,6 +42,13 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       ValueNotifier<List<RobotPose>>([]);
   final ValueNotifier<Matrix4> gestureTransform =
       ValueNotifier(Matrix4.identity());
+
+  bool showCamera = false;
+
+  Offset camPosition = Offset(30, 10); // 初始位置
+  bool isCamFullscreen = false; // 是否全屏
+  Offset camPreviousPosition = Offset(30, 10); // 保存进入全屏前的位置
+  late double camWidgetSize;
 
   Matrix4 cameraFixedTransform = Matrix4.identity(); //固定相机视角(以机器人为中心)
   double cameraFixedScaleValue_ = 1; //固定相机视角时的缩放值
@@ -148,6 +156,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+
+    camWidgetSize = isCamFullscreen ? screenSize.width : screenSize.width / 3.5;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -667,6 +678,76 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   ),
                 ),
               )),
+          //图像
+          Visibility(
+            visible: showCamera, // 根据需要显示或隐藏
+            child: Positioned(
+              left: camPosition.dx,
+              top: camPosition.dy,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  if (!isCamFullscreen) {
+                    setState(() {
+                      double newX = camPosition.dx + details.delta.dx;
+                      double newY = camPosition.dy + details.delta.dy;
+                      // 限制位置在屏幕范围内
+                      newX = newX.clamp(0.0, screenSize.width - camWidgetSize);
+                      newY = newY.clamp(0.0, screenSize.height - camWidgetSize);
+                      camPosition = Offset(newX, newY);
+                    });
+                  }
+                },
+                child: Container(
+                  width: camWidgetSize,
+                  height: camWidgetSize,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    // border: Border.all(color: Colors.blueAccent),
+                  ),
+                  child: Stack(
+                    children: [
+                      Mjpeg(
+                        stream:
+                            'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
+                        isLive: true,
+                        width: camWidgetSize,
+                        height: camWidgetSize,
+                        fit: BoxFit.fill,
+                        // BoxFit.fill：拉伸填充满容器，可能会改变图片的宽高比。
+                        // BoxFit.contain：按照图片的原始比例缩放，直到一边填满容器。
+                        // BoxFit.cover：按照图片的原始比例缩放，直到容器被填满，可能会裁剪图片。
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: IconButton(
+                          icon: Icon(
+                            isCamFullscreen
+                                ? Icons.fullscreen_exit
+                                : Icons.fullscreen,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              isCamFullscreen = !isCamFullscreen;
+                              if (isCamFullscreen) {
+                                // 进入全屏时，保存当前位置，并将位置设为 (0, 0)
+                                camPreviousPosition = camPosition;
+                                camPosition = Offset(0, 0);
+                              } else {
+                                // 退出全屏时，恢复之前的位置
+                                camPosition = camPreviousPosition;
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
           //左侧工具栏
           Positioned(
               left: 5,
@@ -793,6 +874,19 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       },
                     ),
                   ),
+                  //显示相机图像
+                  Card(
+                    elevation: 10,
+                    child: IconButton(
+                      icon: Icon(Icons.camera_alt),
+                      color: showCamera ? Colors.green : theme.iconTheme.color,
+                      onPressed: () {
+                        showCamera = !showCamera;
+                        setState(() {});
+                      },
+                    ),
+                  ),
+
                   //手动控制
                   Card(
                     elevation: 10,

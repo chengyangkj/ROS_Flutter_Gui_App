@@ -33,6 +33,10 @@
         - [1.5.1 地图显示](#151-地图显示)
         - [1.5.2 机器人位置显示](#152-机器人位置显示)
         - [1.5.3 机器人速度控制](#153-机器人速度控制)
+        - [1.5.2 相机图像显示](#152-相机图像显示)
+            - [**ROS 1 安装webvideoserver教程**](#ros-1-安装webvideoserver教程)
+            - [ROS 2 安装webvideoserver教程](#ros-2-安装webvideoserver教程)
+            - [软件配置](#软件配置)
 - [引用](#引用)
 
 <!-- /TOC -->
@@ -40,7 +44,7 @@
 
 *项目截图*
 
-![light](./doc/image/white.png)
+![light](./doc/image/camera.png)
 
 ![main.gif](./doc/image/main.gif)
 ![mapping.gif](./doc/image/mapping.gif)
@@ -63,7 +67,7 @@
 | 机器人导航任务链            |❌    |               |
 | 地图加载                    | ❌    |                      |
 | 地图保存                    | ❌    |                      |
-| 相机图像显示                | ❌    |  |
+| 相机图像显示                | ✅    |  依赖[web_video_server](https://github.com/RobotWebTools/web_video_server.git) 暂不支持web端使用，其余均支持|
 | 机器人车身轮廓显示          | ❌    | 支持配置异形车身     |
 | 图层相机视角调整          | ✅     |      |
 
@@ -192,6 +196,8 @@ python -m http.server 8000
 |maxVw|double|软件手动控制时最大vw速度 |
 |mapFrameName|string|地图坐标系tf fram名|
 |baseLinkFrameName|string|机器人底盘坐标系tf fram名|
+|imagePort|string|相机图像web video server 服务器短裤|
+|imageTopic|string|要展示的相机图像的topic|
 
 设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic的数据：
 ![connect](./images/connect.png)
@@ -213,6 +219,95 @@ python -m http.server 8000
 右侧遥感既可控制机器人速度，又可控制机器人旋转，遥感左上角为正方向，遥感右下角为负方向，左侧为向左旋转，右侧向右旋转，遥感中间为停止。
 
 
+### 1.5.2 相机图像显示
+
+相机图像显示依赖 `web_video_server` 包，这个包会自动将系统中所有的图像topic转换为mjpeg格式的http视频流
+
+以下教程是在 **ROS 1** 和 **ROS 2** 中安装和验证该包的参考方法。
+
+#### **ROS 1 安装web_video_server教程**
+
+1. **安装 `web_video_server` 包**
+
+   在 **ROS 1** 中，运行以下命令安装 `web_video_server` 包：
+
+   ```bash
+   sudo apt install ros-noetic-web-video-server
+   ``
+
+2. 启动相机节点
+
+启动自己的相机节点，确保有图片topic
+
+3. 启动 web_video_server
+
+启动 web_video_server 节点，它将发布图像流供 Web 客户端访问：
+
+```bash
+rosrun web_video_server web_video_server
+```
+
+4. 验证视频流
+
+在 Web 浏览器中打开以下链接，查看视频流（假设相机话题为 /usb_cam/image_raw）：
+
+```bash
+http://localhost:8080/stream?topic=/usb_cam/image_raw
+```
+如果图像正常显示，则 web_video_server 已成功配置。
+
+#### ROS 2 安装web_video_server教程
+安装 web_video_server 包
+
+在 ROS 2 中，您需要从源代码编译 web_video_server。首先，确保您的工作空间已经初始化并设置：
+
+```bash
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+git clone https://github.com/RobotWebTools/web_video_server.git
+```
+1. 安装依赖
+
+安装所需的依赖：
+
+```bash
+cd ~/ros2_ws/
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+2. 编译工作空间
+
+使用 colcon 工具编译工作空间：
+
+```bash
+colcon build
+```
+
+3. 启动相机节点
+
+启动自己的相机节点，确保有图片topic
+
+4. 启动 web_video_server 节点：
+
+```bash
+ros2 run web_video_server web_video_server
+```
+4. 验证视频流
+
+在 Web 浏览器中打开以下链接，查看视频流（假设相机话题为 /usb_cam/image_raw）：
+
+```bash
+http://localhost:8080/stream?topic=/usb_cam/image_raw
+```
+如果图像正常显示，则 web_video_server 已成功配置。
+
+#### 软件配置
+
+在软件中需要配置要显示的话题topic地址，以及web video server的端口（如果更改的话需要修改，默认是8080:
+
+需要配置如下两项：
+- imagePort 相机图像web video server 服务器端口
+- imageTopic 要展示的相机图像的topic
 
 # 引用
 
