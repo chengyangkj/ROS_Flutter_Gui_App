@@ -34,7 +34,7 @@
         - [1.5.2 机器人位置显示](#152-机器人位置显示)
         - [1.5.3 机器人速度控制](#153-机器人速度控制)
         - [1.5.2 相机图像显示](#152-相机图像显示)
-            - [**ROS 1 安装webvideoserver教程**](#ros-1-安装webvideoserver教程)
+            - [ROS 1 安装webvideoserver教程](#ros-1-安装webvideoserver教程)
             - [ROS 2 安装webvideoserver教程](#ros-2-安装webvideoserver教程)
             - [软件配置](#软件配置)
 - [引用](#引用)
@@ -225,7 +225,7 @@ python -m http.server 8000
 
 以下教程是在 **ROS 1** 和 **ROS 2** 中安装和验证该包的参考方法。
 
-#### **ROS 1 安装web_video_server教程**
+#### ROS 1 安装web_video_server教程
 
 1. **安装 `web_video_server` 包**
 
