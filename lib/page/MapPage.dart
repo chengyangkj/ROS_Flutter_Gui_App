@@ -157,6 +157,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    camWidgetWidth = screenSize.width / 3.5;
     camWidgetHeight =
         camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
 
