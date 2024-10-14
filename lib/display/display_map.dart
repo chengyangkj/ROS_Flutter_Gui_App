@@ -13,13 +13,15 @@ class DisplayMap extends StatefulWidget {
 }
 
 class _DisplayMapState extends State<DisplayMap> {
-  List<Offset> occPointList = [];
+  List<MapPoint> occPointList = [];
   List<Offset> freePointList = [];
+
   @override
   void initState() {
     super.initState();
   }
 
+  // 修改处理 map 数据的函数，保存 mapValue 以便后续动态设置透明度
   void _processMapData(OccupancyMap map) {
     occPointList.clear();
     freePointList.clear();
@@ -27,8 +29,10 @@ class _DisplayMapState extends State<DisplayMap> {
       for (int j = 0; j < map.Rows(); j++) {
         int mapValue = map.data[j][i];
         Offset point = Offset(i.toDouble(), j.toDouble());
+
         if (mapValue > 0) {
-          occPointList.add(point);
+          // 使用 MapPoint 保存位置信息以及 mapValue
+          occPointList.add(MapPoint(point: point, value: mapValue));
         } else if (mapValue == 0) {
           freePointList.add(point);
         }
@@ -53,7 +57,7 @@ class _DisplayMapState extends State<DisplayMap> {
                       occPointList: occPointList,
                       freePointList: freePointList,
                       freeColor: theme.colorScheme.surface.withAlpha(98),
-                      occColor: isDarkMode ? Colors.white : Colors.black),
+                      occBaseColor: isDarkMode ? Colors.white : Colors.black),
                 ),
               );
             }));
@@ -61,26 +65,34 @@ class _DisplayMapState extends State<DisplayMap> {
 }
 
 class DisplayMapPainter extends CustomPainter {
-  final List<Offset> occPointList;
+  final List<MapPoint> occPointList;
   final List<Offset> freePointList;
   final Color freeColor;
-  final Color occColor;
+  final Color occBaseColor;
 
   DisplayMapPainter(
       {required this.occPointList,
       required this.freePointList,
       required this.freeColor,
-      required this.occColor});
+      required this.occBaseColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = occColor
       ..strokeCap = StrokeCap.butt
       ..style = PaintingStyle.fill
       ..strokeWidth = 1;
-    canvas.drawPoints(PointMode.points, occPointList, paint);
 
+    // 动态绘制占据区域
+    for (var mapPoint in occPointList) {
+      int alpha =
+          (mapPoint.value * 2.55).clamp(0, 255).toInt(); // 映射到 0-255 的透明度
+      paint.color = occBaseColor.withAlpha(alpha); // 根据透明度设置颜色
+      canvas.drawPoints(
+          PointMode.points, [mapPoint.point], paint); // 使用 drawPoints 绘制单个像素点
+    }
+
+    // 绘制自由区域
     paint.color = freeColor;
     canvas.drawPoints(PointMode.points, freePointList, paint);
   }
@@ -89,4 +101,12 @@ class DisplayMapPainter extends CustomPainter {
   bool shouldRepaint(covariant DisplayMapPainter oldDelegate) {
     return true;
   }
+}
+
+// 新建 MapPoint 类来存储位置信息和值
+class MapPoint {
+  final Offset point;
+  final int value;
+
+  MapPoint({required this.point, required this.value});
 }

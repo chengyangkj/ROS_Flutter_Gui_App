@@ -419,7 +419,7 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
-    print("${json.encode(msg)}");
+    // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
     notifyListeners();
   }
@@ -487,13 +487,13 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> imageCallback(Map<String, dynamic> msg) async {
-    int width = msg['width'];
-    int height = msg['height'];
-    String encoding = msg['encoding'];
-    String data = msg['data'].asString();
+    //int width = msg['width'];
+    // int height = msg['height'];
+    // String encoding = msg['encoding'];
+    // String data = msg['data'].asString();
 
     // Uint8List bytes = _hexToBytes(data);
-    print(data.length);
+    // print(data.length);
     // Uint8L
     // Uint8List bytes = Uint8List.fromList(data.cast<int>());
 

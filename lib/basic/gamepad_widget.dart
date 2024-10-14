@@ -132,6 +132,7 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                           double.parse(globalSetting.getConfig('MaxVw'));
                       double max_vx =
                           double.parse(globalSetting.getConfig('MaxVx'));
+
                       if (details.x.abs() > details.y.abs()) {
                         double vw = max_vw * details.x * -1;
                         Provider.of<RosChannel>(context, listen: false)
@@ -141,8 +142,16 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                         Provider.of<RosChannel>(context, listen: false)
                             .setVxRight(vx);
                       }
+                      
+                      print("right Joystick x:${details.x.abs()}");
+                      print("right Joystick y:${details.y.abs()}");
 
-                      if (details.x == 0) {
+                      if (details.x.abs() == 0) {
+                        Provider.of<RosChannel>(context, listen: false)
+                            .setVx(0);
+                      }
+
+                      if (details.y.abs() == 0) {
                         Provider.of<RosChannel>(context, listen: false)
                             .setVw(0);
                       }

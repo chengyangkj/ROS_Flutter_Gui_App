@@ -11,7 +11,6 @@
 ![linux](https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/linux_build.yaml/badge.svg)
 ![windows](https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/windows_build.yaml/badge.svg)
 
-
 借助ros bridge websocket实现的跨平台flutter gui 人机交互软件
 本项目已接入CI,保证多环境可用,并自动打包多平台二进制Release版本
 
@@ -34,6 +33,10 @@
         - [1.5.1 地图显示](#151-地图显示)
         - [1.5.2 机器人位置显示](#152-机器人位置显示)
         - [1.5.3 机器人速度控制](#153-机器人速度控制)
+        - [1.5.2 相机图像显示](#152-相机图像显示)
+            - [ROS 1 安装webvideoserver教程](#ros-1-安装webvideoserver教程)
+            - [ROS 2 安装webvideoserver教程](#ros-2-安装webvideoserver教程)
+            - [软件配置](#软件配置)
 - [引用](#引用)
 
 <!-- /TOC -->
@@ -41,10 +44,10 @@
 
 *项目截图*
 
-![light](./doc/image/white.png)
+![light](./doc/image/camera.png)
 
 ![main.gif](./doc/image/main.gif)
-
+![mapping.gif](./doc/image/mapping.gif)
 
 功能/TODO:
   
@@ -64,7 +67,7 @@
 | 机器人导航任务链            |❌    |               |
 | 地图加载                    | ❌    |                      |
 | 地图保存                    | ❌    |                      |
-| 相机图像显示                | ❌    |  |
+| 相机图像显示                | ✅    |  依赖[web_video_server](https://github.com/RobotWebTools/web_video_server.git) 暂不支持web端使用，其余均支持|
 | 机器人车身轮廓显示          | ❌    | 支持配置异形车身     |
 | 图层相机视角调整          | ✅     |      |
 
@@ -193,6 +196,8 @@ python -m http.server 8000
 |maxVw|double|软件手动控制时最大vw速度 |
 |mapFrameName|string|地图坐标系tf fram名|
 |baseLinkFrameName|string|机器人底盘坐标系tf fram名|
+|imagePort|string|相机图像web video server 服务器短裤|
+|imageTopic|string|要展示的相机图像的topic|
 
 设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic的数据：
 ![connect](./images/connect.png)
@@ -214,392 +219,95 @@ python -m http.server 8000
 右侧遥感既可控制机器人速度，又可控制机器人旋转，遥感左上角为正方向，遥感右下角为负方向，左侧为向左旋转，右侧向右旋转，遥感中间为停止。
 
 
-## 1.5 机器人
+### 1.5.2 相机图像显示
 
+相机图像显示依赖 `web_video_server` 包，这个包会自动将系统中所有的图像topic转换为mjpeg格式的http视频流
 
-### 1.6.1 walking仿真机器人
+以下教程是在 **ROS 1** 和 **ROS 2** 中安装和验证该包的参考方法。
 
-#### 相关配置
+#### ROS 1 安装web_video_server教程
 
-```
-  void setDefaultCfgRos2() {
-    prefs.setString('init', "2");
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "scan");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/wheel/odometry");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
-  }
-```
+1. **安装 `web_video_server` 包**
 
-### 1.6.2 turtlebot4仿真机器人
+   在 **ROS 1** 中，运行以下命令安装 `web_video_server` 包：
 
-- 针对ignition仿真机器人，请源码安装rosbridge_suite最新版本
-- 需要保证Durability: VOLATILE，如果是Durability: TRANSIENT_LOCAL可能是apt的版本，需要源码安装rosbridge_suite
+   ```bash
+   sudo apt install ros-noetic-web-video-server
+   ``
 
-```
-ros2 topic info /tf --verbose
+2. 启动相机节点
 
-Node name: rosbridge_websocket
-Node namespace: /
-Topic type: tf2_msgs/msg/TFMessage
-Endpoint type: SUBSCRIPTION
-GID: 01.0f.d8.82.58.3b.ad.2f.00.00.00.00.00.00.15.04.00.00.00.00.00.00.00.00
-QoS profile:
-  Reliability: RELIABLE
-  History (Depth): UNKNOWN
-  Durability: VOLATILE
-  Lifespan: Infinite
-  Deadline: Infinite
-  Liveliness: AUTOMATIC
-  Liveliness lease duration: Infinite
-```
-- 利用RCM源码安装rosbridge_suite
+启动自己的相机节点，确保有图片topic
 
-```
-#安装rcm
-curl https://www.ncnynl.com/rcm.sh | bash -
-#安装rosbridge_suite
-rcm -s install_ros2_rosbridge_suite
+3. 启动 web_video_server
+
+启动 web_video_server 节点，它将发布图像流供 Web 客户端访问：
+
+```bash
+rosrun web_video_server web_video_server
 ```
 
+4. 验证视频流
 
-- turtlebot4话题清单 
+在 Web 浏览器中打开以下链接，查看视频流（假设相机话题为 /usb_cam/image_raw）：
 
+```bash
+http://localhost:8080/stream?topic=/usb_cam/image_raw
 ```
-$ ros2 topic list
-/battery_state
-/bumper_contact
-/clicked_point
-/client_count
-/clock
-/cmd_audio
-/cmd_lightring
-/cmd_vel
-/connected_clients
-/diffdrive_controller/cmd_vel_unstamped
-/dock_status
-/downsampled_costmap
-/downsampled_costmap_updates
-/dynamic_joint_states
-/function_calls
-/global_costmap/costmap
-/global_costmap/costmap_updates
-/global_costmap/voxel_marked_cloud
-/hazard_detection
-/hmi/buttons
-/hmi/display
-/hmi/display/message
-/hmi/led
-/initialpose
-/interface_buttons
-/ip
-/ir_intensity
-/ir_opcode
-/joint_states
-/joy
-/kidnap_status
-/local_costmap/costmap
-/local_costmap/costmap_updates
-/local_costmap/published_footprint
-/local_costmap/voxel_marked_cloud
-/local_plan
-/map
-/map_metadata
-/map_updates
-/mobile_base/sensors/bumper_pointcloud
-/mouse
-/oakd/rgb/preview/camera_info
-/oakd/rgb/preview/depth
-/oakd/rgb/preview/depth/points
-/oakd/rgb/preview/image_raw
-/odom
-/parameter_events
-/particle_cloud
-/plan
-/pose
-/robot_description
-/rosout
-/scan
-/sim_ground_truth_dock_pose
-/sim_ground_truth_pose
-/slam_toolbox/feedback
-/slam_toolbox/graph_visualization
-/slam_toolbox/scan_visualization
-/slam_toolbox/update
-/slip_status
-/standard_dock_description
-/stop_status
-/tf
-/tf_static
-/waypoints
-/wheel_status
-/wheel_ticks
-/wheel_vels
+如果图像正常显示，则 web_video_server 已成功配置。
+
+#### ROS 2 安装web_video_server教程
+安装 web_video_server 包
+
+在 ROS 2 中，您需要从源代码编译 web_video_server。首先，确保您的工作空间已经初始化并设置：
+
+```bash
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+git clone https://github.com/RobotWebTools/web_video_server.git
+```
+1. 安装依赖
+
+安装所需的依赖：
+
+```bash
+cd ~/ros2_ws/
+rosdep install --from-paths src --ignore-src -r -y
 ```
 
-- 设置配置init为4,即自动加载turtlebot4配置
+2. 编译工作空间
 
-```
-  void setDefaultCfgRos2TB4() {
-    prefs.setString('init', "4");
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "scan");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/wheel/odometry");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
-  }
+使用 colcon 工具编译工作空间：
+
+```bash
+colcon build
 ```
 
-### 1.6.3 Turtlebot3仿真机器人
+3. 启动相机节点
 
--- Turtlebot3话题清单
+启动自己的相机节点，确保有图片topic
 
+4. 启动 web_video_server 节点：
+
+```bash
+ros2 run web_video_server web_video_server
 ```
-$ ros2 topic list
-/amcl/transition_event
-/amcl_pose
-/behavior_server/transition_event
-/behavior_tree_log
-/bond
-/bt_navigator/transition_event
-/camera/camera_info
-/camera/depth/camera_info
-/camera/depth/image_raw
-/camera/depth/image_raw/compressed
-/camera/depth/image_raw/compressedDepth
-/camera/depth/image_raw/theora
-/camera/image_raw
-/camera/image_raw/compressed
-/camera/image_raw/compressedDepth
-/camera/image_raw/theora
-/camera/points
-/clicked_point
-/client_count
-/clock
-/cmd_vel
-/cmd_vel_nav
-/connected_clients
-/constraint_list
-/controller_server/transition_event
-/cost_cloud
-/diagnostics
-/downsampled_costmap
-/downsampled_costmap_updates
-/evaluation
-/global_costmap/clearing_endpoints
-/global_costmap/costmap
-/global_costmap/costmap_raw
-/global_costmap/costmap_updates
-/global_costmap/footprint
-/global_costmap/global_costmap/transition_event
-/global_costmap/published_footprint
-/global_costmap/voxel_grid
-/global_costmap/voxel_marked_cloud
-/goal_pose
-/imu
-/initialpose
-/joint_states
-/landmark_poses_list
-/local_costmap/clearing_endpoints
-/local_costmap/costmap
-/local_costmap/costmap_raw
-/local_costmap/costmap_updates
-/local_costmap/footprint
-/local_costmap/local_costmap/transition_event
-/local_costmap/published_footprint
-/local_costmap/voxel_grid
-/local_costmap/voxel_marked_cloud
-/local_plan
-/map
-/map_server/transition_event
-/map_updates
-/marker
-/mobile_base/sensors/bumper_pointcloud
-/odom
-/parameter_events
-/particle_cloud
-/performance_metrics
-/plan
-/plan_smoothed
-/planner_server/transition_event
-/received_global_plan
-/robot_description
-/rosout
-/scan
-/scan_matched_points2
-/smoother_server/transition_event
-/speed_limit
-/submap_list
-/tf
-/tf_static
-/trajectory_node_list
-/transformed_global_plan
-/velocity_smoother/transition_event
-/waypoint_follower/transition_event
-/waypoints
-```
+4. 验证视频流
 
-- 设置配置init为3,即自动加载turtlebot3配置
+在 Web 浏览器中打开以下链接，查看视频流（假设相机话题为 /usb_cam/image_raw）：
 
+```bash
+http://localhost:8080/stream?topic=/usb_cam/image_raw
 ```
-  void setDefaultCfgRos2TB3() {
-    prefs.setString('init', "3");
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "scan");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/odom");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
-  } 
-```
-### 1.6.4 jackal仿真机器人
+如果图像正常显示，则 web_video_server 已成功配置。
 
-- jackal话题清单
+#### 软件配置
 
-```
-$ ros2 topic list
-/FootprintApproach
-/behavior_server/transition_event
-/behavior_tree_log
-/bond
-/bt_navigator/transition_event
-/clicked_point
-/clock
-/cmd_vel
-/cmd_vel_nav
-/cmd_vel_smoothed
-/cmd_vel_teleop
-/collision_monitor/transition_event
-/controller_selector
-/controller_server/transition_event
-/detected_dock_pose
-/diagnostics
-/dock_pose
-/docking_server/transition_event
-/filtered_dock_pose
-/global_costmap/clearing_endpoints
-/global_costmap/costmap
-/global_costmap/costmap_raw
-/global_costmap/costmap_updates
-/global_costmap/footprint
-/global_costmap/global_costmap/transition_event
-/global_costmap/published_footprint
-/goal_pose
-/initialpose
-/joint_state_broadcaster/transition_event
-/joy_teleop/cmd_vel
-/joy_teleop/emergency_stop
-/joy_teleop/joy
-/joy_teleop/joy/set_feedback
-/local_costmap/clearing_endpoints
-/local_costmap/costmap
-/local_costmap/costmap_raw
-/local_costmap/costmap_updates
-/local_costmap/footprint
-/local_costmap/local_costmap/transition_event
-/local_costmap/published_footprint
-/map
-/map_metadata
-/map_saver/transition_event
-/map_updates
-/odom
-/parameter_events
-/plan
-/plan_smoothed
-/planner_selector
-/planner_server/transition_event
-/platform/cmd_vel_unstamped
-/platform/dynamic_joint_states
-/platform/joint_states
-/platform/odom
-/platform/odom/filtered
-/platform_velocity_controller/transition_event
-/pose
-/preempt_teleop
-/rc_teleop/cmd_vel
-/robot_description
-/rosout
-/sensors/camera_0/camera_info
-/sensors/camera_0/color/image
-/sensors/camera_0/depth/image
-/sensors/camera_0/depth_image/compressed
-/sensors/camera_0/depth_image/compressedDepth
-/sensors/camera_0/depth_image/theora
-/sensors/camera_0/image/compressed
-/sensors/camera_0/image/compressedDepth
-/sensors/camera_0/image/theora
-/sensors/camera_0/points
-/sensors/gps_0/fix
-/sensors/imu_0/data
-/sensors/imu_0/data_raw
-/sensors/imu_1/data
-/sensors/lidar_0/points
-/sensors/lidar_0/scan
-/set_pose
-/slam_toolbox/feedback
-/slam_toolbox/graph_visualization
-/slam_toolbox/scan_visualization
-/slam_toolbox/update
-/smoother_server/transition_event
-/speed_limit
-/staging_pose
-/tf
-/tf_static
-/trajectories
-/transformed_global_plan
-/unsmoothed_plan
-/velocity_smoother/transition_event
-/waypoint_follower/transition_event
-/waypoints
+在软件中需要配置要显示的话题topic地址，以及web video server的端口（如果更改的话需要修改，默认是8080:
 
-- 设置配置init为5,即自动加载Jackal配置
-
-```
-  void setDefaultCfgRos2Jackal() {
-    prefs.setString('init', "5");
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "/sensors/lidar_0/scan");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/platform/odom/filtered");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
-  } 
-```
+需要配置如下两项：
+- imagePort 相机图像web video server 服务器端口
+- imageTopic 要展示的相机图像的topic
 
 # 引用
 

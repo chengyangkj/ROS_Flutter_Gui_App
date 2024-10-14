@@ -28,6 +28,7 @@ import 'package:ros_flutter_gui_app/display/display_grid.dart';
 import 'package:toast/toast.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:ros_flutter_gui_app/display/display_waypoint.dart';
+import 'package:http/http.dart' as http;
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -146,6 +147,23 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   void _hideContextMenu() {
     _overlayEntry?.remove();
     _overlayEntry = null;
+  }
+
+
+  // 获取图像宽高比的异步方法
+  Future<Size> _getImageSize() async {
+    try {
+      var url = 'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream_viewer?topic=${globalSetting.imageTopic}';
+      print(url);
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final image = await decodeImageFromList(response.bodyBytes);
+        return Size(image.width.toDouble(), image.height.toDouble());
+      }
+    } catch (e) {
+      print('Error fetching image size: $e');
+    }
+    return Size(1, 1); // 默认尺寸防止除以零
   }
 
   @override
@@ -374,7 +392,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                       pose.theta),
                                                   RobotPose(dx, dy, 0));
                                               pose.theta = tmpTheta;
-                                              print("trans pose:${pose}");
+                                              // print("trans pose:${pose}");
                                               setState(() {});
                                             }
                                           },
@@ -678,7 +696,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   ),
                 ),
               )),
-          //图像
+          // 图像
           Visibility(
             visible: showCamera, // 根据需要显示或隐藏
             child: Positioned(
@@ -697,53 +715,60 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     });
                   }
                 },
-                child: Container(
-                  // width: isCamFullscreen ? screenSize.width : camWidgetSize,
-                  // height: isCamFullscreen ? screenSize.height : camWidgetSize,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    // border: Border.all(color: Colors.blueAccent),
-                  ),
-                  child: Stack(
-                    children: [
-                      Mjpeg(
-                        stream:
-                            'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
-                        isLive: true,
+                child: FutureBuilder<Size>(
+                  future: _getImageSize(), // 异步获取图像的宽高
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      double aspectRatio = snapshot.data!.width / snapshot.data!.height;
+                      return Container(
                         width: isCamFullscreen ? screenSize.width : camWidgetSize,
                         height: isCamFullscreen ? screenSize.height : camWidgetSize,
-                        fit: BoxFit.contain,
-                        // BoxFit.fill：拉伸填充满容器，可能会改变图片的宽高比。
-                        // BoxFit.contain：按照图片的原始比例缩放，直到一边填满容器。
-                        // BoxFit.cover：按照图片的原始比例缩放，直到容器被填满，可能会裁剪图片。
-                      ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: IconButton(
-                          icon: Icon(
-                            isCamFullscreen
-                                ? Icons.fullscreen_exit
-                                : Icons.fullscreen,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              isCamFullscreen = !isCamFullscreen;
-                              if (isCamFullscreen) {
-                                // 进入全屏时，保存当前位置，并将位置设为 (0, 0)
-                                camPreviousPosition = camPosition;
-                                camPosition = Offset(0, 0);
-                              } else {
-                                // 退出全屏时，恢复之前的位置
-                                camPosition = camPreviousPosition;
-                              }
-                            });
-                          },
+                        decoration: BoxDecoration(
+                          color: Colors.black,
                         ),
-                      ),
-                    ],
-                  ),
+                        child: AspectRatio(
+                          aspectRatio: aspectRatio, // 使用自动获取的宽高比
+                          child: Stack(
+                            children: [
+                              Mjpeg(
+                                stream:'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream_viewer?topic=${globalSetting.imageTopic}',
+                                isLive: true,
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: IconButton(
+                                  icon: Icon(
+                                    isCamFullscreen
+                                        ? Icons.fullscreen_exit
+                                        : Icons.fullscreen,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      isCamFullscreen = !isCamFullscreen;
+                                      if (isCamFullscreen) {
+                                        // 进入全屏时，保存当前位置，并将位置设为 (0, 0)
+                                        camPreviousPosition = camPosition;
+                                        camPosition = Offset(0, 0);
+                                      } else {
+                                        // 退出全屏时，恢复之前的位置
+                                        camPosition = camPreviousPosition;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else {
+                      // 显示加载指示器或占位符
+                      return Center(child: CircularProgressIndicator());
+                    }
+                  },
                 ),
               ),
             ),

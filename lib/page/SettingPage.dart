@@ -46,8 +46,11 @@ class _SettingsPageState extends State<SettingsPage> {
     // 这里仅作为示例，实际使用时应确保保存的类型与读取的类型一致
     // 设置不同机器人配置文件，通过init字段来自动那个加载对应机器人配置
     // 1是ros1通用配置，2 是ros2通用配置，3是turtlebot3, 4是turtlebot4
-    if (key == "init"){
+    print("key:${key}, value:${value}");
+
+    if (key == "init" && value != ""){
       Setting globalSetting = Setting();
+
       await prefs.setString(key, value);
       await initGlobalSetting();
       _loadSettings();

@@ -698,8 +698,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   }
                 },
                 child: Container(
-                  // width: isCamFullscreen ? screenSize.width : camWidgetSize,
-                  // height: isCamFullscreen ? screenSize.height : camWidgetSize,
+                  width: camWidgetSize,
+                  height: camWidgetSize,
                   decoration: BoxDecoration(
                     color: Colors.black,
                     // border: Border.all(color: Colors.blueAccent),
@@ -710,9 +710,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         stream:
                             'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
                         isLive: true,
-                        width: isCamFullscreen ? screenSize.width : camWidgetSize,
-                        height: isCamFullscreen ? screenSize.height : camWidgetSize,
-                        fit: BoxFit.contain,
+                        width: camWidgetSize,
+                        height: camWidgetSize,
+                        fit: BoxFit.fill,
                         // BoxFit.fill：拉伸填充满容器，可能会改变图片的宽高比。
                         // BoxFit.contain：按照图片的原始比例缩放，直到一边填满容器。
                         // BoxFit.cover：按照图片的原始比例缩放，直到容器被填满，可能会裁剪图片。
