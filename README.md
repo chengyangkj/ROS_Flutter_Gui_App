@@ -198,6 +198,8 @@ python -m http.server 8000
 |baseLinkFrameName|string|机器人底盘坐标系tf fram名|
 |imagePort|string|相机图像web video server 服务器短裤|
 |imageTopic|string|要展示的相机图像的topic|
+|imageWidth|int|要展示的相机图像的宽默认640|
+|imageHeight|int|要展示的相机图像的高默认480|
 
 设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic的数据：
 ![connect](./images/connect.png)
@@ -233,7 +235,7 @@ python -m http.server 8000
 
    ```bash
    sudo apt install ros-noetic-web-video-server
-   ``
+   ```
 
 2. 启动相机节点
 
@@ -308,6 +310,8 @@ http://localhost:8080/stream?topic=/usb_cam/image_raw
 需要配置如下两项：
 - imagePort 相机图像web video server 服务器端口
 - imageTopic 要展示的相机图像的topic
+- imageWidth 要展示的相机图像的宽默认640
+- imageHeight 要展示的相机图像的高默认480
 
 # 引用
 

@@ -22,7 +22,7 @@ class _GamepadWidgetState extends State<GamepadWidget> {
   StreamSubscription<GamepadEvent>? _subscription;
   ValueNotifier<String> eventString = ValueNotifier("");
 
-  double joystickWidgetSize = 200;
+  double joystickWidgetSize = 150;
 
   Map<KeyName, JoyStickEvent> eventMap = {};
 
@@ -99,20 +99,22 @@ class _GamepadWidgetState extends State<GamepadWidget> {
             Positioned(
               left: 30,
               bottom: 10,
-              child: Container(
-                width: joystickWidgetSize,
-                height: joystickWidgetSize,
-                child: Joystick(
-                  // includeInitialAnimation: false,
-                  controller: leftJoystickController,
-                  mode: JoystickMode.vertical,
-                  listener: (details) {
-                    double max_vx =
-                        double.parse(globalSetting.getConfig('MaxVx'));
-                    print("left joystick: ${details.y}");
-                    double vx = max_vx * details.y * -1;
-                    Provider.of<RosChannel>(context, listen: false).setVx(vx);
-                  },
+              child: Opacity(
+                opacity: 1,
+                child: Container(
+                  width: joystickWidgetSize,
+                  height: joystickWidgetSize,
+                  child: Joystick(
+                    controller: leftJoystickController,
+                    mode: JoystickMode.vertical,
+                    includeInitialAnimation: false,
+                    listener: (details) {
+                      double max_vx =
+                          double.parse(globalSetting.getConfig('MaxVx'));
+                      double vx = max_vx * details.y * -1;
+                      Provider.of<RosChannel>(context, listen: false).setVx(vx);
+                    },
+                  ),
                 ),
               ),
             ),
@@ -124,30 +126,33 @@ class _GamepadWidgetState extends State<GamepadWidget> {
               child: Container(
                   width: joystickWidgetSize,
                   height: joystickWidgetSize,
-                  child: Joystick(
-                    controller: rightJoystickController,
-                    mode: JoystickMode.all,
-                    listener: (details) {
-                      double max_vw =
-                          double.parse(globalSetting.getConfig('MaxVw'));
-                      double max_vx =
-                          double.parse(globalSetting.getConfig('MaxVx'));
-                      if (details.x.abs() > details.y.abs()) {
-                        double vw = max_vw * details.x * -1;
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVw(vw);
-                      } else if (details.x.abs() < details.y.abs()) {
-                        double vx = max_vx * details.y * -1;
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVxRight(vx);
-                      }
+                  child: Opacity(
+                      opacity: 1,
+                      child: Joystick(
+                        controller: rightJoystickController,
+                        includeInitialAnimation: false,
+                        mode: JoystickMode.all,
+                        listener: (details) {
+                          double max_vw =
+                              double.parse(globalSetting.getConfig('MaxVw'));
+                          double max_vx =
+                              double.parse(globalSetting.getConfig('MaxVx'));
+                          if (details.x.abs() > details.y.abs()) {
+                            double vw = max_vw * details.x * -1;
+                            Provider.of<RosChannel>(context, listen: false)
+                                .setVw(vw);
+                          } else if (details.x.abs() < details.y.abs()) {
+                            double vx = max_vx * details.y * -1;
+                            Provider.of<RosChannel>(context, listen: false)
+                                .setVxRight(vx);
+                          }
 
-                      if (details.x == 0) {
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVw(0);
-                      }
-                    },
-                  )),
+                          if (details.x == 0) {
+                            Provider.of<RosChannel>(context, listen: false)
+                                .setVw(0);
+                          }
+                        },
+                      ))),
             ),
             Positioned(
               bottom: 10,

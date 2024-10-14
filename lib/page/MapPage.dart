@@ -48,7 +48,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   Offset camPosition = Offset(30, 10); // 初始位置
   bool isCamFullscreen = false; // 是否全屏
   Offset camPreviousPosition = Offset(30, 10); // 保存进入全屏前的位置
-  late double camWidgetSize;
+  late double camWidgetWidth;
+  late double camWidgetHeight;
 
   Matrix4 cameraFixedTransform = Matrix4.identity(); //固定相机视角(以机器人为中心)
   double cameraFixedScaleValue_ = 1; //固定相机视角时的缩放值
@@ -156,8 +157,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-
-    camWidgetSize = isCamFullscreen ? screenSize.width : screenSize.width / 3.5;
+    camWidgetHeight =
+        camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
 
     return Scaffold(
       body: Stack(
@@ -691,31 +692,38 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       double newX = camPosition.dx + details.delta.dx;
                       double newY = camPosition.dy + details.delta.dy;
                       // 限制位置在屏幕范围内
-                      newX = newX.clamp(0.0, screenSize.width - camWidgetSize);
-                      newY = newY.clamp(0.0, screenSize.height - camWidgetSize);
+                      newX = newX.clamp(0.0, screenSize.width - camWidgetWidth);
+                      newY =
+                          newY.clamp(0.0, screenSize.height - camWidgetHeight);
                       camPosition = Offset(newX, newY);
                     });
                   }
                 },
                 child: Container(
-                  width: camWidgetSize,
-                  height: camWidgetSize,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    // border: Border.all(color: Colors.blueAccent),
-                  ),
                   child: Stack(
                     children: [
-                      Mjpeg(
-                        stream:
-                            'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
-                        isLive: true,
-                        width: camWidgetSize,
-                        height: camWidgetSize,
-                        fit: BoxFit.fill,
-                        // BoxFit.fill：拉伸填充满容器，可能会改变图片的宽高比。
-                        // BoxFit.contain：按照图片的原始比例缩放，直到一边填满容器。
-                        // BoxFit.cover：按照图片的原始比例缩放，直到容器被填满，可能会裁剪图片。
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          // 在非全屏状态下，获取屏幕宽高
+                          double containerWidth = isCamFullscreen
+                              ? screenSize.width
+                              : camWidgetWidth;
+                          double containerHeight = isCamFullscreen
+                              ? screenSize.height
+                              : camWidgetHeight;
+
+                          return Mjpeg(
+                            stream:
+                                'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
+                            isLive: true,
+                            width: containerWidth,
+                            height: containerHeight,
+                            fit: BoxFit.fill,
+                            // BoxFit.fill：拉伸填充满容器，可能会改变图片的宽高比。
+                            // BoxFit.contain：按照图片的原始比例缩放，直到一边填满容器。
+                            // BoxFit.cover：按照图片的原始比例缩放，直到容器被填满，可能会裁剪图片。
+                          );
+                        },
                       ),
                       Positioned(
                         right: 0,
@@ -725,8 +733,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             isCamFullscreen
                                 ? Icons.fullscreen_exit
                                 : Icons.fullscreen,
-                            color: Colors.white,
+                            color: Colors.black,
                           ),
+                          constraints: BoxConstraints(), // 移除按钮的默认大小约束，变得更加紧凑
                           onPressed: () {
                             setState(() {
                               isCamFullscreen = !isCamFullscreen;
