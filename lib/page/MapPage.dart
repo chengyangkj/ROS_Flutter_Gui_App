@@ -64,7 +64,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   final ValueNotifier<bool> hasReachedGoal_ = ValueNotifier(false);
   final ValueNotifier<double> currentRobotSpeed_ = ValueNotifier(0);
 
-  bool isLandscape = false; // 用于跟踪屏幕方向  
+  bool isLandscape = false; // 用于跟踪屏幕方向
   int poseDirectionSwellSize = 10; //机器人方向旋转控件膨胀的大小
   double navPoseSize = 15; //导航点的大小
   double robotSize = 20; //机器人坐标的大小
@@ -96,13 +96,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               cameraFixedScaleValue_ =
                   animationValue.value; // 更新 cameraFixedScaleValue_
             });
-          });    // 监听 robotPose_ 的变化，判断是否达到目标点
+          }); // 监听 robotPose_ 的变化，判断是否达到目标点
     robotPose_.addListener(() {
       // 获取机器人当前速度
       double distance = calculateDistance(robotPose_.value, currentNavGoal_);
 
       // 如果距离小于0.5，判断速度为0时候， 表示已达到目标点
-      if ( currentRobotSpeed_.value < 0.001 && rad2deg(currentRobotSpeed_.value) < 0.01 ) {
+      if (currentRobotSpeed_.value < 0.001 &&
+          rad2deg(currentRobotSpeed_.value) < 0.01) {
         hasReachedGoal_.value = true;
       } else {
         hasReachedGoal_.value = false;
@@ -120,7 +121,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   double calculateDistance(RobotPose pose1, RobotPose pose2) {
     double dx = pose1.x - pose2.x;
     double dy = pose1.y - pose2.y;
-    return sqrt(dx * dx + dy * dy);  }
+    return sqrt(dx * dx + dy * dy);
+  }
 
   void _showContextMenu(BuildContext context, Offset position) {
     final overlay =
@@ -174,7 +176,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     _overlayEntry?.remove();
     _overlayEntry = null;
   }
-   // 显示航点编辑窗口的方法
+
+  // 显示航点编辑窗口的方法
   void showEditNavigationPoints(BuildContext context) {
     showDialog(
       context: context,
@@ -412,6 +415,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     ToastContext().init(context);
@@ -608,37 +612,35 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   transform: globalTransform,
                                   origin: originPose,
                                   child: Transform(
-                                      alignment: Alignment.center,
-                                      transform: Matrix4.identity()
-                                        ..translate(
-                                            pose.x -
-                                                navPoseSize / 2 -
-                                                poseDirectionSwellSize / 2,
-                                            pose.y -
-                                                navPoseSize / 2 -
-                                                poseDirectionSwellSize / 2)
-                                        ..rotateZ(-pose.theta),
-                                      child: MatrixGestureDetector(
-                                          onMatrixUpdate: (matrix, transDelta,
-                                              scaleDelta, rotateDelta) {
-                                            // print("transDelta:${transDelta}");
-                                            if (Provider.of<GlobalState>(
-                                                        context,
-                                                        listen: false)
-                                                    .mode
-                                                    .value ==
-                                                Mode.addNavPoint) {
-                                              //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                              double dx =
-                                                  transDelta.dx / scaleValue;
-                                              double dy =
-                                                  transDelta.dy / scaleValue;
-                                              double tmpTheta = pose.theta;
-                                              pose = absoluteSum(
-                                                  RobotPose(pose.x, pose.y,
-                                                      pose.theta),
-                                                  RobotPose(dx, dy, 0));
-                                              pose.theta = tmpTheta;
+                                    alignment: Alignment.center,
+                                    transform: Matrix4.identity()
+                                      ..translate(
+                                          pose.x -
+                                              navPoseSize / 2 -
+                                              poseDirectionSwellSize / 2,
+                                          pose.y -
+                                              navPoseSize / 2 -
+                                              poseDirectionSwellSize / 2)
+                                      ..rotateZ(-pose.theta),
+                                    child: MatrixGestureDetector(
+                                      onMatrixUpdate: (matrix, transDelta,
+                                          scaleDelta, rotateDelta) {
+                                        if (Provider.of<GlobalState>(context,
+                                                    listen: false)
+                                                .mode
+                                                .value ==
+                                            Mode.addNavPoint) {
+                                          // 移动距离的delta距离需要除于当前的scale的值
+                                          double dx =
+                                              transDelta.dx / scaleValue;
+                                          double dy =
+                                              transDelta.dy / scaleValue;
+                                          double tmpTheta = pose.theta;
+                                          pose = absoluteSum(
+                                              RobotPose(
+                                                  pose.x, pose.y, pose.theta),
+                                              RobotPose(dx, dy, 0));
+                                          pose.theta = tmpTheta;
                                           setState(() {});
                                         }
                                       },
@@ -669,70 +671,70 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                 details.delta.dy / scaleValue;
                                             pose.x += dx;
                                             pose.y += dy;
-                                              setState(() {});
-                                            }
-                                          },
-                                          child: Container(
-                                            height: navPoseSize +
-                                                poseDirectionSwellSize,
-                                            width: navPoseSize +
-                                                poseDirectionSwellSize,
-                                            child: Stack(
-                                              alignment: Alignment.center,
-                                              children: [
-                                                Visibility(
-                                                    visible:
-                                                        Provider.of<GlobalState>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .mode
-                                                                .value ==
-                                                            Mode.addNavPoint,
-                                                    child: DisplayPoseDirection(
-                                                      size: navPoseSize +
-                                                          poseDirectionSwellSize,
-                                                      initAngle: -pose.theta,
-                                                      resetAngle: false,
-                                                      onRotateCallback:
-                                                          (angle) {
-                                                        pose.theta = -angle;
-                                                        setState(() {});
-                                                      },
-                                                    )),
-                                                GestureDetector(
-                                                    onTapDown: (details) {
-                                                      if (Provider.of<GlobalState>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .mode
-                                                              .value ==
-                                                          Mode.noraml) {
-                                                        // _showContextMenu(context,
-                                                        //     details.globalPosition);
-                                                        Provider.of<RosChannel>(
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: Container(
+                                          height: navPoseSize +
+                                              poseDirectionSwellSize,
+                                          width: navPoseSize +
+                                              poseDirectionSwellSize,
+                                          child: Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              Visibility(
+                                                visible:
+                                                    Provider.of<GlobalState>(
                                                                 context,
                                                                 listen: false)
-                                                            .sendNavigationGoal(
-                                                                RobotPose(
-                                                                    pose.x,
-                                                                    pose.y,
-                                                                    pose.theta));
-                                                        currentNavGoal_ = pose;
-                                                        setState(() {});
-                                                      }
-                                                    },
-                                                    child: DisplayWayPoint(
-                                                      size: navPoseSize,
-                                                      color: currentNavGoal_ ==
-                                                              pose
-                                                          ? Colors.pink
-                                                          : Colors.green,
-                                                      count: 4,
-                                                    )),
-                                              ],
-                                            ),
-                                          ))),
+                                                            .mode
+                                                            .value ==
+                                                        Mode.addNavPoint,
+                                                child: DisplayPoseDirection(
+                                                  size: navPoseSize +
+                                                      poseDirectionSwellSize,
+                                                  initAngle: -pose.theta,
+                                                  resetAngle: false,
+                                                  onRotateCallback: (angle) {
+                                                    pose.theta = -angle;
+                                                    setState(() {});
+                                                  },
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTapDown: (details) {
+                                                  if (Provider.of<GlobalState>(
+                                                              context,
+                                                              listen: false)
+                                                          .mode
+                                                          .value ==
+                                                      Mode.normal) {
+                                                    Provider.of<RosChannel>(
+                                                            context,
+                                                            listen: false)
+                                                        .sendNavigationGoal(
+                                                            RobotPose(
+                                                                pose.x,
+                                                                pose.y,
+                                                                pose.theta));
+                                                    currentNavGoal_ = pose;
+                                                    setState(() {});
+                                                  }
+                                                },
+                                                child: DisplayWayPoint(
+                                                  size: navPoseSize,
+                                                  color: currentNavGoal_ == pose
+                                                      ? Colors.pink
+                                                      : Colors.green,
+                                                  count: 4,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               //机器人位置（固定视角）
