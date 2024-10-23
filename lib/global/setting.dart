@@ -105,7 +105,9 @@ class Setting {
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw");       
+    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);      
   }  
 
   void setDefaultCfgRos2TB4() {
@@ -125,7 +127,9 @@ class Setting {
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw");      
+    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);     
   }
 
   void setDefaultCfgRos2TB3() {
@@ -145,7 +149,9 @@ class Setting {
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw");    
+    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);   
   }  
 
   void setDefaultCfgRos2() {
@@ -166,6 +172,8 @@ class Setting {
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
     prefs.setString('imageTopic', "/camera/image_raw");  
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);
   }
 
   void setDefaultCfgRos1() {
@@ -186,6 +194,8 @@ class Setting {
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
     prefs.setString('imageTopic', "/camera/rgb/image_raw");
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);
   }
 
   SharedPreferences get config {
@@ -197,6 +207,13 @@ class Setting {
     prefs.setString('robotIp', ip);
   }
 
+  double get imageWidth {
+    return prefs.getDouble("imageWidth") ?? 640;
+  }
+
+  double get imageHeight {
+    return prefs.getDouble("imageHeight") ?? 480;
+  }
   String get robotIp {
     return prefs.getString("robotIp") ?? "127.0.0.1";
   }
