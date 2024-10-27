@@ -10,10 +10,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
-import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
-import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/math.dart';
 import 'package:ros_flutter_gui_app/basic/matrix_gesture_detector.dart';
@@ -61,8 +59,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   final ValueNotifier<RobotPose> robotPose_ = ValueNotifier(RobotPose(0, 0, 0));
   final ValueNotifier<double> gestureScaleValue_ = ValueNotifier(1);
+
   OverlayEntry? _overlayEntry;
   RobotPose currentNavGoal_ = RobotPose.zero();
+
   // 定义一个变量用于表示是否达到目标点
   final ValueNotifier<bool> hasReachedGoal_ = ValueNotifier(false);
   final ValueNotifier<double> currentRobotSpeed_ = ValueNotifier(0);
@@ -99,14 +99,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               cameraFixedScaleValue_ =
                   animationValue.value; // 更新 cameraFixedScaleValue_
             });
-          }); // 监听 robotPose_ 的变化，判断是否达到目标点
+          });
+
+    // 监听 robotPose_ 的变化，判断是否达到目标点
     robotPose_.addListener(() {
       // 获取机器人当前速度
       double distance = calculateDistance(robotPose_.value, currentNavGoal_);
 
       // 如果距离小于0.5，判断速度为0时候， 表示已达到目标点
-      if (currentRobotSpeed_.value < 0.001 &&
-          rad2deg(currentRobotSpeed_.value) < 0.01) {
+      if ( currentRobotSpeed_.value < 0.001 && rad2deg(currentRobotSpeed_.value) < 0.01 ) {
         hasReachedGoal_.value = true;
       } else {
         hasReachedGoal_.value = false;
@@ -430,9 +431,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     camWidgetWidth = screenSize.width / 3.5;
     camWidgetHeight =
         camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
-    camWidgetWidth = screenSize.width / 3.5;
-    camWidgetHeight =
-        camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
 
     return Scaffold(
       body: Stack(
@@ -612,7 +610,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                   pointList: laserPointsScene));
                                         })),
                               ),
-                              //导航点
                               ...navPointList_.value.map((pose) {
                                 return Transform(
                                   transform: globalTransform,

@@ -50,25 +50,24 @@ class RosChannel extends ChangeNotifier {
   late Topic batteryChannel_;
   late Topic imageTopic_;
   Timer? cmdVelTimer;
+
   bool manualCtrlMode_ = false;
-  ValueNotifier<double> battery_ = ValueNotifier(0);
-  ValueNotifier<Uint8List> imageData = ValueNotifier(Uint8List(0));
-  RobotSpeed cmdVel_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
-  double vxLeft_ = 0;
-  ValueNotifier<RobotSpeed> robotSpeed_ =
-      ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
-  String url_ = "";
-  TF2Dart tf_ = TF2Dart();
-  ValueNotifier<OccupancyMap> map_ =
-      ValueNotifier<OccupancyMap>(OccupancyMap());
-  Status rosConnectState_ = Status.none;
+  ValueNotifier<double> battery_          = ValueNotifier(0);
+  ValueNotifier<Uint8List> imageData      = ValueNotifier(Uint8List(0));
+  RobotSpeed cmdVel_                      = RobotSpeed(vx: 0, vy: 0, vw: 0);
+  double vxLeft_                          = 0;
+  ValueNotifier<RobotSpeed> robotSpeed_   = ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
+  String url_                             = "";
+  TF2Dart tf_                             = TF2Dart();
+  ValueNotifier<OccupancyMap>        map_ = ValueNotifier<OccupancyMap>(OccupancyMap());
+  Status rosConnectState_                 = Status.none;
   ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
   ValueNotifier<List<Offset>> laserPoint_ = ValueNotifier([]);
-  ValueNotifier<List<Offset>> localPath = ValueNotifier([]);
-  ValueNotifier<List<Offset>> globalPath = ValueNotifier([]);
-  ValueNotifier<LaserData> laserPointData = ValueNotifier(
-      LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
+  ValueNotifier<List<Offset>> localPath   = ValueNotifier([]);
+  ValueNotifier<List<Offset>> globalPath  = ValueNotifier([]);
+  ValueNotifier<LaserData> laserPointData = ValueNotifier(LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
+
   RosChannel() {
     //启动定时器 获取机器人实时坐标
     globalSetting.init().then((success) {
@@ -76,12 +75,9 @@ class RosChannel extends ChangeNotifier {
         connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
           try {
-            currRobotPose_.value = tf_.lookUpForTransform(
-                globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
-            Offset poseScene = map_.value
-                .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
-            robotPoseScene.value = RobotPose(
-                poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
+            currRobotPose_.value = tf_.lookUpForTransform(globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
+            Offset poseScene = map_.value.xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
+            robotPoseScene.value = RobotPose(poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
           } catch (e) {
             print("get robot pose error:${e}");
           }
@@ -159,7 +155,7 @@ class RosChannel extends ChangeNotifier {
       queueSize: 1,
       reconnectOnClose: true,
     );
-    tfStaticChannel_.subscribe(tfCallback);
+    tfStaticChannel_.subscribe(tfStaticCallback);
 
     laserChannel_ = Topic(
       ros: ros,
@@ -250,7 +246,7 @@ class RosChannel extends ChangeNotifier {
     vm.Quaternion quaternion = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
-        "seq": 0,
+        // "seq": 0,
         "stamp": {
           "secs": DateTime.now().second,
           "nsecs": DateTime.now().millisecond * 1000000
@@ -279,6 +275,12 @@ class RosChannel extends ChangeNotifier {
   void destroyConnection() async {
     await mapChannel_.unsubscribe();
     await ros.close();
+  }
+
+  void setVxRight(double vx) {
+    if (vxLeft_ == 0) {
+      cmdVel_.vx = vx;
+    }
   }
 
   void setVxRight(double vx) {
@@ -337,7 +339,7 @@ class RosChannel extends ChangeNotifier {
     vm.Quaternion quation = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
-        "seq": 0,
+        // "seq": 0,
         "stamp": {
           "secs": DateTime.now().second,
           "nsecs": DateTime.now().millisecond * 1000000
@@ -402,7 +404,10 @@ class RosChannel extends ChangeNotifier {
   }
 
   Future<void> batteryCallback(Map<String, dynamic> message) async {
-    battery_.value = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
+    double percentage = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
+    battery_.value = percentage;
+    // print("battery:$percentage");
+    notifyListeners();
   }
 
   Future<void> odomCallback(Map<String, dynamic> message) async {
@@ -415,6 +420,7 @@ class RosChannel extends ChangeNotifier {
     robotSpeed_.value.vx = vx;
     robotSpeed_.value.vy = vy;
     robotSpeed_.value.vw = vw;
+    // print("vx:$vx,vy:$vy,vw:$vw");
     notifyListeners();
   }
 
@@ -423,6 +429,12 @@ class RosChannel extends ChangeNotifier {
     tf_.updateTF(TF.fromJson(msg));
     notifyListeners();
   }
+
+  Future<void> tfStaticCallback(Map<String, dynamic> msg) async {
+    // print("${json.encode(msg)}");
+    tf_.updateTF(TF.fromJson(msg));
+    notifyListeners();
+  }  
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
     localPath.value.clear();
@@ -485,8 +497,13 @@ class RosChannel extends ChangeNotifier {
     // int height = msg['height'];
     // String encoding = msg['encoding'];
     // String data = msg['data'].asString();
+    //int width = msg['width'];
+    // int height = msg['height'];
+    // String encoding = msg['encoding'];
+    // String data = msg['data'].asString();
 
     // Uint8List bytes = _hexToBytes(data);
+    // print(data.length);
     // print(data.length);
     // Uint8L
     // Uint8List bytes = Uint8List.fromList(data.cast<int>());
