@@ -42,6 +42,7 @@
 <!-- /TOC -->
 
 
+
 *项目截图*
 
 ![light](./doc/image/camera.png)
@@ -180,7 +181,7 @@ python -m http.server 8000
 设置界面：
 ![setting_button](./doc/image/setting_list.png)
 
-配置说明
+## 1.5 配置说明
 |配置名|消息类型|说明|
 |---|---|---|
 |battery_topic|sensor_msgs/BatteryState|机器人电池电量的topic，软件订阅 |
@@ -201,28 +202,29 @@ python -m http.server 8000
 |imageTopic|string|要展示的相机图像的topic|
 |imageWidth|int|要展示的相机图像的宽默认640|
 |imageHeight|int|要展示的相机图像的高默认480|
+|ConfigTemplate|string|模板配置，软件在升级与初始化时，会根据此模板配置做初始化支持类型("turtlebot3:ros2","turtlebot3:ros1","jackal","turtlebot4","walking")|
 
 设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic的数据：
 ![connect](./images/connect.png)
 
-## 1.5 功能说明
+## 1.6 功能说明
 
-### 1.5.1 地图显示
+### 1.6.1 地图显示
 
 软件会自动订阅设置的地图topic，配置项[mapTopic]，并显示地图数据，地图数据会以2D栅格的形式显示在界面上，点击地图上的栅格，会显示栅格的坐标和栅格的值。
 
-### 1.5.2 机器人位置显示
+### 1.6.2 机器人位置显示
 
 软件订阅ros的tf，手动构建tf树，实现tf2_dart类，通过tf2_dart类，可以获取机器人在地图上的位置，并显示在界面上。
 
-### 1.5.3 机器人速度控制
+### 1.6.3 机器人速度控制
 
 软件会自动发布设置的手动控制速度，配置项[SpeedCtrlTopic]，并显示机器人速度控制数据，点击界面上的速度控制按钮，可以控制机器人的速度。
 左侧遥感可以控制机器人的速度，遥感左上角为正方向，遥感右下角为负方向，遥感中间为停止。
 右侧遥感既可控制机器人速度，又可控制机器人旋转，遥感左上角为正方向，遥感右下角为负方向，左侧为向左旋转，右侧向右旋转，遥感中间为停止。
 
 
-### 1.5.2 相机图像显示
+### 1.6.4 相机图像显示
 
 相机图像显示依赖 `web_video_server` 包，这个包会自动将系统中所有的图像topic转换为mjpeg格式的http视频流
 
