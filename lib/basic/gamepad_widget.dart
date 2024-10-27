@@ -147,7 +147,7 @@ class _GamepadWidgetState extends State<GamepadWidget> {
 
                       if (details.x.abs() == 0) {
                         Provider.of<RosChannel>(context, listen: false)
-                            .setVx(0);
+                            .setVxRight(0);
                       }
 
                       if (details.y.abs() == 0) {

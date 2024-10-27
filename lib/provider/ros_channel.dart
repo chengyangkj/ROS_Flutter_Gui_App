@@ -52,21 +52,24 @@ class RosChannel extends ChangeNotifier {
   Timer? cmdVelTimer;
 
   bool manualCtrlMode_ = false;
-  ValueNotifier<double> battery_          = ValueNotifier(0);
-  ValueNotifier<Uint8List> imageData      = ValueNotifier(Uint8List(0));
-  RobotSpeed cmdVel_                      = RobotSpeed(vx: 0, vy: 0, vw: 0);
-  double vxLeft_                          = 0;
-  ValueNotifier<RobotSpeed> robotSpeed_   = ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
-  String url_                             = "";
-  TF2Dart tf_                             = TF2Dart();
-  ValueNotifier<OccupancyMap>        map_ = ValueNotifier<OccupancyMap>(OccupancyMap());
-  Status rosConnectState_                 = Status.none;
+  ValueNotifier<double> battery_ = ValueNotifier(0);
+  ValueNotifier<Uint8List> imageData = ValueNotifier(Uint8List(0));
+  RobotSpeed cmdVel_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
+  double vxLeft_ = 0;
+  ValueNotifier<RobotSpeed> robotSpeed_ =
+      ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
+  String url_ = "";
+  TF2Dart tf_ = TF2Dart();
+  ValueNotifier<OccupancyMap> map_ =
+      ValueNotifier<OccupancyMap>(OccupancyMap());
+  Status rosConnectState_ = Status.none;
   ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
   ValueNotifier<List<Offset>> laserPoint_ = ValueNotifier([]);
-  ValueNotifier<List<Offset>> localPath   = ValueNotifier([]);
-  ValueNotifier<List<Offset>> globalPath  = ValueNotifier([]);
-  ValueNotifier<LaserData> laserPointData = ValueNotifier(LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
+  ValueNotifier<List<Offset>> localPath = ValueNotifier([]);
+  ValueNotifier<List<Offset>> globalPath = ValueNotifier([]);
+  ValueNotifier<LaserData> laserPointData = ValueNotifier(
+      LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
 
   RosChannel() {
     //启动定时器 获取机器人实时坐标
@@ -75,9 +78,12 @@ class RosChannel extends ChangeNotifier {
         connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
           try {
-            currRobotPose_.value = tf_.lookUpForTransform(globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
-            Offset poseScene = map_.value.xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
-            robotPoseScene.value = RobotPose(poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
+            currRobotPose_.value = tf_.lookUpForTransform(
+                globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
+            Offset poseScene = map_.value
+                .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
+            robotPoseScene.value = RobotPose(
+                poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
           } catch (e) {
             print("get robot pose error:${e}");
           }
@@ -283,7 +289,6 @@ class RosChannel extends ChangeNotifier {
     }
   }
 
-
   void setVx(double vx) {
     vxLeft_ = vx;
     cmdVel_.vx = vx;
@@ -429,7 +434,7 @@ class RosChannel extends ChangeNotifier {
     // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
     notifyListeners();
-  }  
+  }
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
     localPath.value.clear();
