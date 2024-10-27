@@ -283,11 +283,6 @@ class RosChannel extends ChangeNotifier {
     }
   }
 
-  void setVxRight(double vx) {
-    if (vxLeft_ == 0) {
-      cmdVel_.vx = vx;
-    }
-  }
 
   void setVx(double vx) {
     vxLeft_ = vx;
