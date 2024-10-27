@@ -29,7 +29,15 @@
             - [安装 rosbridgesuite](#安装-rosbridgesuite)
             - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
     - [1.4 软件运行](#14-软件运行)
-- [引用说明](#引用说明)
+    - [1.5 功能说明](#15-功能说明)
+        - [1.5.1 地图显示](#151-地图显示)
+        - [1.5.2 机器人位置显示](#152-机器人位置显示)
+        - [1.5.3 机器人速度控制](#153-机器人速度控制)
+        - [1.5.2 相机图像显示](#152-相机图像显示)
+            - [ROS 1 安装webvideoserver教程](#ros-1-安装webvideoserver教程)
+            - [ROS 2 安装webvideoserver教程](#ros-2-安装webvideoserver教程)
+            - [软件配置](#软件配置)
+- [引用](#引用)
 
 <!-- /TOC -->
 
@@ -56,7 +64,7 @@
 | 机器人拓扑地图功能          | ❌    |                      |
 | 电池电量显示                | ✅     |                      |
 | 地图编辑功能                | ❌    |                      |
-| 机器人导航任务链            |❌    |               |
+| 机器人导航任务链            |✅   |               |
 | 地图加载                    | ❌    |                      |
 | 地图保存                    | ❌    |                      |
 | 相机图像显示                | ✅    |  依赖[web_video_server](https://github.com/RobotWebTools/web_video_server.git) 暂不支持web端使用，其余均支持|
