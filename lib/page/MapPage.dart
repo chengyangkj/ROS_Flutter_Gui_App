@@ -10,8 +10,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/math.dart';
 import 'package:ros_flutter_gui_app/basic/matrix_gesture_detector.dart';
@@ -61,7 +63,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   final ValueNotifier<double> gestureScaleValue_ = ValueNotifier(1);
   OverlayEntry? _overlayEntry;
   RobotPose currentNavGoal_ = RobotPose.zero();
+  // 定义一个变量用于表示是否达到目标点
+  final ValueNotifier<bool> hasReachedGoal_ = ValueNotifier(false);
+  final ValueNotifier<double> currentRobotSpeed_ = ValueNotifier(0);
 
+  bool isLandscape = false; // 用于跟踪屏幕方向
   int poseDirectionSwellSize = 10; //机器人方向旋转控件膨胀的大小
   double navPoseSize = 15; //导航点的大小
   double robotSize = 20; //机器人坐标的大小
@@ -93,7 +99,32 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               cameraFixedScaleValue_ =
                   animationValue.value; // 更新 cameraFixedScaleValue_
             });
-          });
+          }); // 监听 robotPose_ 的变化，判断是否达到目标点
+    robotPose_.addListener(() {
+      // 获取机器人当前速度
+      double distance = calculateDistance(robotPose_.value, currentNavGoal_);
+
+      // 如果距离小于0.5，判断速度为0时候， 表示已达到目标点
+      if (currentRobotSpeed_.value < 0.001 &&
+          rad2deg(currentRobotSpeed_.value) < 0.01) {
+        hasReachedGoal_.value = true;
+      } else {
+        hasReachedGoal_.value = false;
+      }
+
+      // print(currentRobotSpeed_.value);
+      // print(rad2deg(currentRobotSpeed_.value));
+      // print(robotPose_);
+      // print(currentNavGoal_);
+      // print(hasReachedGoal_.value);
+    });
+  }
+
+// 计算两点之间的距离的方法
+  double calculateDistance(RobotPose pose1, RobotPose pose2) {
+    double dx = pose1.x - pose2.x;
+    double dy = pose1.y - pose2.y;
+    return sqrt(dx * dx + dy * dy);
   }
 
   void _showContextMenu(BuildContext context, Offset position) {
@@ -149,6 +180,245 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     _overlayEntry = null;
   }
 
+  // 显示航点编辑窗口的方法
+  void showEditNavigationPoints(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        Offset offset = Offset.zero; // 初始偏移量
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return GestureDetector(
+              onPanUpdate: (details) {
+                // 更新偏移量，实现拖动效果
+                setState(() {
+                  offset += details.delta;
+                });
+              },
+              child: Transform.translate(
+                offset: offset,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 400), // 设置最大宽度
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: Container(
+                        padding: EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '航点编辑',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 10),
+                            ValueListenableBuilder<List<RobotPose>>(
+                              valueListenable: navPointList_,
+                              builder: (context, navPointList, child) {
+                                return ConstrainedBox(
+                                  constraints: BoxConstraints(maxHeight: 300),
+                                  child: ReorderableListView(
+                                    shrinkWrap: true,
+                                    onReorder: (int oldIndex, int newIndex) {
+                                      if (newIndex > oldIndex) {
+                                        newIndex -= 1;
+                                      }
+                                      final item =
+                                          navPointList.removeAt(oldIndex);
+                                      navPointList.insert(newIndex, item);
+                                      navPointList_.value =
+                                          List.from(navPointList);
+                                    },
+                                    children: [
+                                      for (int index = 0;
+                                          index < navPointList.length;
+                                          index++)
+                                        ListTile(
+                                          key: ValueKey(index),
+                                          title: Text('航点 ${index + 1}'),
+                                          subtitle: Text(
+                                              '坐标: (${navPointList[index].x}, ${navPointList[index].y})'),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(Icons.edit),
+                                                onPressed: () {
+                                                  editNavigationPoint(
+                                                      context, index);
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.delete),
+                                                onPressed: () {
+                                                  navPointList_.value = List
+                                                      .from(navPointList_.value)
+                                                    ..removeAt(index);
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.navigation),
+                                                onPressed: () {
+                                                  executeNavigation(
+                                                      navPointList[index]);
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(); // 关闭窗口
+                                  },
+                                  child: Text('关闭'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    executeMultipleNavigation();
+                                  },
+                                  child: Text('多点导航'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // 示例：执行单点导航的函数
+  void executeNavigation(RobotPose pose) {
+    // 创建 pose 的副本，避免修改原始值
+    RobotPose targetPose = RobotPose(pose.x, pose.y, pose.theta);
+
+    // print(targetPose); // 打印副本以确保不改变原始 pose
+    Provider.of<RosChannel>(context, listen: false)
+        .sendNavigationGoal(targetPose);
+    print("执行单点导航到: (${pose.x}, ${pose.y}, ${pose.theta})");
+
+    currentNavGoal_ = pose;
+  }
+
+  // 示例：执行多点导航的函数
+  // 异步函数执行多点导航
+  Future<void> executeMultipleNavigation() async {
+    List<RobotPose> points = List.from(navPointList_.value);
+
+    for (RobotPose point in points) {
+      // 创建 pose 的副本，避免修改原始值
+      RobotPose targetPose = RobotPose(point.x, point.y, point.theta);
+      // 发送导航目标
+      Provider.of<RosChannel>(context, listen: false)
+          .sendNavigationGoal(targetPose);
+      print("执行单点导航到: (${point.x}, ${point.y}, ${point.theta})");
+
+      currentNavGoal_ = point;
+
+      // 等待 hasReachedGoal_ 变为 true，表示已到达目标点
+      await waitForGoalReached();
+
+      print("已到达目标点: (${point.x}, ${point.y}, ${point.theta})");
+    }
+
+    print("多点导航完成");
+  }
+
+  // 等待函数，当 hasReachedGoal_ 变为 true 时返回
+  Future<void> waitForGoalReached() async {
+    // 使用 Completer 实现异步等待
+    Completer<void> completer = Completer<void>();
+
+    // 创建监听器
+    void listener() {
+      if (hasReachedGoal_.value) {
+        completer.complete(); // 达到目标点，完成等待
+      }
+    }
+
+    // 添加监听器
+    hasReachedGoal_.addListener(listener);
+
+    // 等待完成
+    await completer.future;
+
+    // 移除监听器，防止内存泄漏
+    hasReachedGoal_.removeListener(listener);
+  }
+
+  // 编辑航点的方法
+  void editNavigationPoint(BuildContext context, int index) {
+    var point = navPointList_.value[index];
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController xController =
+            TextEditingController(text: point.x.toString());
+        TextEditingController yController =
+            TextEditingController(text: point.y.toString());
+
+        return AlertDialog(
+          title: Text('编辑航点'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: xController,
+                decoration: InputDecoration(labelText: 'X 坐标'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: yController,
+                decoration: InputDecoration(labelText: 'Y 坐标'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+              child: Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                // 更新航点的坐标
+                point.x = double.parse(xController.text);
+                point.y = double.parse(yController.text);
+                navPointList_.value = List.from(navPointList_.value)
+                  ..[index] = point;
+                Navigator.of(context).pop(); // 关闭对话框
+              },
+              child: Text('保存'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ToastContext().init(context);
@@ -157,6 +427,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    camWidgetWidth = screenSize.width / 3.5;
+    camWidgetHeight =
+        camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
     camWidgetWidth = screenSize.width / 3.5;
     camWidgetHeight =
         camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
@@ -345,102 +618,129 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   transform: globalTransform,
                                   origin: originPose,
                                   child: Transform(
-                                      alignment: Alignment.center,
-                                      transform: Matrix4.identity()
-                                        ..translate(
-                                            pose.x -
-                                                navPoseSize / 2 -
-                                                poseDirectionSwellSize / 2,
-                                            pose.y -
-                                                navPoseSize / 2 -
-                                                poseDirectionSwellSize / 2)
-                                        ..rotateZ(-pose.theta),
-                                      child: MatrixGestureDetector(
-                                          onMatrixUpdate: (matrix, transDelta,
-                                              scaleDelta, rotateDelta) {
-                                            // print("transDelta:${transDelta}");
-                                            if (Provider.of<GlobalState>(
-                                                        context,
-                                                        listen: false)
-                                                    .mode
-                                                    .value ==
-                                                Mode.addNavPoint) {
-                                              //移动距离的deleta距离需要除于当前的scale的值(放大后，相同移动距离，地图实际移动的要少)
-                                              double dx =
-                                                  transDelta.dx / scaleValue;
-                                              double dy =
-                                                  transDelta.dy / scaleValue;
-                                              double tmpTheta = pose.theta;
-                                              pose = absoluteSum(
-                                                  RobotPose(pose.x, pose.y,
-                                                      pose.theta),
-                                                  RobotPose(dx, dy, 0));
-                                              pose.theta = tmpTheta;
-                                              print("trans pose:${pose}");
-                                              setState(() {});
-                                            }
-                                          },
-                                          child: Container(
-                                            height: navPoseSize +
-                                                poseDirectionSwellSize,
-                                            width: navPoseSize +
-                                                poseDirectionSwellSize,
-                                            child: Stack(
-                                              alignment: Alignment.center,
-                                              children: [
-                                                Visibility(
-                                                    visible:
-                                                        Provider.of<GlobalState>(
-                                                                    context,
-                                                                    listen:
-                                                                        false)
-                                                                .mode
-                                                                .value ==
-                                                            Mode.addNavPoint,
-                                                    child: DisplayPoseDirection(
-                                                      size: navPoseSize +
-                                                          poseDirectionSwellSize,
-                                                      initAngle: -pose.theta,
-                                                      resetAngle: false,
-                                                      onRotateCallback:
-                                                          (angle) {
-                                                        pose.theta = -angle;
-                                                        setState(() {});
-                                                      },
-                                                    )),
-                                                GestureDetector(
-                                                    onTapDown: (details) {
-                                                      if (Provider.of<GlobalState>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .mode
-                                                              .value ==
-                                                          Mode.noraml) {
-                                                        // _showContextMenu(context,
-                                                        //     details.globalPosition);
-                                                        Provider.of<RosChannel>(
+                                    alignment: Alignment.center,
+                                    transform: Matrix4.identity()
+                                      ..translate(
+                                          pose.x -
+                                              navPoseSize / 2 -
+                                              poseDirectionSwellSize / 2,
+                                          pose.y -
+                                              navPoseSize / 2 -
+                                              poseDirectionSwellSize / 2)
+                                      ..rotateZ(-pose.theta),
+                                    child: MatrixGestureDetector(
+                                      onMatrixUpdate: (matrix, transDelta,
+                                          scaleDelta, rotateDelta) {
+                                        if (Provider.of<GlobalState>(context,
+                                                    listen: false)
+                                                .mode
+                                                .value ==
+                                            Mode.addNavPoint) {
+                                          // 移动距离的delta距离需要除于当前的scale的值
+                                          double dx =
+                                              transDelta.dx / scaleValue;
+                                          double dy =
+                                              transDelta.dy / scaleValue;
+                                          double tmpTheta = pose.theta;
+                                          pose = absoluteSum(
+                                              RobotPose(
+                                                  pose.x, pose.y, pose.theta),
+                                              RobotPose(dx, dy, 0));
+                                          pose.theta = tmpTheta;
+                                          setState(() {});
+                                        }
+                                      },
+                                      child: GestureDetector(
+                                        onDoubleTap: () {
+                                          if (Provider.of<GlobalState>(context,
+                                                      listen: false)
+                                                  .mode
+                                                  .value ==
+                                              Mode.addNavPoint) {
+                                            // 双击删除导航点
+                                            navPointList_.value =
+                                                List.from(navPointList_.value)
+                                                  ..remove(pose);
+                                            setState(() {});
+                                          }
+                                        },
+                                        onPanUpdate: (details) {
+                                          if (Provider.of<GlobalState>(context,
+                                                      listen: false)
+                                                  .mode
+                                                  .value ==
+                                              Mode.addNavPoint) {
+                                            // 更新导航点位置
+                                            double dx =
+                                                details.delta.dx / scaleValue;
+                                            double dy =
+                                                details.delta.dy / scaleValue;
+                                            pose.x += dx;
+                                            pose.y += dy;
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: Container(
+                                          height: navPoseSize +
+                                              poseDirectionSwellSize,
+                                          width: navPoseSize +
+                                              poseDirectionSwellSize,
+                                          child: Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              Visibility(
+                                                visible:
+                                                    Provider.of<GlobalState>(
                                                                 context,
                                                                 listen: false)
-                                                            .sendNavigationGoal(
-                                                                RobotPose(
-                                                                    pose.x,
-                                                                    pose.y,
-                                                                    pose.theta));
-                                                        currentNavGoal_ = pose;
-                                                        setState(() {});
-                                                      }
-                                                    },
-                                                    child: DisplayWayPoint(
-                                                      size: navPoseSize,
-                                                      color: currentNavGoal_ ==
-                                                              pose
-                                                          ? Colors.pink
-                                                          : Colors.green,
-                                                      count: 4,
-                                                    )),
-                                              ],
-                                            ),
-                                          ))),
+                                                            .mode
+                                                            .value ==
+                                                        Mode.addNavPoint,
+                                                child: DisplayPoseDirection(
+                                                  size: navPoseSize +
+                                                      poseDirectionSwellSize,
+                                                  initAngle: -pose.theta,
+                                                  resetAngle: false,
+                                                  onRotateCallback: (angle) {
+                                                    pose.theta = -angle;
+                                                    setState(() {});
+                                                  },
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTapDown: (details) {
+                                                  if (Provider.of<GlobalState>(
+                                                              context,
+                                                              listen: false)
+                                                          .mode
+                                                          .value ==
+                                                      Mode.normal) {
+                                                    Provider.of<RosChannel>(
+                                                            context,
+                                                            listen: false)
+                                                        .sendNavigationGoal(
+                                                            RobotPose(
+                                                                pose.x,
+                                                                pose.y,
+                                                                pose.theta));
+                                                    currentNavGoal_ = pose;
+                                                    setState(() {});
+                                                  }
+                                                },
+                                                child: DisplayWayPoint(
+                                                  size: navPoseSize,
+                                                  color: currentNavGoal_ == pose
+                                                      ? Colors.pink
+                                                      : Colors.green,
+                                                  count: 4,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 );
                               }).toList(),
                               //机器人位置（固定视角）
@@ -640,6 +940,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   Provider.of<RosChannel>(context, listen: true)
                                       .robotSpeed_,
                               builder: (context, speed, child) {
+                                currentRobotSpeed_.value = speed.vx;
                                 return Text(
                                     '${(speed.vx).toStringAsFixed(2)} m/s');
                               }),
@@ -798,7 +1099,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   Provider.of<GlobalState>(context,
                                           listen: false)
                                       .mode
-                                      .value = Mode.noraml;
+                                      .value = Mode.normal;
                                 }
                                 setState(() {});
                               },
@@ -823,7 +1124,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     Provider.of<GlobalState>(context,
                                             listen: false)
                                         .mode
-                                        .value = Mode.noraml;
+                                        .value = Mode.normal;
                                     setState(() {});
                                   },
                                   icon: const Icon(
@@ -841,7 +1142,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     Provider.of<GlobalState>(context,
                                             listen: false)
                                         .mode
-                                        .value = Mode.noraml;
+                                        .value = Mode.normal;
                                     Provider.of<RosChannel>(context,
                                             listen: false)
                                         .sendRelocPoseScene(poseSceneOnReloc);
@@ -856,32 +1157,31 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   //设置导航目标点
                   Card(
                     elevation: 10,
-                    child: IconButton(
-                      icon: Icon(
-                        const IconData(0xeba1, fontFamily: "NavPoint"),
-                        color: (Provider.of<GlobalState>(context, listen: false)
-                                    .mode
-                                    .value ==
-                                Mode.addNavPoint)
-                            ? Colors.green
-                            : theme.iconTheme.color,
-                      ),
-                      onPressed: () {
-                        if (!(Provider.of<GlobalState>(context, listen: false)
-                                .mode
-                                .value ==
-                            Mode.addNavPoint)) {
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.addNavPoint;
-                          setState(() {});
-                        } else {
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.noraml;
-                          setState(() {});
-                        }
+                    child: GestureDetector(
+                      onLongPress: () {
+                        showEditNavigationPoints(context); //长按显示编辑窗口
                       },
+                      child: IconButton(
+                        icon: Icon(
+                          const IconData(0xeba1, fontFamily: "NavPoint"),
+                          color:
+                              (Provider.of<GlobalState>(context, listen: false)
+                                          .mode
+                                          .value ==
+                                      Mode.addNavPoint)
+                                  ? Colors.green
+                                  : theme.iconTheme.color,
+                        ),
+                        onPressed: () {
+                          var globalState =
+                              Provider.of<GlobalState>(context, listen: false);
+                          if (globalState.mode.value == Mode.addNavPoint) {
+                            globalState.mode.value = Mode.normal;
+                          } else {
+                            globalState.mode.value = Mode.addNavPoint;
+                          }
+                        },
+                      ),
                     ),
                   ),
                   //显示相机图像
@@ -988,7 +1288,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             Mode.robotFixedCenter) {
                           Provider.of<GlobalState>(context, listen: false)
                               .mode
-                              .value = Mode.noraml;
+                              .value = Mode.normal;
                           cameraFixedScaleValue_ = 1;
                         } else {
                           Provider.of<GlobalState>(context, listen: false)
@@ -1008,7 +1308,33 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                           .value ==
                                       Mode.robotFixedCenter
                                   ? Colors.green
-                                  : theme.iconTheme.color))
+                                  : theme.iconTheme.color)),
+                  IconButton(
+                    onPressed: () {
+                      // 切换横竖屏
+                      SystemChrome.setPreferredOrientations([
+                        // 切换到横屏或竖屏
+                        isLandscape
+                            ? DeviceOrientation.portraitUp
+                            : DeviceOrientation.landscapeRight,
+                      ]);
+                      setState(() {
+                        isLandscape = !isLandscape; // 更新状态
+                      });
+                    },
+                    icon: Icon(isLandscape
+                        ? Icons.screen_rotation
+                        : Icons.screen_rotation_alt),
+                    tooltip: '切换横竖屏',
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      // 退出操作
+                      Navigator.pop(context); // 返回到上一个页面
+                    },
+                    icon: const Icon(Icons.exit_to_app),
+                    tooltip: '退出',
+                  ),
                 ],
               ),
             ),

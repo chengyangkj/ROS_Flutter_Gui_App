@@ -22,7 +22,7 @@ class _GamepadWidgetState extends State<GamepadWidget> {
   StreamSubscription<GamepadEvent>? _subscription;
   ValueNotifier<String> eventString = ValueNotifier("");
 
-  double joystickWidgetSize = 150;
+  double joystickWidgetSize = 120;
 
   Map<KeyName, JoyStickEvent> eventMap = {};
 
@@ -126,33 +126,36 @@ class _GamepadWidgetState extends State<GamepadWidget> {
               child: Container(
                   width: joystickWidgetSize,
                   height: joystickWidgetSize,
-                  child: Opacity(
-                      opacity: 1,
-                      child: Joystick(
-                        controller: rightJoystickController,
-                        includeInitialAnimation: false,
-                        mode: JoystickMode.all,
-                        listener: (details) {
-                          double max_vw =
-                              double.parse(globalSetting.getConfig('MaxVw'));
-                          double max_vx =
-                              double.parse(globalSetting.getConfig('MaxVx'));
-                          if (details.x.abs() > details.y.abs()) {
-                            double vw = max_vw * details.x * -1;
-                            Provider.of<RosChannel>(context, listen: false)
-                                .setVw(vw);
-                          } else if (details.x.abs() < details.y.abs()) {
-                            double vx = max_vx * details.y * -1;
-                            Provider.of<RosChannel>(context, listen: false)
-                                .setVxRight(vx);
-                          }
+                  child: Joystick(
+                    controller: rightJoystickController,
+                    mode: JoystickMode.all,
+                    listener: (details) {
+                      double max_vw =
+                          double.parse(globalSetting.getConfig('MaxVw'));
+                      double max_vx =
+                          double.parse(globalSetting.getConfig('MaxVx'));
 
-                          if (details.x == 0) {
-                            Provider.of<RosChannel>(context, listen: false)
-                                .setVw(0);
-                          }
-                        },
-                      ))),
+                      if (details.x.abs() > details.y.abs()) {
+                        double vw = max_vw * details.x * -1;
+                        Provider.of<RosChannel>(context, listen: false)
+                            .setVw(vw);
+                      } else if (details.x.abs() < details.y.abs()) {
+                        double vx = max_vx * details.y * -1;
+                        Provider.of<RosChannel>(context, listen: false)
+                            .setVxRight(vx);
+                      }
+
+                      if (details.x.abs() == 0) {
+                        Provider.of<RosChannel>(context, listen: false)
+                            .setVx(0);
+                      }
+
+                      if (details.y.abs() == 0) {
+                        Provider.of<RosChannel>(context, listen: false)
+                            .setVw(0);
+                      }
+                    },
+                  )),
             ),
             Positioned(
               bottom: 10,

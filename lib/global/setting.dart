@@ -60,12 +60,119 @@ Map<String, JoyStickEvent> buttonMapping = {
 class Setting {
   late SharedPreferences prefs;
   Future<bool> init() async {
+    //walking 
     prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey("init") ||
-        (prefs.containsKey("init") && prefs.getString("init") != "1")) {
-      setDefaultCfgRos1();
+    if (!prefs.containsKey("init") || (prefs.containsKey("init") && prefs.getString("init") == "2"))
+    {
+      setDefaultCfgRos2();
     }
+    //jackal   
+    else if((prefs.containsKey("init") && prefs.getString("init") == "5")) { 
+      setDefaultCfgRos2Jackal();
+    }     
+    //turtlebot4
+    else if((prefs.containsKey("init") && prefs.getString("init") == "4")) { 
+      setDefaultCfgRos2TB4();
+    }
+    //turtlebot3
+    else if((prefs.containsKey("init") && prefs.getString("init") == "3")) { 
+      setDefaultCfgRos2TB3();
+    }
+    else if((prefs.containsKey("init") && prefs.getString("init") == "1")) {
+      setDefaultCfgRos1();
+    } 
+    else {
+      setDefaultCfgRos2();
+    } 
     return true;
+  }
+
+  void setDefaultCfgRos2Jackal() {
+    prefs.setString('init', "5");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "/sensors/lidar_0/scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/platform/odom/filtered");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+    prefs.setString('imagePort', "8080");
+    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);      
+  }  
+
+  void setDefaultCfgRos2TB4() {
+    prefs.setString('init', "4");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/odom");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+    prefs.setString('imagePort', "8080");
+    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);     
+  }
+
+  void setDefaultCfgRos2TB3() {
+    prefs.setString('init', "3");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/odom");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+    prefs.setString('imagePort', "8080");
+    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);   
+  }  
+
+  void setDefaultCfgRos2() {
+    prefs.setString('init', "2");
+    prefs.setString('mapTopic', "map");
+    prefs.setString('laserTopic', "scan");
+    prefs.setString('globalPathTopic', "/plan");
+    prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('relocTopic', "/initialpose");
+    prefs.setString('navGoalTopic', "/goal_pose");
+    prefs.setString('OdometryTopic', "/wheel/odometry");
+    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
+    prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('MaxVx', "0.1");
+    prefs.setString('MaxVy', "0.1");
+    prefs.setString('MaxVw', "0.3");
+    prefs.setString('mapFrameName', "map");
+    prefs.setString('baseLinkFrameName', "base_link");
+    prefs.setString('imagePort', "8080");
+    prefs.setString('imageTopic', "/camera/image_raw");  
+    prefs.setDouble('imageWidth', 640);
+    prefs.setDouble('imageHeight', 480);
   }
 
   void setDefaultCfgRos1() {
@@ -78,7 +185,7 @@ class Setting {
     prefs.setString('navGoalTopic', "move_base_simple/goal");
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery");
+    prefs.setString('BatteryTopic', "/battery_status");
     prefs.setString('MaxVx', "0.1");
     prefs.setString('MaxVy', "0.1");
     prefs.setString('MaxVw', "0.3");
@@ -88,13 +195,6 @@ class Setting {
     prefs.setString('imageTopic', "/camera/rgb/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
-  }
-
-  void setDefaultCfgRos2() {
-    prefs.setString('init', "1");
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "scan");
-    prefs.setString('globalPathTopic', "/move_base/global_plan");
   }
 
   SharedPreferences get config {
@@ -113,7 +213,6 @@ class Setting {
   double get imageHeight {
     return prefs.getDouble("imageHeight") ?? 480;
   }
-
   String get robotIp {
     return prefs.getString("robotIp") ?? "127.0.0.1";
   }
@@ -155,8 +254,7 @@ class Setting {
   }
 
   String get globalPathTopic {
-    return prefs.getString("globalPathTopic") ??
-        "/move_base/DWAPlannerROS/global_plan";
+    return prefs.getString("globalPathTopic") ?? "plan";
   }
 
   void setLocalPathTopic(String topic) {
@@ -164,8 +262,7 @@ class Setting {
   }
 
   String get localPathTopic {
-    return prefs.getString("localPathTopic") ??
-        "/move_base/DWAPlannerROS/local_plan";
+    return prefs.getString("localPathTopic") ?? "/local_plan";
   }
 
   void setRelocTopic(String topic) {
@@ -184,32 +281,33 @@ class Setting {
     return prefs.getString("baseLinkFrameName") ?? "base_link";
   }
 
+  String get navGoalTopic {
+    return prefs.getString("navGoalTopic") ?? "/goal_pose";
+  }
+
   void setNavGoalTopic(String topic) {
     prefs.setString('navGoalTopic', topic);
   }
 
   String get batteryTopic {
-    return prefs.getString("batteryTopic") ?? "/battery_state";
+    return prefs.getString("BatteryTopic") ?? "/battery_status";
   }
 
   void setBatteryTopic(String topic) {
-    prefs.setString('batteryTopic', topic);
+    prefs.setString('BatteryTopic', topic);
   }
 
-  String get navGoalTopic {
-    return prefs.getString("navGoalTopic") ?? "/move_base_simple/goal";
-  }
 
   String getConfig(String key) {
     return prefs.getString(key) ?? "";
   }
 
   String get odomTopic {
-    return prefs.getString("OdomTopic") ?? "/odom";
+    return prefs.getString("OdometryTopic") ?? "/wheel/odometry";
   }
 
-  void set odomTopic(String topic) {
-    prefs.setString('OdomTopic', topic);
+  void setOdomTopic(String topic) {
+    prefs.setString('OdometryTopic', topic);
   }
   //实列
 }
