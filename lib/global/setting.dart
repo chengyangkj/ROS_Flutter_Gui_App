@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'dart:convert';
 
 enum KeyName {
   None,
@@ -24,7 +25,7 @@ enum KeyName {
 
 class JoyStickEvent {
   late KeyName keyName;
-  bool reverse = false; //是否反转(反转填-1)
+  bool reverse = false; //是否反转(反转填-1)Q
   int maxValue = 32767;
   int minValue = -32767;
   double value = 0;
@@ -103,21 +104,127 @@ class Setting {
   Future<bool> init() async {
     prefs = await SharedPreferences.getInstance();
 
-    // 从 package_info_plus 获取应用版本
+    // 获取应用版本
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String currentVersion = packageInfo.version;
-    if (!prefs.containsKey("tempConfig") ||
+
+    if (!prefs.containsKey("init") ||
         !prefs.containsKey("version") ||
         prefs.getString("version") != currentVersion) {
-      print(
-          "set default config $currentVersion last version: ${prefs.getString("version")}");
       setDefaultCfgRos2();
-      // 保存当前版本号
       prefs.setString("version", currentVersion);
-      prefs.setString("tempConfig", "2");
+      _resetToDefaultMapping();
     }
 
+    // 从配置中加载手柄映射
+    await _loadGamepadMapping();
+
     return true;
+  }
+
+  Future<void> _loadGamepadMapping() async {
+    final mappingStr = prefs.getString('gamepadMapping');
+    if (mappingStr != null) {
+      try {
+        final mapping = jsonDecode(mappingStr);
+
+        // 清空现有映射
+        axisMapping.clear();
+        buttonMapping.clear();
+
+        // 加载 axisMapping
+        if (mapping['axisMapping'] != null) {
+          (mapping['axisMapping'] as Map<String, dynamic>)
+              .forEach((key, value) {
+            final keyName = _parseKeyName(value['keyName']);
+            axisMapping[key] = JoyStickEvent(
+              keyName,
+              maxValue: value['maxValue'] ?? 32767,
+              minValue: value['minValue'] ?? -32767,
+              reverse: value['reverse'] ?? false,
+            );
+          });
+        }
+
+        // 加载 buttonMapping
+        if (mapping['buttonMapping'] != null) {
+          (mapping['buttonMapping'] as Map<String, dynamic>)
+              .forEach((key, value) {
+            final keyName = _parseKeyName(value['keyName']);
+            buttonMapping[key] = JoyStickEvent(
+              keyName,
+              maxValue: value['maxValue'] ?? 1,
+              minValue: value['minValue'] ?? 0,
+              reverse: value['reverse'] ?? true,
+            );
+          });
+        }
+      } catch (e) {
+        print('Error loading gamepad mapping: $e');
+        // 如果加载失败，使用默认映射
+        _resetToDefaultMapping();
+      }
+    }
+  }
+
+  KeyName _parseKeyName(String keyNameStr) {
+    // 移除 'KeyName.' 前缀
+    final enumStr = keyNameStr.replaceAll('KeyName.', '');
+    return KeyName.values.firstWhere(
+      (e) => e.toString() == 'KeyName.$enumStr',
+      orElse: () => KeyName.None,
+    );
+  }
+
+  Future<void> _resetToDefaultMapping() async {
+    axisMapping.clear();
+    buttonMapping.clear();
+
+    // 恢复默认的轴映射
+    axisMapping.addAll({
+      "AXIS_X": JoyStickEvent(KeyName.leftAxisX),
+      "AXIS_Y": JoyStickEvent(KeyName.leftAxisY),
+      "AXIS_Z": JoyStickEvent(KeyName.rightAxisX),
+      "AXIS_RZ": JoyStickEvent(KeyName.rightAxisY),
+      "triggerRight": JoyStickEvent(KeyName.triggerRight),
+      "triggerLeft": JoyStickEvent(KeyName.triggerLeft),
+      "buttonLeftRight": JoyStickEvent(KeyName.buttonLeftRight),
+      "buttonUpDown": JoyStickEvent(KeyName.buttonUpDown),
+    });
+
+    // 恢复默认的按钮映射
+    buttonMapping.addAll({
+      "KEYCODE_BUTTON_A": JoyStickEvent(KeyName.buttonA,
+          maxValue: 1, minValue: 0, reverse: true),
+      "KEYCODE_BUTTON_B": JoyStickEvent(KeyName.buttonB,
+          maxValue: 1, minValue: 0, reverse: true),
+      "KEYCODE_BUTTON_X": JoyStickEvent(KeyName.buttonX,
+          maxValue: 1, minValue: 0, reverse: true),
+      "KEYCODE_BUTTON_Y": JoyStickEvent(KeyName.buttonY,
+          maxValue: 1, minValue: 0, reverse: true),
+      "KEYCODE_BUTTON_L1": JoyStickEvent(KeyName.buttonLB,
+          maxValue: 1, minValue: 0, reverse: true),
+      "KEYCODE_BUTTON_R1": JoyStickEvent(KeyName.buttonRB,
+          maxValue: 1, minValue: 0, reverse: true),
+    });
+
+    // 将默认映射保存到配置中
+    final mapping = {
+      'axisMapping': axisMapping.map((key, value) => MapEntry(key, {
+            'keyName': value.keyName.toString(),
+            'maxValue': value.maxValue,
+            'minValue': value.minValue,
+            'reverse': value.reverse,
+          })),
+      'buttonMapping': buttonMapping.map((key, value) => MapEntry(key, {
+            'keyName': value.keyName.toString(),
+            'maxValue': value.maxValue,
+            'minValue': value.minValue,
+            'reverse': value.reverse,
+          })),
+    };
+
+    await prefs.setString('gamepadMapping', jsonEncode(mapping));
   }
 
   void setDefaultCfgRos2Jackal() {

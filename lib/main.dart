@@ -7,10 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toast/toast.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/page/MapPage.dart';
-import 'package:ros_flutter_gui_app/page/RobotConnectPage.dart';
+import 'package:ros_flutter_gui_app/page/map_page.dart';
+import 'package:ros_flutter_gui_app/page/robot_connect_page.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
-import 'package:ros_flutter_gui_app/page/SettingPage.dart';
+import 'package:ros_flutter_gui_app/page/setting_page.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'provider/them_provider.dart';
 

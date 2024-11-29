@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'gamepad_mapping_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -223,6 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildRobotTypeSection(),
       _buildBasicSection(),
       _buildTopicSection(),
+      _buildGamepadSection(),
       // ... 其他设置组
     ];
   }
@@ -428,6 +430,24 @@ class _SettingsPageState extends State<SettingsPage> {
             'BatteryTopic', _settings['BatteryTopic'] ?? '/battery_status'),
         _buildSettingItem(
             'imageTopic', _settings['imageTopic'] ?? '/camera/image_raw'),
+      ],
+    );
+  }
+
+  Widget _buildGamepadSection() {
+    return _buildSection(
+      "手柄设置",
+      [
+        ListTile(
+          title: const Text("手柄按键映射"),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const GamepadMappingPage(),
+            ),
+          ),
+        ),
       ],
     );
   }
