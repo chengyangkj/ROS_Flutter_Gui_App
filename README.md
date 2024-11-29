@@ -18,25 +18,26 @@
 <!-- TOC -->
 
 - [一，使用教程](#一使用教程)
-    - [1.1 下载项目 Release 包](#11-下载项目-release-包)
-    - [1.2 运行项目](#12-运行项目)
-        - [1.2.1 web端运行指南](#121-web端运行指南)
-    - [1.3 机器人端环境配置](#13-机器人端环境配置)
-        - [ROS 1](#ros-1)
-            - [安装 rosbridgesuite](#安装-rosbridgesuite)
-            - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
-        - [ROS 2](#ros-2)
-            - [安装 rosbridgesuite](#安装-rosbridgesuite)
-            - [运行 rosbridgewebsocket](#运行-rosbridgewebsocket)
-    - [1.4 软件运行](#14-软件运行)
-    - [1.5 功能说明](#15-功能说明)
-        - [1.5.1 地图显示](#151-地图显示)
-        - [1.5.2 机器人位置显示](#152-机器人位置显示)
-        - [1.5.3 机器人速度控制](#153-机器人速度控制)
-        - [1.5.2 相机图像显示](#152-相机图像显示)
-            - [ROS 1 安装webvideoserver教程](#ros-1-安装webvideoserver教程)
-            - [ROS 2 安装webvideoserver教程](#ros-2-安装webvideoserver教程)
-            - [软件配置](#软件配置)
+  - [1.1 下载项目 Release 包](#11-下载项目-release-包)
+  - [1.2 运行项目](#12-运行项目)
+    - [1.2.1 web端运行指南](#121-web端运行指南)
+  - [1.3 机器人端环境配置](#13-机器人端环境配置)
+    - [ROS 1](#ros-1)
+      - [安装 rosbridge\_suite](#安装-rosbridge_suite)
+      - [运行 rosbridge\_websocket](#运行-rosbridge_websocket)
+    - [ROS 2](#ros-2)
+      - [安装 rosbridge\_suite](#安装-rosbridge_suite-1)
+      - [运行 rosbridge\_websocket](#运行-rosbridge_websocket-1)
+  - [1.4 软件运行](#14-软件运行)
+  - [1.5 功能说明](#15-功能说明)
+    - [1.5.1 地图显示](#151-地图显示)
+    - [1.5.2 机器人位置显示](#152-机器人位置显示)
+    - [1.5.3 机器人速度控制](#153-机器人速度控制)
+    - [1.5.2 相机图像显示](#152-相机图像显示)
+      - [ROS 1 安装web\_video\_server教程](#ros-1-安装web_video_server教程)
+      - [ROS 2 安装web\_video\_server教程](#ros-2-安装web_video_server教程)
+        - [1.5.3 多点导航](#153-多点导航)
+      - [软件配置](#软件配置)
 - [引用](#引用)
 
 <!-- /TOC -->
@@ -51,26 +52,26 @@
 
 功能/TODO:
   
-| 功能                        | 状态 | 备注                 |
-| --------------------------- | ---- | -------------------- |
-| ROS1/ROS2通信               | ✅    |                      |
-| 地图显示           | ✅    |                      |
-| 机器人实时位置显示          | ✅    |                      |
-| 机器人速度仪表盘            | ✅     |                      |
-| 机器人手动控制              | ✅    |                      |
-| 机器人重定位                | ✅    |                      |
-| 机器人单点/多点导航         |  ✅    |                      |
-| 机器人全局/局部规划轨迹显示 | ✅    |                      |
-| 机器人拓扑地图功能          | ❌    |                      |
-| 电池电量显示                | ✅     |                      |
-| 地图编辑功能                | ❌    |                      |
-| 机器人导航任务链            |✅   |               |
-| 地图加载                    | ❌    |                      |
-| 地图保存                    | ❌    |                      |
-| 相机图像显示                | ✅    |  依赖[web_video_server](https://github.com/RobotWebTools/web_video_server.git) 暂不支持web端使用，其余均支持|
-| 相机图像显示                | ✅    |  依赖[web_video_server](https://github.com/RobotWebTools/web_video_server.git) 暂不支持web端使用，其余均支持|
-| 机器人车身轮廓显示          | ❌    | 支持配置异形车身     |
-| 图层相机视角调整          | ✅     |      |
+| 功能                        | 状态 | 备注                                                                                                        |
+| --------------------------- | ---- | ----------------------------------------------------------------------------------------------------------- |
+| ROS1/ROS2通信               | ✅    |                                                                                                             |
+| 地图显示                    | ✅    |                                                                                                             |
+| 机器人实时位置显示          | ✅    |                                                                                                             |
+| 机器人速度仪表盘            | ✅    |                                                                                                             |
+| 机器人手动控制              | ✅    |                                                                                                             |
+| 机器人重定位                | ✅    |                                                                                                             |
+| 机器人单点/多点导航         | ✅    |                                                                                                             |
+| 机器人全局/局部规划轨迹显示 | ✅    |                                                                                                             |
+| 机器人拓扑地图功能          | ❌    |                                                                                                             |
+| 电池电量显示                | ✅    |                                                                                                             |
+| 地图编辑功能                | ❌    |                                                                                                             |
+| 机器人导航任务链            | ✅    |                                                                                                             |
+| 地图加载                    | ❌    |                                                                                                             |
+| 地图保存                    | ❌    |                                                                                                             |
+| 相机图像显示                | ✅    | 依赖[web_video_server](https://github.com/RobotWebTools/web_video_server.git) 暂不支持web端使用，其余均支持 |
+| 相机图像显示                | ✅    | 依赖[web_video_server](https://github.com/RobotWebTools/web_video_server.git) 暂不支持web端使用，其余均支持 |
+| 机器人车身轮廓显示          | ❌    | 支持配置异形车身                                                                                            |
+| 图层相机视角调整            | ✅    |                                                                                                             |
 
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chengyangkj/Ros_Flutter_Gui_App&type=Timeline&theme=dark" />
@@ -181,26 +182,26 @@ python -m http.server 8000
 ![setting_button](./doc/image/setting_list.png)
 
 配置说明
-|配置名|消息类型|说明|
-|---|---|---|
-|battery_topic|sensor_msgs/BatteryState|机器人电池电量的topic，软件订阅 |
-|mapTopic|nav_msgs/OccupancyGrid|机器人地图话题名，软件订阅 |
-|laserTopic|sensor_msgs/LaserScan| 激光话题名，软件订阅|
-|localPathTopic|nav_msgs/Path|机器人局部路径话题名，软件订阅 |
-|globalPathTopic|nav_msgs/Path|机器人全局路径话题名，软件订阅 |
-|odomTopic|nav_msgs/Odometry|机器人里程计话题名，软件订阅 |
-|relocTopic|geometry_msgs/PoseWithCovarianceStamped|机器人重定位topic名，软件发布 |
-|navGoalTopic|geometry_msgs/PoseStamped|机器人导航目标点话题名，软件发布 |
-|SpeedCtrlTopic|geometry_msgs/Twist|机器人速度控制话题名，软件发布|
-|maxVx|double|软件手动控制时最大vx速度 |
-|maxVydouble|软件手动控制时最大vy速度 |
-|maxVw|double|软件手动控制时最大vw速度 |
-|mapFrameName|string|地图坐标系tf fram名|
-|baseLinkFrameName|string|机器人底盘坐标系tf fram名|
-|imagePort|string|相机图像web video server 服务器短裤|
-|imageTopic|string|要展示的相机图像的topic|
-|imageWidth|int|要展示的相机图像的宽默认640|
-|imageHeight|int|要展示的相机图像的高默认480|
+| 配置名            | 消息类型                                | 说明                                |
+| ----------------- | --------------------------------------- | ----------------------------------- |
+| battery_topic     | sensor_msgs/BatteryState                | 机器人电池电量的topic，软件订阅     |
+| mapTopic          | nav_msgs/OccupancyGrid                  | 机器人地图话题名，软件订阅          |
+| laserTopic        | sensor_msgs/LaserScan                   | 激光话题名，软件订阅                |
+| localPathTopic    | nav_msgs/Path                           | 机器人局部路径话题名，软件订阅      |
+| globalPathTopic   | nav_msgs/Path                           | 机器人全局路径话题名，软件订阅      |
+| odomTopic         | nav_msgs/Odometry                       | 机器人里程计话题名，软件订阅        |
+| relocTopic        | geometry_msgs/PoseWithCovarianceStamped | 机器人重定位topic名，软件发布       |
+| navGoalTopic      | geometry_msgs/PoseStamped               | 机器人导航目标点话题名，软件发布    |
+| SpeedCtrlTopic    | geometry_msgs/Twist                     | 机器人速度控制话题名，软件发布      |
+| maxVx             | double                                  | 软件手动控制时最大vx速度            |
+| maxVydouble       | 软件手动控制时最大vy速度                |
+| maxVw             | double                                  | 软件手动控制时最大vw速度            |
+| mapFrameName      | string                                  | 地图坐标系tf fram名                 |
+| baseLinkFrameName | string                                  | 机器人底盘坐标系tf fram名           |
+| imagePort         | string                                  | 相机图像web video server 服务器短裤 |
+| imageTopic        | string                                  | 要展示的相机图像的topic             |
+| imageWidth        | int                                     | 要展示的相机图像的宽默认640         |
+| imageHeight       | int                                     | 要展示的相机图像的高默认480         |
 
 设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic的数据：
 ![connect](./images/connect.png)
@@ -303,6 +304,11 @@ ros2 run web_video_server web_video_server
 http://localhost:8080/stream?topic=/usb_cam/image_raw
 ```
 如果图像正常显示，则 web_video_server 已成功配置。
+
+##### 1.5.3 多点导航
+
+长按左侧导航点按钮，可以管理航点，并进行多点导航
+
 
 #### 软件配置
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 enum KeyName {
   None,
@@ -57,33 +58,65 @@ Map<String, JoyStickEvent> buttonMapping = {
       JoyStickEvent(KeyName.buttonRB, maxValue: 1, minValue: 0, reverse: true),
 };
 
+enum RobotType {
+  ROS2Default,
+  ROS1,
+  TurtleBot3,
+  TurtleBot4,
+  Jackal,
+}
+
+extension RobotTypeExtension on RobotType {
+  String get displayName {
+    switch (this) {
+      case RobotType.ROS2Default:
+        return "ROS2 默认";
+      case RobotType.ROS1:
+        return "ROS1";
+      case RobotType.TurtleBot3:
+        return "TurtleBot3";
+      case RobotType.TurtleBot4:
+        return "TurtleBot4";
+      case RobotType.Jackal:
+        return "Jackal";
+    }
+  }
+
+  String get value {
+    switch (this) {
+      case RobotType.ROS2Default:
+        return "2";
+      case RobotType.ROS1:
+        return "1";
+      case RobotType.TurtleBot3:
+        return "3";
+      case RobotType.TurtleBot4:
+        return "4";
+      case RobotType.Jackal:
+        return "5";
+    }
+  }
+}
+
 class Setting {
   late SharedPreferences prefs;
   Future<bool> init() async {
-    //walking 
     prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey("init") || (prefs.containsKey("init") && prefs.getString("init") == "2"))
-    {
+
+    // 从 package_info_plus 获取应用版本
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String currentVersion = packageInfo.version;
+    if (!prefs.containsKey("tempConfig") ||
+        !prefs.containsKey("version") ||
+        prefs.getString("version") != currentVersion) {
+      print(
+          "set default config $currentVersion last version: ${prefs.getString("version")}");
       setDefaultCfgRos2();
+      // 保存当前版本号
+      prefs.setString("version", currentVersion);
+      prefs.setString("tempConfig", "2");
     }
-    //jackal   
-    else if((prefs.containsKey("init") && prefs.getString("init") == "5")) { 
-      setDefaultCfgRos2Jackal();
-    }     
-    //turtlebot4
-    else if((prefs.containsKey("init") && prefs.getString("init") == "4")) { 
-      setDefaultCfgRos2TB4();
-    }
-    //turtlebot3
-    else if((prefs.containsKey("init") && prefs.getString("init") == "3")) { 
-      setDefaultCfgRos2TB3();
-    }
-    else if((prefs.containsKey("init") && prefs.getString("init") == "1")) {
-      setDefaultCfgRos1();
-    } 
-    else {
-      setDefaultCfgRos2();
-    } 
+
     return true;
   }
 
@@ -104,10 +137,10 @@ class Setting {
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
-    prefs.setDouble('imageHeight', 480);      
-  }  
+    prefs.setDouble('imageHeight', 480);
+  }
 
   void setDefaultCfgRos2TB4() {
     prefs.setString('init', "4");
@@ -126,9 +159,9 @@ class Setting {
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
-    prefs.setDouble('imageHeight', 480);     
+    prefs.setDouble('imageHeight', 480);
   }
 
   void setDefaultCfgRos2TB3() {
@@ -148,10 +181,10 @@ class Setting {
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw"); 
+    prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
-    prefs.setDouble('imageHeight', 480);   
-  }  
+    prefs.setDouble('imageHeight', 480);
+  }
 
   void setDefaultCfgRos2() {
     prefs.setString('init', "2");
@@ -170,7 +203,7 @@ class Setting {
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw");  
+    prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
   }
@@ -201,11 +234,6 @@ class Setting {
     return prefs;
   }
 
-  // 设置机器人IP
-  void setRobotIp(String ip) {
-    prefs.setString('robotIp', ip);
-  }
-
   double get imageWidth {
     return prefs.getDouble("imageWidth") ?? 640;
   }
@@ -213,6 +241,7 @@ class Setting {
   double get imageHeight {
     return prefs.getDouble("imageHeight") ?? 480;
   }
+
   String get robotIp {
     return prefs.getString("robotIp") ?? "127.0.0.1";
   }
@@ -223,10 +252,6 @@ class Setting {
 
   String get imageTopic {
     return prefs.getString("imageTopic") ?? "/camera/rgb/image_raw";
-  }
-
-  void setRobotPort(String port) {
-    prefs.setString('robotPort', port);
   }
 
   String get robotPort {
@@ -297,7 +322,6 @@ class Setting {
     prefs.setString('BatteryTopic', topic);
   }
 
-
   String getConfig(String key) {
     return prefs.getString(key) ?? "";
   }
@@ -309,7 +333,160 @@ class Setting {
   void setOdomTopic(String topic) {
     prefs.setString('OdometryTopic', topic);
   }
-  //实列
+
+  // 添加速度控制相关的方法
+  void setSpeedCtrlTopic(String topic) {
+    prefs.setString('SpeedCtrlTopic', topic);
+  }
+
+  String get speedCtrlTopic {
+    return prefs.getString("SpeedCtrlTopic") ?? "/cmd_vel";
+  }
+
+  // 添加最大速度设置方法
+  void setMaxVx(String value) {
+    prefs.setString('MaxVx', value);
+  }
+
+  void setMaxVy(String value) {
+    prefs.setString('MaxVy', value);
+  }
+
+  void setMaxVw(String value) {
+    prefs.setString('MaxVw', value);
+  }
+
+  // 添加最大速度获取方法
+  double get maxVx {
+    return double.parse(prefs.getString("MaxVx") ?? "0.1");
+  }
+
+  double get maxVy {
+    return double.parse(prefs.getString("MaxVy") ?? "0.1");
+  }
+
+  double get maxVw {
+    return double.parse(prefs.getString("MaxVw") ?? "0.3");
+  }
+
+  // 添加图像设置方法
+  void setImagePort(String port) {
+    prefs.setString('imagePort', port);
+  }
+
+  void setImageTopic(String topic) {
+    prefs.setString('imageTopic', topic);
+  }
+
+  void setImageWidth(double width) {
+    prefs.setDouble('imageWidth', width);
+  }
+
+  void setImageHeight(double height) {
+    prefs.setDouble('imageHeight', height);
+  }
+
+  // 添加框架名称设置方法
+  void setMapFrameName(String name) {
+    prefs.setString('mapFrameName', name);
+  }
+
+  void setBaseLinkFrameName(String name) {
+    prefs.setString('baseLinkFrameName', name);
+  }
+
+  // 添加通用配置设置方法
+  void setConfig(String key, String value) {
+    prefs.setString(key, value);
+  }
+
+  // 基本设置相关方法
+  void setRobotIp(String ip) {
+    prefs.setString('robotIp', ip);
+  }
+
+  void setRobotPort(String port) {
+    prefs.setString('robotPort', port);
+  }
+
+  // 地图相关方法
+
+  void setMapMetadataTopic(String topic) {
+    prefs.setString('mapMetadataTopic', topic);
+  }
+
+  // 定位相关方法
+
+  void setInitPoseTopic(String topic) {
+    prefs.setString('initPoseTopic', topic);
+  }
+
+  void setAmclPoseTopic(String topic) {
+    prefs.setString('amclPoseTopic', topic);
+  }
+
+  // 导航相关方法
+  void setMoveBaseTopic(String topic) {
+    prefs.setString('moveBaseTopic', topic);
+  }
+
+  void setCmdVelTopic(String topic) {
+    prefs.setString('cmdVelTopic', topic);
+  }
+
+  void setGlobalPlanTopic(String topic) {
+    prefs.setString('globalPlanTopic', topic);
+  }
+
+  void setLocalPlanTopic(String topic) {
+    prefs.setString('localPlanTopic', topic);
+  }
+
+  void setGlobalCostmapTopic(String topic) {
+    prefs.setString('globalCostmapTopic', topic);
+  }
+
+  void setLocalCostmapTopic(String topic) {
+    prefs.setString('localCostmapTopic', topic);
+  }
+
+  void setGlobalPathTopic(String topic) {
+    prefs.setString('globalPathTopic', topic);
+  }
+
+  // 状态监控相关方法
+  void setRobotStatusTopic(String topic) {
+    prefs.setString('robotStatusTopic', topic);
+  }
+
+  void setJointStatesTopic(String topic) {
+    prefs.setString('jointStatesTopic', topic);
+  }
+
+  // 获取各个配置的默认值方法
+  Map<String, String> getDefaultValues() {
+    return {
+      'robotIp': '192.168.1.100',
+      'robotPort': '9090',
+      'mapTopic': '/map',
+      'mapMetadataTopic': '/map_metadata',
+      'laserTopic': '/scan',
+      'initPoseTopic': '/initialpose',
+      'amclPoseTopic': '/amcl_pose',
+      'odomTopic': '/odom',
+      'moveBaseTopic': '/move_base',
+      'cmdVelTopic': '/cmd_vel',
+      'globalPlanTopic': '/move_base/GlobalPlanner/plan',
+      'localPlanTopic': '/move_base/local_plan',
+      'globalCostmapTopic': '/move_base/global_costmap/costmap',
+      'localCostmapTopic': '/move_base/local_costmap/costmap',
+      'globalPathTopic': '/move_base/NavfnROS/plan',
+      'localPathTopic': '/move_base/DWAPlannerROS/local_plan',
+      'robotStatusTopic': '/robot_status',
+      'batteryTopic': '/battery_state',
+      'jointStatesTopic': '/joint_states'
+    };
+  }
 }
 
 Setting globalSetting = Setting();
