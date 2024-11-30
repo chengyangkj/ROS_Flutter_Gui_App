@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
@@ -83,23 +84,36 @@ class DisplayMapPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..strokeWidth = 1;
 
-    // 动态绘制占据区域
+    // 按透明度对占据点进行分组
+    Map<int, List<Offset>> alphaGroups = {};
     for (var mapPoint in occPointList) {
-      int alpha =
-          (mapPoint.value * 2.55).clamp(0, 255).toInt(); // 映射到 0-255 的透明度
-      paint.color = occBaseColor.withAlpha(alpha); // 根据透明度设置颜色
-      canvas.drawPoints(
-          PointMode.points, [mapPoint.point], paint); // 使用 drawPoints 绘制单个像素点
+      int alpha = (mapPoint.value * 2.55).clamp(0, 255).toInt();
+      alphaGroups.putIfAbsent(alpha, () => []).add(mapPoint.point);
     }
 
-    // 绘制自由区域
-    paint.color = freeColor;
-    canvas.drawPoints(PointMode.points, freePointList, paint);
+    // 批量绘制相同透明度的点
+    for (var entry in alphaGroups.entries) {
+      paint.color = occBaseColor.withAlpha(entry.key);
+      final points = Float32List.fromList(
+          entry.value.expand((point) => [point.dx, point.dy]).toList());
+      canvas.drawRawPoints(PointMode.points, points, paint);
+    }
+
+    // 批量绘制自由区域
+    if (freePointList.isNotEmpty) {
+      paint.color = freeColor;
+      final freePoints = Float32List.fromList(
+          freePointList.expand((point) => [point.dx, point.dy]).toList());
+      canvas.drawRawPoints(PointMode.points, freePoints, paint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant DisplayMapPainter oldDelegate) {
-    return true;
+    return oldDelegate.occPointList != occPointList ||
+        oldDelegate.freePointList != freePointList ||
+        oldDelegate.freeColor != freeColor ||
+        oldDelegate.occBaseColor != occBaseColor;
   }
 }
 

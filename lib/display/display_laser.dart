@@ -14,27 +14,7 @@ class DisplayLaser extends StatefulWidget {
   DisplayLaserState createState() => DisplayLaserState();
 }
 
-class DisplayLaserState extends State<DisplayLaser>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    _controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 2000))
-          ..repeat();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Offset updateMoveOffset = Offset(0, 0);
-  Offset startMoveOffset = Offset(0, 0);
-  Offset endMoveOffset = Offset(0, 0);
+class DisplayLaserState extends State<DisplayLaser> {
   @override
   Widget build(BuildContext context) {
     //计算宽高
@@ -48,40 +28,33 @@ class DisplayLaserState extends State<DisplayLaser>
         height = element.dy.toInt();
       }
     });
-    return RepaintBoundary(child: Container(
-        width: width.toDouble(),
-        height: height.toDouble(),
-        // color: Colors.red,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return CustomPaint(
-              painter: DisplayLaserPainter(pointList: widget.pointList),
-            );
-          },
-        ),
-      ) ) ;
+    return RepaintBoundary(
+        child: Container(
+      width: width.toDouble(),
+      height: height.toDouble(),
+      child: CustomPaint(
+        painter: DisplayLaserPainter(pointList: widget.pointList),
+      ),
+    ));
   }
 }
 
 class DisplayLaserPainter extends CustomPainter {
-  List<Offset> pointList = [];
-
-  Paint _paint = Paint()..style = PaintingStyle.fill;
+  final List<Offset> pointList;
+  final Paint _paint = Paint()
+    ..color = Colors.red
+    ..strokeCap = StrokeCap.butt
+    ..strokeWidth = 1;
 
   DisplayLaserPainter({required this.pointList});
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = Colors.red // 设置颜色为传入的颜色参数
-      ..strokeCap = StrokeCap.butt // 设置画笔的端点为圆形，以便绘制圆形点
-      ..strokeWidth = 1; // 设置画笔的宽度为1个像素
-    canvas.drawPoints(PointMode.points, pointList, paint);
+    canvas.drawPoints(PointMode.points, pointList, _paint);
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
+  bool shouldRepaint(DisplayLaserPainter oldDelegate) {
+    return oldDelegate.pointList != pointList;
   }
 }

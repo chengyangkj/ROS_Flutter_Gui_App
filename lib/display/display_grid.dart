@@ -10,16 +10,20 @@ class DisplayGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    return Container(
-      width: width,
-      height: height,
-      color: theme.scaffoldBackgroundColor,
-      child: CustomPaint(
-        painter: GridPainter(
-          step: step,
-          color: isDarkMode
-              ? Colors.white.withAlpha(60)
-              : Colors.black.withAlpha(60),
+    return RepaintBoundary(
+      child: Container(
+        width: width,
+        height: height,
+        color: theme.scaffoldBackgroundColor,
+        child: CustomPaint(
+          isComplex: true,
+          willChange: false,
+          painter: GridPainter(
+            step: step,
+            color: isDarkMode
+                ? Colors.white.withAlpha(60)
+                : Colors.black.withAlpha(60),
+          ),
         ),
       ),
     );
@@ -34,20 +38,20 @@ class GridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
+    final Paint paint = Paint()
       ..color = color
-      ..strokeCap = StrokeCap.round // 圆形端点
-      ..strokeWidth = 2.0; // 点的直径
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.fill;
 
     for (double x = 0; x <= size.width; x += step) {
       for (double y = 0; y <= size.height; y += step) {
-        canvas.drawCircle(Offset(x, y), 1.0, paint); // 在网格交界处绘制点
+        canvas.drawCircle(Offset(x, y), 1.0, paint);
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
+  bool shouldRepaint(GridPainter oldDelegate) {
+    return step != oldDelegate.step || color != oldDelegate.color;
   }
 }
