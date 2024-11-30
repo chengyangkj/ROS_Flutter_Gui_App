@@ -95,7 +95,7 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .surface
-                                      .withOpacity(0.8),
+                                      .withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: Theme.of(context)
@@ -208,7 +208,7 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                 ),
                               ),
                             ),
-
+                            const SizedBox(height: 5),
                             // 连接按钮
                             SizedBox(
                               width: double.infinity,
@@ -260,7 +260,7 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                 color: Theme.of(context)
                                     .colorScheme
                                     .surface
-                                    .withOpacity(0.8),
+                                    .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: Theme.of(context)

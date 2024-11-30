@@ -1311,24 +1311,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   : theme.iconTheme.color)),
                   IconButton(
                     onPressed: () {
-                      // 切换横竖屏
-                      SystemChrome.setPreferredOrientations([
-                        // 切换到横屏或竖屏
-                        isLandscape
-                            ? DeviceOrientation.portraitUp
-                            : DeviceOrientation.landscapeRight,
-                      ]);
-                      setState(() {
-                        isLandscape = !isLandscape; // 更新状态
-                      });
-                    },
-                    icon: Icon(isLandscape
-                        ? Icons.screen_rotation
-                        : Icons.screen_rotation_alt),
-                    tooltip: '切换横竖屏',
-                  ),
-                  IconButton(
-                    onPressed: () {
                       // 退出操作
                       Navigator.pop(context); // 返回到上一个页面
                     },

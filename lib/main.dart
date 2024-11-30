@@ -14,12 +14,30 @@ import 'package:ros_flutter_gui_app/page/setting_page.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'provider/them_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await _setInitialOrientation();
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider<RosChannel>(create: (_) => RosChannel()),
     ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
     ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState())
   ], child: MyApp()));
+}
+
+Future<void> _setInitialOrientation() async {
+  final prefs = await SharedPreferences.getInstance();
+  final orientationValue = prefs.getString('screenOrientation') ?? 'landscape';
+  if (orientationValue == 'portrait') {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  } else {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
 }
 
 class MyApp extends StatefulWidget {

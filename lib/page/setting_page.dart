@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'gamepad_mapping_page.dart';
+import 'package:flutter/services.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -15,12 +16,14 @@ class _SettingsPageState extends State<SettingsPage> {
   final Map<String, String> _settings = {};
   late RobotType _selectedRobotType;
   String _version = '';
+  Orientation _selectedOrientation = Orientation.landscape;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _loadVersion();
+    _loadOrientation();
     String initValue = globalSetting.getConfig('init');
     _selectedRobotType = RobotType.values.firstWhere(
       (type) => type.value == initValue,
@@ -225,6 +228,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildBasicSection(),
       _buildTopicSection(),
       _buildGamepadSection(),
+      _buildOrientationSection(),
       // ... 其他设置组
     ];
   }
@@ -450,6 +454,69 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ],
     );
+  }
+
+  Widget _buildOrientationSection() {
+    return _buildSection(
+      "屏幕方向",
+      [
+        ListTile(
+          title: const Text("选择屏幕方向"),
+          trailing: DropdownButton<Orientation>(
+            value: _selectedOrientation,
+            dropdownColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.white,
+            onChanged: (Orientation? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedOrientation = newValue;
+                  _setOrientation(newValue);
+                  _saveOrientation(newValue);
+                });
+              }
+            },
+            items: Orientation.values
+                .map<DropdownMenuItem<Orientation>>((Orientation orientation) {
+              return DropdownMenuItem<Orientation>(
+                value: orientation,
+                child: Text(orientation == Orientation.portrait ? "竖屏" : "横屏"),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _loadOrientation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final orientationValue =
+        prefs.getString('screenOrientation') ?? 'landscape';
+    _selectedOrientation = orientationValue == 'portrait'
+        ? Orientation.portrait
+        : Orientation.landscape;
+    _setOrientation(_selectedOrientation);
+  }
+
+  void _setOrientation(Orientation orientation) {
+    if (orientation == Orientation.portrait) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
+  }
+
+  Future<void> _saveOrientation(Orientation orientation) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('screenOrientation',
+        orientation == Orientation.portrait ? 'portrait' : 'landscape');
   }
 
   @override
