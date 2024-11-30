@@ -32,8 +32,8 @@ class _DisplayMapState extends State<DisplayMap> {
         Offset point = Offset(i.toDouble(), j.toDouble());
 
         if (mapValue > 0) {
-          // 使用 MapPoint 保存位置信息以及 mapValue
-          occPointList.add(MapPoint(point: point, value: mapValue));
+          int alpha = (mapValue * 2.55).clamp(0, 255).toInt();
+          occPointList.add(MapPoint(point: point, value: alpha));
         } else if (mapValue == 0) {
           freePointList.add(point);
         }
@@ -84,19 +84,17 @@ class DisplayMapPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..strokeWidth = 1;
 
-    // 按透明度对占据点进行分组
-    Map<int, List<Offset>> alphaGroups = {};
-    for (var mapPoint in occPointList) {
-      int alpha = (mapPoint.value * 2.55).clamp(0, 255).toInt();
-      alphaGroups.putIfAbsent(alpha, () => []).add(mapPoint.point);
-    }
+    // 使用 PictureRecorder 缓存绘制内容
+    final recorder = PictureRecorder();
+    final recordingCanvas = Canvas(recorder);
 
-    // 批量绘制相同透明度的点
-    for (var entry in alphaGroups.entries) {
-      paint.color = occBaseColor.withAlpha(entry.key);
-      final points = Float32List.fromList(
-          entry.value.expand((point) => [point.dx, point.dy]).toList());
-      canvas.drawRawPoints(PointMode.points, points, paint);
+    // 保存 Canvas 状态
+    recordingCanvas.save();
+
+    // 批量绘制占据点
+    for (var mapPoint in occPointList) {
+      paint.color = occBaseColor.withAlpha(mapPoint.value);
+      recordingCanvas.drawPoints(PointMode.points, [mapPoint.point], paint);
     }
 
     // 批量绘制自由区域
@@ -104,8 +102,15 @@ class DisplayMapPainter extends CustomPainter {
       paint.color = freeColor;
       final freePoints = Float32List.fromList(
           freePointList.expand((point) => [point.dx, point.dy]).toList());
-      canvas.drawRawPoints(PointMode.points, freePoints, paint);
+      recordingCanvas.drawRawPoints(PointMode.points, freePoints, paint);
     }
+
+    // 恢复 Canvas 状态
+    recordingCanvas.restore();
+
+    // 将录制的内容绘制到实际 Canvas 上
+    final picture = recorder.endRecording();
+    canvas.drawPicture(picture);
   }
 
   @override
