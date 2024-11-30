@@ -19,7 +19,7 @@
 
 - [一，使用教程](#一使用教程)
   - [1.1 下载项目 Release 包](#11-下载项目-release-包)
-  - [1.2 运行项目](#12-运行项目)
+  - [1.2 行项目](#12-行项目)
     - [1.2.1 web端运行指南](#121-web端运行指南)
   - [1.3 机器人端环境配置](#13-机器人端环境配置)
     - [ROS 1](#ros-1)
@@ -34,13 +34,14 @@
     - [1.5.2 机器人位置显示](#152-机器人位置显示)
     - [1.5.3 机器人速度控制](#153-机器人速度控制)
     - [1.5.2 相机图像显示](#152-相机图像显示)
-      - [ROS 1 安装web\_video\_server教程](#ros-1-安装web_video_server教程)
+      - [ROS 1 安装web\_video\_server程](#ros-1-安装web_video_server程)
       - [ROS 2 安装web\_video\_server教程](#ros-2-安装web_video_server教程)
         - [1.5.3 多点导航](#153-多点导航)
       - [软件配置](#软件配置)
 - [引用](#引用)
+  - [许可证](#许可证)
 
-<!-- /TOC -->
+
 
 
 *项目截图*
@@ -84,7 +85,7 @@
 
 从[Release界面](https://github.com/chengyangkj/ROS_Flutter_Gui_App/releases) 下载所需要的对应环境的版本（windows，linux，web，android）
 
-## 1.2 运行项目
+## 1.2 行项目
 
 解压下载的压缩包，APP端下载后即可运行，web端运行时需要借助网站服务器这里介绍下web端使用：
 
@@ -203,7 +204,7 @@ python -m http.server 8000
 | imageWidth        | int                                     | 要展示的相机图像的宽默认640         |
 | imageHeight       | int                                     | 要展示的相机图像的高默认480         |
 
-设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic的数据：
+设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic数据：
 ![connect](./images/connect.png)
 
 ## 1.5 功能说明
@@ -229,7 +230,7 @@ python -m http.server 8000
 
 以下教程是在 **ROS 1** 和 **ROS 2** 中安装和验证该包的参考方法。
 
-#### ROS 1 安装web_video_server教程
+#### ROS 1 安装web_video_server程
 
 1. **安装 `web_video_server` 包**
 
@@ -324,4 +325,21 @@ http://localhost:8080/stream?topic=/usb_cam/image_raw
 
 - 部分UI界面效果参考自[ros_navigation_command_app](https://github.com/Rongix/ros_navigation_command_app)，仅参考UI显示效果，本仓库的代码的实现均为原创
 - [roslibdart](https://pub.dev/packages/roslibdart)，实现flutter 中的ros bridge websocket的通信，借助此库可以直接与ros进行端对端通信
-- [matrix_gesture_detector](https://pub.dev/packages/matrix_gesture_detector) 软件的手势识别在此pub包的基础上做更改
+- [matrix_gesture_detector](https://pub.dev/packages/matrix_gesture_detector) 软件的手势识别在此pub���的基础上做���
+
+## 许可证
+
+本项目采用知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议进行许可。您可以：
+
+- **共享** — 在任何媒介或格式中复制和再分发本作品
+- **演绎** — 修改、转换或以本作品为基础进行创作
+
+但须遵守以下条件：
+
+- **署名** — 您必须给予适当的署名，提供指向许可证的链接，并说明是否对作品进行了修改。您可以以任何合理的方式进行，但不得以任何方式暗示许可人认可您或您的使用。
+- **非商业性使用** — 您不得将本作品用于商业目的。需要得到作者的许可。
+- **相同方式共享** — 如果您对本作品进行了修改、转换或以本作品为基础进行创作，您必须基于与原始作品相同的许可协议分发您的贡献。
+
+如需商业用途，请联系作者以获取授权。
+
+更多详情，请参阅 [LICENSE](./LICENSE) 文件。
