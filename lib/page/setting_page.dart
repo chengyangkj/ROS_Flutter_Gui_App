@@ -360,29 +360,32 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _getDisplayName(key),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isDarkMode ? Colors.white : Colors.black,
+              Expanded(
+                child: Text(
+                  _getDisplayName(key),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
                 ),
               ),
-              Row(
-                children: [
-                  Text(
-                    value,
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.chevron_right,
+              Flexible(
+                child: Text(
+                  value,
+                  style: TextStyle(
                     color: isDarkMode ? Colors.grey[400] : Colors.grey,
-                    size: 20,
+                    fontSize: 16,
                   ),
-                ],
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right,
+                color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                size: 20,
               ),
             ],
           ),
