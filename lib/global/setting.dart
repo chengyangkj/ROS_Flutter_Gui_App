@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:convert';
@@ -228,7 +229,6 @@ class Setting {
   }
 
   void setDefaultCfgRos2Jackal() {
-    prefs.setString('init', "5");
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "/sensors/lidar_0/scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -250,7 +250,6 @@ class Setting {
   }
 
   void setDefaultCfgRos2TB4() {
-    prefs.setString('init', "4");
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -272,7 +271,6 @@ class Setting {
   }
 
   void setDefaultCfgRos2TB3() {
-    prefs.setString('init', "3");
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -294,7 +292,6 @@ class Setting {
   }
 
   void setDefaultCfgRos2() {
-    prefs.setString('init', "2");
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -316,7 +313,6 @@ class Setting {
   }
 
   void setDefaultCfgRos1() {
-    prefs.setString('init', "1");
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/move_base/DWAPlannerROS/global_plan");
