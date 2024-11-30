@@ -33,315 +33,336 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
           _ipController.text = globalSetting.robotIp;
           _portController.text = globalSetting.robotPort;
 
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        // 顶部图标和标题
-                        Flexible(
-                          flex: 2,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.smart_toy_outlined,
-                                size: 60,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '机器人连接',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // 中间表单部分
-                        Flexible(
-                          flex: 3,
-                          child: Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              side: BorderSide(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.2),
-                              ),
-                            ),
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surface
-                                .withOpacity(0.8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.05),
+                          Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          children: [
+                            // 顶部图标和标题
+                            Flexible(
+                              flex: 2,
                               child: Column(
-                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  TextField(
-                                    controller: _ipController,
-                                    decoration: InputDecoration(
-                                      labelText: 'IP 地址',
-                                      labelStyle: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.computer,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.5),
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
+                                  Icon(
+                                    Icons.smart_toy_outlined,
+                                    size: 60,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                   ),
-                                  const SizedBox(height: 16),
-                                  TextField(
-                                    controller: _portController,
-                                    decoration: InputDecoration(
-                                      labelText: '端口',
-                                      labelStyle: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.settings_ethernet,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '机器人连接',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium
+                                        ?.copyWith(
                                           color: Theme.of(context)
                                               .colorScheme
                                               .primary,
                                         ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.5),
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    keyboardType: TextInputType.number,
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                        ),
 
-                        // 连接按钮
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: _isConnecting ? null : _handleConnect,
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.surface,
-                              side: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: _isConnecting
-                                ? SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                    ),
-                                  )
-                                : Text(
-                                    '连接机器人',
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                      fontSize: 16,
-                                    ),
+                            // 中间表单部分
+                            Flexible(
+                              flex: 3,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surface
+                                      .withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.2),
                                   ),
-                          ),
-                        ),
-
-                        const Spacer(),
-
-                        // 底部主题切换
-                        Card(
-                          elevation: 0,
-                          margin: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.2),
-                            ),
-                          ),
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withOpacity(0.8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.palette_outlined,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.primary,
                                 ),
-                                const SizedBox(width: 8),
-                                SegmentedButton<ThemeMode>(
-                                  segments: const [
-                                    ButtonSegment(
-                                      value: ThemeMode.system,
-                                      icon: Icon(Icons.brightness_auto),
-                                      label: Text('自动'),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextField(
+                                        controller: _ipController,
+                                        decoration: InputDecoration(
+                                          labelText: 'IP 地址',
+                                          labelStyle: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                          prefixIcon: Icon(
+                                            Icons.computer,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                                  .withOpacity(0.5),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              width: 2,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      TextField(
+                                        controller: _portController,
+                                        decoration: InputDecoration(
+                                          labelText: '端口',
+                                          labelStyle: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                          prefixIcon: Icon(
+                                            Icons.settings_ethernet,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                                  .withOpacity(0.5),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              width: 2,
+                                            ),
+                                          ),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // 连接按钮
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed:
+                                    _isConnecting ? null : _handleConnect,
+                                style: OutlinedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.surface,
+                                  side: BorderSide(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: _isConnecting
+                                    ? SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      )
+                                    : Text(
+                                        '连接机器人',
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                              ),
+                            ),
+
+                            const Spacer(),
+
+                            // 底部主题切换
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surface
+                                    .withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.2),
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.palette_outlined,
+                                      size: 20,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                     ),
-                                    ButtonSegment(
-                                      value: ThemeMode.light,
-                                      icon: Icon(Icons.light_mode),
-                                      label: Text('浅色'),
-                                    ),
-                                    ButtonSegment(
-                                      value: ThemeMode.dark,
-                                      icon: Icon(Icons.dark_mode),
-                                      label: Text('深色'),
+                                    const SizedBox(width: 8),
+                                    SegmentedButton<ThemeMode>(
+                                      segments: const [
+                                        ButtonSegment(
+                                          value: ThemeMode.system,
+                                          icon: Icon(Icons.brightness_auto),
+                                          label: Text('自动'),
+                                        ),
+                                        ButtonSegment(
+                                          value: ThemeMode.light,
+                                          icon: Icon(Icons.light_mode),
+                                          label: Text('浅色'),
+                                        ),
+                                        ButtonSegment(
+                                          value: ThemeMode.dark,
+                                          icon: Icon(Icons.dark_mode),
+                                          label: Text('深色'),
+                                        ),
+                                      ],
+                                      selected: {
+                                        Provider.of<ThemeProvider>(context)
+                                            .themeMode
+                                      },
+                                      onSelectionChanged:
+                                          (Set<ThemeMode> selection) {
+                                        Provider.of<ThemeProvider>(context,
+                                                listen: false)
+                                            .updateThemeMode(
+                                                selection.first.index);
+                                      },
+                                      style: ButtonStyle(
+                                        side: MaterialStateProperty.all(
+                                            BorderSide(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.5),
+                                        )),
+                                      ),
                                     ),
                                   ],
-                                  selected: {
-                                    Provider.of<ThemeProvider>(context)
-                                        .themeMode
-                                  },
-                                  onSelectionChanged:
-                                      (Set<ThemeMode> selection) {
-                                    Provider.of<ThemeProvider>(context,
-                                            listen: false)
-                                        .updateThemeMode(selection.first.index);
-                                  },
-                                  style: ButtonStyle(
-                                    side: MaterialStateProperty.all(BorderSide(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(0.5),
-                                    )),
-                                  ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 16),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                      ],
+                      ),
                     ),
-
-                    // 右上角设置按钮
-                    Positioned(
-                      top: 8,
-                      right: 0,
-                      child: IconButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, "/setting"),
-                        icon: Icon(
-                          Icons.settings,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 28,
-                        ),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withOpacity(0.8),
-                          padding: const EdgeInsets.all(8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.2),
-                              width: 1.5,
-                            ),
+                  ),
+                  // 右上角设置按钮
+                  Positioned(
+                    top: 8,
+                    right: 0,
+                    child: IconButton(
+                      onPressed: () => Navigator.pushNamed(context, "/setting"),
+                      icon: Icon(
+                        Icons.settings,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 28,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surface
+                            .withOpacity(0.8),
+                        padding: const EdgeInsets.all(8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.2),
+                            width: 1.5,
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
