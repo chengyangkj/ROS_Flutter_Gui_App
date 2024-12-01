@@ -109,99 +109,162 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      TextField(
-                                        controller: _ipController,
-                                        decoration: InputDecoration(
-                                          labelText: 'IP 地址',
-                                          labelStyle: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.computer,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 3,
+                                            child: TextField(
+                                              controller: _ipController,
+                                              decoration: InputDecoration(
+                                                labelText: 'IP 地址',
+                                                labelStyle: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                                prefixIcon: Icon(
+                                                  Icons.computer,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                  ),
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withOpacity(0.5),
+                                                  ),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary
-                                                  .withOpacity(0.5),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            flex: 1,
+                                            child: TextField(
+                                              controller: _portController,
+                                              decoration: InputDecoration(
+                                                labelText: '端口',
+                                                labelStyle: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                                prefixIcon: Icon(
+                                                  Icons.settings_ethernet,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                  ),
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withOpacity(0.5),
+                                                  ),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                              ),
+                                              keyboardType:
+                                                  TextInputType.number,
                                             ),
                                           ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                              width: 2,
-                                            ),
-                                          ),
-                                        ),
+                                        ],
                                       ),
                                       const SizedBox(height: 16),
-                                      TextField(
-                                        controller: _portController,
-                                        decoration: InputDecoration(
-                                          labelText: '端口',
-                                          labelStyle: TextStyle(
-                                            color: Theme.of(context)
+                                      // 连接按钮
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: OutlinedButton(
+                                          onPressed: _isConnecting
+                                              ? null
+                                              : _handleConnect,
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            backgroundColor: Theme.of(context)
                                                 .colorScheme
-                                                .primary,
-                                          ),
-                                          prefixIcon: Icon(
-                                            Icons.settings_ethernet,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
+                                                .surface,
+                                            side: BorderSide(
                                               color: Theme.of(context)
                                                   .colorScheme
                                                   .primary,
+                                              width: 1.5,
                                             ),
                                           ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary
-                                                  .withOpacity(0.5),
-                                            ),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            borderSide: BorderSide(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                              width: 2,
-                                            ),
-                                          ),
+                                          child: _isConnecting
+                                              ? SizedBox(
+                                                  height: 20,
+                                                  width: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                  ),
+                                                )
+                                              : Text(
+                                                  '连接机器人',
+                                                  style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
                                         ),
-                                        keyboardType: TextInputType.number,
                                       ),
                                     ],
                                   ),
@@ -209,51 +272,6 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                               ),
                             ),
                             const SizedBox(height: 5),
-                            // 连接按钮
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed:
-                                    _isConnecting ? null : _handleConnect,
-                                style: OutlinedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.surface,
-                                  side: BorderSide(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: _isConnecting
-                                    ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                        ),
-                                      )
-                                    : Text(
-                                        '连接机器人',
-                                        style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                              ),
-                            ),
-
-                            const Spacer(),
-
                             // 底部主题切换
                             Container(
                               decoration: BoxDecoration(

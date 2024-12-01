@@ -41,9 +41,11 @@ class _GamepadWidgetState extends State<GamepadWidget> {
 
           bool trigger = (value != 0);
           if (trigger) {
-            mappingEvent.value = globalSetting.buttonMapping[key]!.reverse ? 0 : 1;
+            mappingEvent.value =
+                globalSetting.buttonMapping[key]!.reverse ? 0 : 1;
           } else {
-            mappingEvent.value = globalSetting.buttonMapping[key]!.reverse ? 1 : 0;
+            mappingEvent.value =
+                globalSetting.buttonMapping[key]!.reverse ? 1 : 0;
           }
 
           eventMap[mappingEvent.keyName] = mappingEvent;
@@ -82,8 +84,8 @@ class _GamepadWidgetState extends State<GamepadWidget> {
   @override
   void dispose() {
     super.dispose();
-    leftJoystickController.end();
-    rightJoystickController.end();
+    // leftJoystickController.end();
+    // rightJoystickController.end();
     _subscription?.cancel();
   }
 

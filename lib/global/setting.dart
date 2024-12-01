@@ -32,15 +32,19 @@ class JoyStickEvent {
   double val = 0;
 
   set value(double val) {
-    this.val = val;
+    if (val > maxValue) {
+      val = maxValue;
+    } else if (val < minValue) {
+      val = minValue;
+    }
+    if (reverse) {
+      val = -val;
+    }
   }
 
   double get value {
     //数值归一化-1到1
     var normalizedValue = (val - minValue) / (maxValue - minValue) * 2 - 1;
-    if (reverse) {
-      normalizedValue = -normalizedValue;
-    }
     return normalizedValue;
   }
 
@@ -139,6 +143,7 @@ class Setting {
 
   Future<void> _loadGamepadMapping() async {
     final mappingStr = prefs.getString('gamepadMapping');
+    print(mappingStr);
     if (mappingStr != null) {
       try {
         final mapping = jsonDecode(mappingStr);
@@ -207,7 +212,7 @@ class Setting {
             'reverse': value.reverse,
           })),
     };
-
+    print(jsonEncode(mapping));
     await prefs.setString('gamepadMapping', jsonEncode(mapping));
   }
 

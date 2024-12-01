@@ -120,7 +120,6 @@ class _GamepadMappingPageState extends State<GamepadMappingPage> {
       int maxCount = 0;
       MappingResult? maxResult;
       _mappingResults.forEach((key, value) {
-        print("$key: ${value.count}");
         if (value.count > maxCount) {
           maxCount = value.count;
           maxResult = value;
@@ -165,7 +164,7 @@ class _GamepadMappingPageState extends State<GamepadMappingPage> {
           if (maxResult!.value > 0) {
             j_event.reverse = true;
           }
-          j_event.maxValue = maxResult!.value;
+          j_event.minValue = maxResult!.value;
 
           globalSetting.axisMapping[maxResult!.key] = j_event;
         } else if (_editingKey == "左摇杆右") {
@@ -189,7 +188,7 @@ class _GamepadMappingPageState extends State<GamepadMappingPage> {
           if (maxResult!.value > 0) {
             j_event.reverse = true;
           }
-          j_event.maxValue = maxResult!.value;
+          j_event.minValue = maxResult!.value;
 
           globalSetting.axisMapping[maxResult!.key] = j_event;
         } else if (_editingKey == "右摇杆右") {
