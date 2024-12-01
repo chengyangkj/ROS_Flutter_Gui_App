@@ -52,13 +52,13 @@ dependencies:
   package_info_plus: ^8.1.0
   flutter_mjpeg: ^2.0.4
   http: ^0.13.6
+  fluttertoast: ^8.2.8
 
-# flutter_icons:
-#   android: true
-#   ios: true
-#   image_path: "assets/icon/app_icon.png" # 你的图标路径
-#   adaptive_icon_background: "#ffffff" # 可选，设置 Android 自适应图标的背景色
-#   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"  
+
 dependency_overrides:
   gamepads_windows:
     path: ./thirdparty/gamepads_windows  # 指向你自定义实现的路径

@@ -227,7 +227,6 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildRobotTypeSection(),
       _buildBasicSection(),
       _buildTopicSection(),
-      _buildGamepadSection(),
       _buildOrientationSection(),
       // ... 其他设置组
     ];
@@ -441,9 +440,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildGamepadSection() {
+  Widget _buildOrientationSection() {
     return _buildSection(
-      "手柄设置",
+      "APP设置",
       [
         ListTile(
           title: const Text("手柄按键映射"),
@@ -455,14 +454,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildOrientationSection() {
-    return _buildSection(
-      "屏幕方向",
-      [
         ListTile(
           title: const Text("选择屏幕方向"),
           trailing: DropdownButton<Orientation>(

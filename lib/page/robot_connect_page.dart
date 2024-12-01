@@ -281,43 +281,45 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                           Theme.of(context).colorScheme.primary,
                                     ),
                                     const SizedBox(width: 8),
-                                    SegmentedButton<ThemeMode>(
-                                      segments: const [
-                                        ButtonSegment(
-                                          value: ThemeMode.system,
-                                          icon: Icon(Icons.brightness_auto),
-                                          label: Text('自动'),
+                                    Expanded(
+                                      child: SegmentedButton<ThemeMode>(
+                                        segments: const [
+                                          ButtonSegment(
+                                            value: ThemeMode.system,
+                                            icon: Icon(Icons.brightness_auto),
+                                            label: Text('自动'),
+                                          ),
+                                          ButtonSegment(
+                                            value: ThemeMode.light,
+                                            icon: Icon(Icons.light_mode),
+                                            label: Text('浅色'),
+                                          ),
+                                          ButtonSegment(
+                                            value: ThemeMode.dark,
+                                            icon: Icon(Icons.dark_mode),
+                                            label: Text('深色'),
+                                          ),
+                                        ],
+                                        selected: {
+                                          Provider.of<ThemeProvider>(context)
+                                              .themeMode
+                                        },
+                                        onSelectionChanged:
+                                            (Set<ThemeMode> selection) {
+                                          Provider.of<ThemeProvider>(context,
+                                                  listen: false)
+                                              .updateThemeMode(
+                                                  selection.first.index);
+                                        },
+                                        style: ButtonStyle(
+                                          side: MaterialStateProperty.all(
+                                              BorderSide(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(0.5),
+                                          )),
                                         ),
-                                        ButtonSegment(
-                                          value: ThemeMode.light,
-                                          icon: Icon(Icons.light_mode),
-                                          label: Text('浅色'),
-                                        ),
-                                        ButtonSegment(
-                                          value: ThemeMode.dark,
-                                          icon: Icon(Icons.dark_mode),
-                                          label: Text('深色'),
-                                        ),
-                                      ],
-                                      selected: {
-                                        Provider.of<ThemeProvider>(context)
-                                            .themeMode
-                                      },
-                                      onSelectionChanged:
-                                          (Set<ThemeMode> selection) {
-                                        Provider.of<ThemeProvider>(context,
-                                                listen: false)
-                                            .updateThemeMode(
-                                                selection.first.index);
-                                      },
-                                      style: ButtonStyle(
-                                        side: MaterialStateProperty.all(
-                                            BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.5),
-                                        )),
                                       ),
                                     ),
                                   ],
