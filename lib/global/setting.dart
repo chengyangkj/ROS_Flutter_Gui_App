@@ -27,38 +27,26 @@ enum KeyName {
 class JoyStickEvent {
   late KeyName keyName;
   bool reverse = false; //是否反转(反转填-1)Q
-  int maxValue = 32767;
-  int minValue = -32767;
-  double value = 0;
+  double maxValue = 32767;
+  double minValue = -32767;
+  double val = 0;
+
+  set value(double val) {
+    this.val = val;
+  }
+
+  double get value {
+    //数值归一化-1到1
+    var normalizedValue = (val - minValue) / (maxValue - minValue) * 2 - 1;
+    if (reverse) {
+      normalizedValue = -normalizedValue;
+    }
+    return normalizedValue;
+  }
+
   JoyStickEvent(this.keyName,
       {this.reverse = false, this.maxValue = 32767, this.minValue = -32767});
 }
-
-// 定义一个映射关系，将Dart中的类名映射到JavaScript中的类名
-Map<String, JoyStickEvent> axisMapping = {
-  "AXIS_X": JoyStickEvent(KeyName.leftAxisX),
-  "AXIS_Y": JoyStickEvent(KeyName.leftAxisY),
-  "AXIS_Z": JoyStickEvent(KeyName.rightAxisX),
-  "AXIS_RZ": JoyStickEvent(KeyName.rightAxisY),
-  "triggerRight": JoyStickEvent(KeyName.triggerRight),
-  "triggerLeft": JoyStickEvent(KeyName.triggerLeft),
-  "buttonLeftRight": JoyStickEvent(KeyName.buttonLeftRight),
-  "buttonUpDown": JoyStickEvent(KeyName.buttonUpDown),
-};
-Map<String, JoyStickEvent> buttonMapping = {
-  "KEYCODE_BUTTON_A":
-      JoyStickEvent(KeyName.buttonA, maxValue: 1, minValue: 0, reverse: true),
-  "KEYCODE_BUTTON_B":
-      JoyStickEvent(KeyName.buttonB, maxValue: 1, minValue: 0, reverse: true),
-  "KEYCODE_BUTTON_X":
-      JoyStickEvent(KeyName.buttonX, maxValue: 1, minValue: 0, reverse: true),
-  "KEYCODE_BUTTON_Y":
-      JoyStickEvent(KeyName.buttonY, maxValue: 1, minValue: 0, reverse: true),
-  "KEYCODE_BUTTON_L1":
-      JoyStickEvent(KeyName.buttonLB, maxValue: 1, minValue: 0, reverse: true),
-  "KEYCODE_BUTTON_R1":
-      JoyStickEvent(KeyName.buttonRB, maxValue: 1, minValue: 0, reverse: true),
-};
 
 enum RobotType {
   ROS2Default,
@@ -102,6 +90,33 @@ extension RobotTypeExtension on RobotType {
 
 class Setting {
   late SharedPreferences prefs;
+
+// 定义一个映射关系，将Dart中的类名映射到JavaScript中的类名
+  Map<String, JoyStickEvent> axisMapping = {
+    "AXIS_X": JoyStickEvent(KeyName.leftAxisX),
+    "AXIS_Y": JoyStickEvent(KeyName.leftAxisY),
+    "AXIS_Z": JoyStickEvent(KeyName.rightAxisX),
+    "AXIS_RZ": JoyStickEvent(KeyName.rightAxisY),
+    "triggerRight": JoyStickEvent(KeyName.triggerRight),
+    "triggerLeft": JoyStickEvent(KeyName.triggerLeft),
+    "buttonLeftRight": JoyStickEvent(KeyName.buttonLeftRight),
+    "buttonUpDown": JoyStickEvent(KeyName.buttonUpDown),
+  };
+  Map<String, JoyStickEvent> buttonMapping = {
+    "KEYCODE_BUTTON_A":
+        JoyStickEvent(KeyName.buttonA, maxValue: 1, minValue: 0, reverse: true),
+    "KEYCODE_BUTTON_B":
+        JoyStickEvent(KeyName.buttonB, maxValue: 1, minValue: 0, reverse: true),
+    "KEYCODE_BUTTON_X":
+        JoyStickEvent(KeyName.buttonX, maxValue: 1, minValue: 0, reverse: true),
+    "KEYCODE_BUTTON_Y":
+        JoyStickEvent(KeyName.buttonY, maxValue: 1, minValue: 0, reverse: true),
+    "KEYCODE_BUTTON_L1": JoyStickEvent(KeyName.buttonLB,
+        maxValue: 1, minValue: 0, reverse: true),
+    "KEYCODE_BUTTON_R1": JoyStickEvent(KeyName.buttonRB,
+        maxValue: 1, minValue: 0, reverse: true),
+  };
+
   Future<bool> init() async {
     prefs = await SharedPreferences.getInstance();
 
@@ -114,7 +129,6 @@ class Setting {
         prefs.getString("version") != currentVersion) {
       setDefaultCfgRos2();
       prefs.setString("version", currentVersion);
-      _resetToDefaultMapping();
     }
 
     // 从配置中加载手柄映射
@@ -163,7 +177,7 @@ class Setting {
       } catch (e) {
         print('Error loading gamepad mapping: $e');
         // 如果加载失败，使用默认映射
-        _resetToDefaultMapping();
+        resetGamepadMapping();
       }
     }
   }
@@ -177,7 +191,27 @@ class Setting {
     );
   }
 
-  Future<void> _resetToDefaultMapping() async {
+  Future<void> saveGamepadMapping() async {
+    // 将默认映射保存到配置中
+    final mapping = {
+      'axisMapping': axisMapping.map((key, value) => MapEntry(key, {
+            'keyName': value.keyName.toString(),
+            'maxValue': value.maxValue,
+            'minValue': value.minValue,
+            'reverse': value.reverse,
+          })),
+      'buttonMapping': buttonMapping.map((key, value) => MapEntry(key, {
+            'keyName': value.keyName.toString(),
+            'maxValue': value.maxValue,
+            'minValue': value.minValue,
+            'reverse': value.reverse,
+          })),
+    };
+
+    await prefs.setString('gamepadMapping', jsonEncode(mapping));
+  }
+
+  Future<void> resetGamepadMapping() async {
     axisMapping.clear();
     buttonMapping.clear();
 

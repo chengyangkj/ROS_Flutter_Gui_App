@@ -36,14 +36,14 @@ class _GamepadWidgetState extends State<GamepadWidget> {
       eventString.value = event.toString();
 
       if (event.type == KeyType.button) {
-        if (buttonMapping.containsKey(key)) {
-          var mappingEvent = buttonMapping[key]!;
+        if (globalSetting.buttonMapping.containsKey(key)) {
+          var mappingEvent = globalSetting.buttonMapping[key]!;
 
           bool trigger = (value != 0);
           if (trigger) {
-            mappingEvent.value = buttonMapping[key]!.reverse ? 0 : 1;
+            mappingEvent.value = globalSetting.buttonMapping[key]!.reverse ? 0 : 1;
           } else {
-            mappingEvent.value = buttonMapping[key]!.reverse ? 1 : 0;
+            mappingEvent.value = globalSetting.buttonMapping[key]!.reverse ? 1 : 0;
           }
 
           eventMap[mappingEvent.keyName] = mappingEvent;
@@ -52,8 +52,8 @@ class _GamepadWidgetState extends State<GamepadWidget> {
               'current button not mapping! event key: ${event.key},value:${event.value}type:${event.type}');
         }
       } else {
-        if (axisMapping.containsKey(key)) {
-          var mappingEvent = axisMapping[key]!;
+        if (globalSetting.axisMapping.containsKey(key)) {
+          var mappingEvent = globalSetting.axisMapping[key]!;
           mappingEvent.value = value;
           eventMap[mappingEvent.keyName] = mappingEvent;
         } else {
