@@ -14,7 +14,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final Map<String, String> _settings = {};
-  late RobotType _selectedRobotType;
+  late TempConfigType _selectedTempConfigType;
   String _version = '';
   Orientation _selectedOrientation = Orientation.landscape;
 
@@ -24,11 +24,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadSettings();
     _loadVersion();
     _loadOrientation();
-    String initValue = globalSetting.getConfig('init');
-    _selectedRobotType = RobotType.values.firstWhere(
-      (type) => type.value == initValue,
-      orElse: () => RobotType.ROS2Default,
-    );
+    _selectedTempConfigType = globalSetting.tempConfig;
   }
 
   Future<void> _loadVersion() async {
@@ -127,104 +123,99 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _saveSettings(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
 
-    if (key == "tempConfig" && value.isNotEmpty) {
-      await prefs.setString(key, value);
-      await initGlobalSetting();
-    } else {
-      await prefs.setString(key, value);
-      switch (key) {
-        case 'robotIp':
-          globalSetting.setRobotIp(value);
-          break;
-        case 'robotPort':
-          globalSetting.setRobotPort(value);
-          break;
-        case 'mapTopic':
-          globalSetting.setMapTopic(value);
-          break;
-        case 'laserTopic':
-          globalSetting.setLaserTopic(value);
-          break;
-        case 'globalPathTopic':
-          globalSetting.setGlobalPathTopic(value);
-          break;
-        case 'localPathTopic':
-          globalSetting.setLocalPathTopic(value);
-          break;
-        case 'relocTopic':
-          globalSetting.setRelocTopic(value);
-          break;
-        case 'navGoalTopic':
-          globalSetting.setNavGoalTopic(value);
-          break;
-        case 'OdometryTopic':
-          globalSetting.setOdomTopic(value);
-          break;
-        case 'SpeedCtrlTopic':
-          globalSetting.setSpeedCtrlTopic(value);
-          break;
-        case 'BatteryTopic':
-          globalSetting.setBatteryTopic(value);
-          break;
-        case 'MaxVx':
-          globalSetting.setMaxVx(value);
-          break;
-        case 'MaxVy':
-          globalSetting.setMaxVy(value);
-          break;
-        case 'MaxVw':
-          globalSetting.setMaxVw(value);
-          break;
-        case 'mapFrameName':
-          globalSetting.setMapFrameName(value);
-          break;
-        case 'baseLinkFrameName':
-          globalSetting.setBaseLinkFrameName(value);
-          break;
-        case 'imagePort':
-          globalSetting.setImagePort(value);
-          break;
-        case 'imageTopic':
-          globalSetting.setImageTopic(value);
-          break;
-        case 'imageWidth':
-          globalSetting.setImageWidth(double.parse(value));
-          break;
-        case 'imageHeight':
-          globalSetting.setImageHeight(double.parse(value));
-          break;
-      }
+    await prefs.setString(key, value);
+    switch (key) {
+      case 'robotIp':
+        globalSetting.setRobotIp(value);
+        break;
+      case 'robotPort':
+        globalSetting.setRobotPort(value);
+        break;
+      case 'mapTopic':
+        globalSetting.setMapTopic(value);
+        break;
+      case 'laserTopic':
+        globalSetting.setLaserTopic(value);
+        break;
+      case 'globalPathTopic':
+        globalSetting.setGlobalPathTopic(value);
+        break;
+      case 'localPathTopic':
+        globalSetting.setLocalPathTopic(value);
+        break;
+      case 'relocTopic':
+        globalSetting.setRelocTopic(value);
+        break;
+      case 'navGoalTopic':
+        globalSetting.setNavGoalTopic(value);
+        break;
+      case 'OdometryTopic':
+        globalSetting.setOdomTopic(value);
+        break;
+      case 'SpeedCtrlTopic':
+        globalSetting.setSpeedCtrlTopic(value);
+        break;
+      case 'BatteryTopic':
+        globalSetting.setBatteryTopic(value);
+        break;
+      case 'MaxVx':
+        globalSetting.setMaxVx(value);
+        break;
+      case 'MaxVy':
+        globalSetting.setMaxVy(value);
+        break;
+      case 'MaxVw':
+        globalSetting.setMaxVw(value);
+        break;
+      case 'mapFrameName':
+        globalSetting.setMapFrameName(value);
+        break;
+      case 'baseLinkFrameName':
+        globalSetting.setBaseLinkFrameName(value);
+        break;
+      case 'imagePort':
+        globalSetting.setImagePort(value);
+        break;
+      case 'imageTopic':
+        globalSetting.setImageTopic(value);
+        break;
+      case 'imageWidth':
+        globalSetting.setImageWidth(double.parse(value));
+        break;
+      case 'imageHeight':
+        globalSetting.setImageHeight(double.parse(value));
+        break;
     }
 
     _loadSettings();
   }
 
-  Future<void> _applyTemplate(RobotType type) async {
+  Future<void> _applyTemplate(TempConfigType type) async {
     switch (type) {
-      case RobotType.ROS2Default:
+      case TempConfigType.ROS2Default:
         globalSetting.setDefaultCfgRos2();
         break;
-      case RobotType.ROS1:
+      case TempConfigType.ROS1:
         globalSetting.setDefaultCfgRos1();
         break;
-      case RobotType.TurtleBot3:
+      case TempConfigType.TurtleBot3:
         globalSetting.setDefaultCfgRos2TB3();
         break;
-      case RobotType.TurtleBot4:
+      case TempConfigType.TurtleBot4:
         globalSetting.setDefaultCfgRos2TB4();
         break;
-      case RobotType.Jackal:
+      case TempConfigType.Jackal:
         globalSetting.setDefaultCfgRos2Jackal();
         break;
     }
     setState(() {
-      _selectedRobotType = type;
+      _selectedTempConfigType = type;
     });
   }
 
   List<Widget> _buildSettingGroups() {
     return [
-      _buildRobotTypeSection(),
+      _buildTempConfigTypeSection(),
       _buildBasicSection(),
       _buildTopicSection(),
       _buildOrientationSection(),
@@ -232,7 +223,7 @@ class _SettingsPageState extends State<SettingsPage> {
     ];
   }
 
-  Widget _buildRobotTypeSection() {
+  Widget _buildTempConfigTypeSection() {
     return _buildSection(
       "机器人类型",
       [
@@ -250,8 +241,8 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
             child: DropdownButtonHideUnderline(
-              child: DropdownButton<RobotType>(
-                value: _selectedRobotType,
+              child: DropdownButton<TempConfigType>(
+                value: _selectedTempConfigType,
                 dropdownColor: Theme.of(context).brightness == Brightness.dark
                     ? Colors.grey[800]
                     : Colors.white,
@@ -259,7 +250,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 elevation: 8,
                 isDense: true,
                 icon: const Icon(Icons.arrow_drop_down),
-                onChanged: (RobotType? newValue) {
+                onChanged: (TempConfigType? newValue) {
                   if (newValue != null) {
                     showDialog(
                       context: context,
@@ -285,12 +276,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     );
                   }
                 },
-                items: RobotType.values
-                    .map<DropdownMenuItem<RobotType>>((RobotType type) {
-                  return DropdownMenuItem<RobotType>(
+                items: TempConfigType.values
+                    .map<DropdownMenuItem<TempConfigType>>(
+                        (TempConfigType type) {
+                  return DropdownMenuItem<TempConfigType>(
                     value: type,
                     child: Text(
-                      type.displayName,
+                      tempConfigTypeToString(type),
                       style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.white
@@ -444,16 +436,6 @@ class _SettingsPageState extends State<SettingsPage> {
     return _buildSection(
       "APP设置",
       [
-        ListTile(
-          title: const Text("手柄按键映射"),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const GamepadMappingPage(),
-            ),
-          ),
-        ),
         ListTile(
           title: const Text("选择屏幕方向"),
           trailing: DropdownButton<Orientation>(

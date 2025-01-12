@@ -52,7 +52,7 @@ class JoyStickEvent {
       {this.reverse = false, this.maxValue = 32767, this.minValue = -32767});
 }
 
-enum RobotType {
+enum TempConfigType {
   ROS2Default,
   ROS1,
   TurtleBot3,
@@ -60,36 +60,8 @@ enum RobotType {
   Jackal,
 }
 
-extension RobotTypeExtension on RobotType {
-  String get displayName {
-    switch (this) {
-      case RobotType.ROS2Default:
-        return "ROS2 默认";
-      case RobotType.ROS1:
-        return "ROS1";
-      case RobotType.TurtleBot3:
-        return "TurtleBot3";
-      case RobotType.TurtleBot4:
-        return "TurtleBot4";
-      case RobotType.Jackal:
-        return "Jackal";
-    }
-  }
-
-  String get value {
-    switch (this) {
-      case RobotType.ROS2Default:
-        return "2";
-      case RobotType.ROS1:
-        return "1";
-      case RobotType.TurtleBot3:
-        return "3";
-      case RobotType.TurtleBot4:
-        return "4";
-      case RobotType.Jackal:
-        return "5";
-    }
-  }
+String tempConfigTypeToString(TempConfigType type) {
+  return type.toString().split('.').last;
 }
 
 class Setting {
@@ -128,8 +100,7 @@ class Setting {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String currentVersion = packageInfo.version;
 
-    if (!prefs.containsKey("init") ||
-        !prefs.containsKey("version") ||
+    if (!prefs.containsKey("version") ||
         prefs.getString("version") != currentVersion) {
       setDefaultCfgRos2();
       prefs.setString("version", currentVersion);
@@ -268,6 +239,7 @@ class Setting {
   }
 
   void setDefaultCfgRos2Jackal() {
+    prefs.setInt("tempConfig", TempConfigType.Jackal.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "/sensors/lidar_0/scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -289,6 +261,7 @@ class Setting {
   }
 
   void setDefaultCfgRos2TB4() {
+    prefs.setInt("tempConfig", TempConfigType.TurtleBot4.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -310,6 +283,7 @@ class Setting {
   }
 
   void setDefaultCfgRos2TB3() {
+    prefs.setInt("tempConfig", TempConfigType.TurtleBot3.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -331,6 +305,7 @@ class Setting {
   }
 
   void setDefaultCfgRos2() {
+    prefs.setInt("tempConfig", TempConfigType.ROS2Default.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/plan");
@@ -352,6 +327,7 @@ class Setting {
   }
 
   void setDefaultCfgRos1() {
+    prefs.setInt("tempConfig", TempConfigType.ROS1.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('globalPathTopic', "/move_base/DWAPlannerROS/global_plan");
@@ -496,6 +472,10 @@ class Setting {
 
   void setMaxVw(String value) {
     prefs.setString('MaxVw', value);
+  }
+
+  TempConfigType get tempConfig {
+    return TempConfigType.values[prefs.getInt("tempConfig") ?? 0];
   }
 
   // 添加最大速度获取方法
