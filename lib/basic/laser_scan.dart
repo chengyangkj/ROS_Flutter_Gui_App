@@ -23,23 +23,35 @@ class LaserScan {
       this.intensities});
 
   LaserScan.fromJson(Map<String, dynamic> json) {
-    header =
-        json['header'] != null ? new Header.fromJson(json['header']) : null;
-    angleMin = json['angle_min'] as double;
-    angleMax = json['angle_max'] as double;
-    angleIncrement = json['angle_increment'] as double;
-    timeIncrement = json['time_increment'] as double;
-    scanTime = json['scan_time'] as double;
-    rangeMin = json['range_min'] as double;
-    rangeMax = json['range_max'] as double;
-    ranges = (json['ranges'] as List<dynamic>).map((e) {
-      // print("e:${e.runtimeType}");
-      if (e == null) -1.toDouble();
-      if (e is double) return e.toDouble();
-      return -1.toDouble();
-    }).toList();
+    try {
+      header = json['header'] != null ? Header.fromJson(json['header']) : null;
+      angleMin = (json['angle_min'] as num?)?.toDouble() ?? 0.0;
+      angleMax = (json['angle_max'] as num?)?.toDouble() ?? 0.0;
+      angleIncrement = (json['angle_increment'] as num?)?.toDouble() ?? 0.0;
+      timeIncrement = (json['time_increment'] as num?)?.toDouble() ?? 0.0;
+      scanTime = (json['scan_time'] as num?)?.toDouble() ?? 0.0;
+      rangeMin = (json['range_min'] as num?)?.toDouble() ?? 0.0;
+      rangeMax = (json['range_max'] as num?)?.toDouble() ?? 0.0;
 
-    intensities = json['intensities'].cast<int>();
+      ranges = (json['ranges'] as List<dynamic>?)?.map((e) {
+            if (e == null) return -1.0;
+            if (e is num) return e.toDouble();
+            return -1.0;
+          }).toList() ??
+          [];
+
+      intensities = (json['intensities'] as List<dynamic>?)?.map((e) {
+            if (e == null) return 0;
+            if (e is num) return e.toInt();
+            return 0;
+          }).toList() ??
+          [];
+    } catch (e) {
+      print("Error parsing LaserScan data: $e");
+      // 设置默认值
+      ranges = [];
+      intensities = [];
+    }
   }
 
   Map<String, dynamic> toJson() {

@@ -17,25 +17,39 @@ class DisplayLaser extends StatefulWidget {
 class DisplayLaserState extends State<DisplayLaser> {
   @override
   Widget build(BuildContext context) {
+    if (widget.pointList.isEmpty) {
+      return Container(); // 如果没有点，返回空容器
+    }
+
     //计算宽高
-    int width = 0;
-    int height = 0;
-    widget.pointList.forEach((element) {
-      if (element.dx > width) {
-        width = element.dx.toInt();
+    double width = 0;
+    double height = 0;
+    for (var point in widget.pointList) {
+      if (point.dx.isFinite && point.dx > width) {
+        width = point.dx;
       }
-      if (element.dy > height) {
-        height = element.dy.toInt();
+      if (point.dy.isFinite && point.dy > height) {
+        height = point.dy;
       }
-    });
+    }
+
+    // 确保有最小尺寸
+    width = width.clamp(1.0, double.infinity);
+    height = height.clamp(1.0, double.infinity);
+
     return RepaintBoundary(
-        child: Container(
-      width: width.toDouble(),
-      height: height.toDouble(),
-      child: CustomPaint(
-        painter: DisplayLaserPainter(pointList: widget.pointList),
+      child: Container(
+        width: width,
+        height: height,
+        child: CustomPaint(
+          painter: DisplayLaserPainter(
+            pointList: widget.pointList
+                .where((point) => point.dx.isFinite && point.dy.isFinite)
+                .toList(),
+          ),
+        ),
       ),
-    ));
+    );
   }
 }
 
