@@ -4,6 +4,7 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'gamepad_mapping_page.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -60,18 +61,18 @@ class _SettingsPageState extends State<SettingsPage> {
               Theme.of(context).dialogBackgroundColor.withOpacity(1.0),
         ),
         child: AlertDialog(
-          title: Text('编辑 ${_getDisplayName(key)}'),
+          title: Text('Edit ${_getDisplayName(key)}'),
           content: TextField(
             controller: controller,
             decoration: InputDecoration(
-              hintText: '请输入${_getDisplayName(key)}',
+              hintText: 'Please input ${_getDisplayName(key)}',
               border: const OutlineInputBorder(),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             TextButton(
               onPressed: () async {
@@ -79,14 +80,14 @@ class _SettingsPageState extends State<SettingsPage> {
                 Navigator.pop(context);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('设置已保存，重启应用后生效'),
+                     SnackBar(
+                      content: Text(AppLocalizations.of(context)!.config_saved),
                       duration: Duration(seconds: 2),
                     ),
                   );
                 }
               },
-              child: const Text('确定'),
+              child: Text(AppLocalizations.of(context)!.ok),
             ),
           ],
         ),
@@ -96,26 +97,26 @@ class _SettingsPageState extends State<SettingsPage> {
 
   String _getDisplayName(String key) {
     final Map<String, String> displayNames = {
-      'robotIp': 'IP地址',
-      'robotPort': '端口',
-      'mapTopic': '地图话题',
-      'laserTopic': '激光雷达话题',
-      'globalPathTopic': '全局路径话题',
-      'localPathTopic': '局部路径话题',
-      'relocTopic': '重定位话题',
-      'navGoalTopic': '导航目标话题',
-      'OdometryTopic': '里程计话题',
-      'SpeedCtrlTopic': '速度控制话题',
-      'BatteryTopic': '电池状态话题',
-      'MaxVx': '最大前进速度',
-      'MaxVy': '最大横向速度',
-      'MaxVw': '最大旋转速度',
-      'mapFrameName': '地图坐标系',
-      'baseLinkFrameName': '机器人坐标系',
-      'imagePort': '图像端口',
-      'imageTopic': '图像话题',
-      'imageWidth': '图像宽度',
-      'imageHeight': '图像高度',
+      'robotIp': AppLocalizations.of(context)!.ip_address,
+      'robotPort': AppLocalizations.of(context)!.port,
+      'mapTopic': AppLocalizations.of(context)!.map_topic,
+      'laserTopic': AppLocalizations.of(context)!.laser_topic,
+      'globalPathTopic': AppLocalizations.of(context)!.global_path_topic,
+      'localPathTopic': AppLocalizations.of(context)!.local_path_topic,
+      'relocTopic': AppLocalizations.of(context)!.reloc_topic,
+      'navGoalTopic': AppLocalizations.of(context)!.nav_goal_topic,
+      'OdometryTopic': AppLocalizations.of(context)!.odometry_topic,
+      'SpeedCtrlTopic': AppLocalizations.of(context)!.speed_ctrl_topic,
+      'BatteryTopic': AppLocalizations.of(context)!.battery_topic,
+      'MaxVx': AppLocalizations.of(context)!.max_speed,
+      'MaxVy': AppLocalizations.of(context)!.max_y_speed,
+      'MaxVw': AppLocalizations.of(context)!.max_angular_speed,
+      'mapFrameName': AppLocalizations.of(context)!.map_frame,
+      'baseLinkFrameName': AppLocalizations.of(context)!.base_frame,
+      'imagePort': AppLocalizations.of(context)!.image_port,
+      'imageTopic': AppLocalizations.of(context)!.image_topic,
+      'imageWidth': AppLocalizations.of(context)!.image_width,
+      'imageHeight': AppLocalizations.of(context)!.image_height,
     };
     return displayNames[key] ?? key;
   }
@@ -225,10 +226,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildTempConfigTypeSection() {
     return _buildSection(
-      "机器人类型",
+      AppLocalizations.of(context)!.robot_type,
       [
         ListTile(
-          title: const Text("默认配置模板"),
+          title: Text(AppLocalizations.of(context)!.default_config_template),
           trailing: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
@@ -255,12 +256,12 @@ class _SettingsPageState extends State<SettingsPage> {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text("确认更改"),
-                        content: const Text("切换配置模版板将会重置所有配置，是否继续？"),
+                        title: Text(AppLocalizations.of(context)!.confirm_change),
+                        content: Text(AppLocalizations.of(context)!.switch_template_will_reset_all_settings),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text("取消"),
+                            child: Text(AppLocalizations.of(context)!.cancel),
                           ),
                           TextButton(
                             onPressed: () async {
@@ -269,7 +270,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               _loadSettings();
                               setState(() {});
                             },
-                            child: const Text("确定"),
+                            child: Text(AppLocalizations.of(context)!.ok),
                           ),
                         ],
                       ),

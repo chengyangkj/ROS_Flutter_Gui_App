@@ -22,9 +22,6 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
   Widget build(BuildContext context) {
     ToastContext().init(context);
 
-    // 获取本地化字符串
-    final autoLabel = AppLocalizations.of(context)!.auto;
-
     return Scaffold(
       body: FutureBuilder<bool>(
         future: initGlobalSetting(),
@@ -78,7 +75,7 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '机器人连接',
+                                    AppLocalizations.of(context)!.connect_robot,
                                     style: Theme.of(context)
                                         .textTheme
                                         .headlineMedium
@@ -121,7 +118,9 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                             child: TextField(
                                               controller: _ipController,
                                               decoration: InputDecoration(
-                                                labelText: 'IP 地址',
+                                                labelText: AppLocalizations.of(
+                                                        context)!
+                                                    .ip_address,
                                                 labelStyle: TextStyle(
                                                   color: Theme.of(context)
                                                       .colorScheme
@@ -173,7 +172,9 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                             child: TextField(
                                               controller: _portController,
                                               decoration: InputDecoration(
-                                                labelText: '端口',
+                                                labelText: AppLocalizations.of(
+                                                        context)!
+                                                    .port,
                                                 labelStyle: TextStyle(
                                                   color: Theme.of(context)
                                                       .colorScheme
@@ -261,7 +262,8 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                                   ),
                                                 )
                                               : Text(
-                                                  '连接机器人',
+                                                  AppLocalizations.of(context)!
+                                                      .connect_robot,
                                                   style: TextStyle(
                                                     color: Theme.of(context)
                                                         .colorScheme
@@ -310,17 +312,23 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                           ButtonSegment(
                                             value: ThemeMode.system,
                                             icon: Icon(Icons.brightness_auto),
-                                            label: Text(autoLabel),
+                                            label: Text(
+                                                AppLocalizations.of(context)!
+                                                    .auto),
                                           ),
-                                          const ButtonSegment(
+                                          ButtonSegment(
                                             value: ThemeMode.light,
                                             icon: Icon(Icons.light_mode),
-                                            label: Text('浅色'),
+                                            label: Text(
+                                                AppLocalizations.of(context)!
+                                                    .light),
                                           ),
-                                          const ButtonSegment(
+                                          ButtonSegment(
                                             value: ThemeMode.dark,
                                             icon: Icon(Icons.dark_mode),
-                                            label: Text('深色'),
+                                            label: Text(
+                                                AppLocalizations.of(context)!
+                                                    .dark),
                                           ),
                                         ],
                                         selected: {
@@ -409,7 +417,7 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
         Navigator.pushNamed(context, "/map");
       } else {
         Toast.show(
-          "连接ROS失败，请检查IP和端口是否正确",
+          AppLocalizations.of(context)!.connect_error,
           duration: Toast.lengthLong,
           gravity: Toast.bottom,
         );
