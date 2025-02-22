@@ -53,6 +53,9 @@ dependencies:
   flutter_mjpeg: ^2.0.4
   http: ^0.13.6
   fluttertoast: ^8.2.8
+  intl: any
+  flutter_localizations:
+    sdk: flutter
 
 flutter_icons:
   android: true
@@ -77,7 +80,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
+  generate: true 
   fonts:
     - family: Reloc
       fonts:

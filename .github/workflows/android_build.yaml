@@ -19,14 +19,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Install Flutter
-        run: |
-          git clone https://github.com/flutter/flutter.git -b stable --depth 1
-          echo "$GITHUB_WORKSPACE/flutter/bin" >> $GITHUB_PATH
-      - name: Install Android SDK
-        run: |
-          yes | sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version: "3.27.4"
       - run: flutter pub cache clean
       - run: flutter pub get
       - run: flutter build apk

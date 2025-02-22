@@ -21,7 +21,7 @@
 
 - [一，使用教程](#一使用教程)
   - [1.1 下载项目 Release 包](#11-下载项目-release-包)
-  - [1.2 行项目](#12-行项目)
+  - [1.2 运行项目](#12-运行项目)
     - [1.2.1 web端运行指南](#121-web端运行指南)
   - [1.3 机器人端环境配置](#13-机器人端环境配置)
     - [ROS 1](#ros-1)
@@ -37,7 +37,7 @@
     - [1.6.2 机器人位置显示](#162-机器人位置显示)
     - [1.6.3 机器人速度控制](#163-机器人速度控制)
     - [1.6.4 相机图像显示](#164-相机图像显示)
-      - [ROS 1 安装web\_video\_server程](#ros-1-安装web_video_server程)
+      - [ROS 1 安装web\_video\_server教程](#ros-1-安装web_video_server教程)
       - [ROS 2 安装web\_video\_server教程](#ros-2-安装web_video_server教程)
         - [1.5.3 多点导航](#153-多点导航)
       - [软件配置](#软件配置)
@@ -89,7 +89,7 @@
 
 从[Release界面](https://github.com/chengyangkj/ROS_Flutter_Gui_App/releases) 下载所需要的对应环境的版本（windows，linux，web，android）
 
-## 1.2 行项目
+## 1.2 运行项目
 
 解压下载的压缩包，APP端下载后即可运行，web端运行时需要借助网站服务器这里介绍下web端使用：
 
@@ -235,7 +235,7 @@ python -m http.server 8000
 
 以下教程是在 **ROS 1** 和 **ROS 2** 中安装和验证该包的参考方法。
 
-#### ROS 1 安装web_video_server程
+#### ROS 1 安装web_video_server教程
 
 1. **安装 `web_video_server` 包**
 

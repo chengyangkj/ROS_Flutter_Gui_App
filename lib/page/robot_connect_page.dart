@@ -4,6 +4,7 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:toast/toast.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RobotConnectionPage extends StatefulWidget {
   @override
@@ -20,6 +21,10 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
   @override
   Widget build(BuildContext context) {
     ToastContext().init(context);
+
+    // 获取本地化字符串
+    final autoLabel = AppLocalizations.of(context)!.auto;
+
     return Scaffold(
       body: FutureBuilder<bool>(
         future: initGlobalSetting(),
@@ -301,18 +306,18 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: SegmentedButton<ThemeMode>(
-                                        segments: const [
+                                        segments: [
                                           ButtonSegment(
                                             value: ThemeMode.system,
                                             icon: Icon(Icons.brightness_auto),
-                                            label: Text('自动'),
+                                            label: Text(autoLabel),
                                           ),
-                                          ButtonSegment(
+                                          const ButtonSegment(
                                             value: ThemeMode.light,
                                             icon: Icon(Icons.light_mode),
                                             label: Text('浅色'),
                                           ),
-                                          ButtonSegment(
+                                          const ButtonSegment(
                                             value: ThemeMode.dark,
                                             icon: Icon(Icons.dark_mode),
                                             label: Text('深色'),

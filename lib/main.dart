@@ -13,6 +13,8 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/setting_page.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'provider/them_provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +62,16 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Ros Flutter GUI App',
+      localizationsDelegates: [
+        AppLocalizations.delegate, // Add this line
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        Locale('en'), // English
+        Locale('zh'), // Chinese
+      ],
       initialRoute: "/connect",
       routes: {
         "/connect": ((context) => RobotConnectionPage()),
