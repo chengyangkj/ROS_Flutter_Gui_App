@@ -1,3 +1,5 @@
+  [中文](#中文) ｜ [English](README_EN.md)
+
 ![GitHub last commit](https://img.shields.io/github/last-commit/chengyangkj/ROS_Flutter_Gui_App?style=flat-square)
 ![GitHub stars](https://img.shields.io/github/stars/chengyangkj/ROS_Flutter_Gui_App?style=flat-square)
 ![GitHub forks](https://img.shields.io/github/forks/chengyangkj/ROS_Flutter_Gui_App?style=flat-square)
@@ -185,27 +187,27 @@ python -m http.server 8000
 ![setting_button](./doc/image/setting_list.png)
 
 ## 1.5 配置说明
-|配置名|消息类型|说明|
-|---|---|---|
-|battery_topic|sensor_msgs/BatteryState|机器人电池电量的topic，软件订阅 |
-|mapTopic|nav_msgs/OccupancyGrid|机器人地图话题名，软件订阅 |
-|laserTopic|sensor_msgs/LaserScan| 激光话题名，软件订阅|
-|localPathTopic|nav_msgs/Path|机器人局部路径话题名，软件订阅 |
-|globalPathTopic|nav_msgs/Path|机器人全局路径话题名，软件订阅 |
-|odomTopic|nav_msgs/Odometry|机器人里程计话题名，软件订阅 |
-|relocTopic|geometry_msgs/PoseWithCovarianceStamped|机器人重定位topic名，软件发布 |
-|navGoalTopic|geometry_msgs/PoseStamped|机器人导航目标点话题名，软件发布 |
-|SpeedCtrlTopic|geometry_msgs/Twist|机器人速度控制话题名，软件发布|
-|maxVx|double|软件手动控制时最大vx速度 |
-|maxVydouble|软件手动控制时最大vy速度 |
-|maxVw|double|软件手动控制时最大vw速度 |
-|mapFrameName|string|地图坐标系tf fram名|
-|baseLinkFrameName|string|机器人底盘坐标系tf fram名|
-|imagePort|string|相机图像web video server 服务器短裤|
-|imageTopic|string|要展示的相机图像的topic|
-|imageWidth|int|要展示的相机图像的宽默认640|
-|imageHeight|int|要展示的相机图像的高默认480|
-|ConfigTemplate|string|模板配置，软件在升级与初始化时，会根据此模板配置做初始化支持类型("turtlebot3:ros2","turtlebot3:ros1","jackal","turtlebot4","walking")|
+| 配置名            | 消息类型                                | 说明                                                                                                                                  |
+| ----------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| battery_topic     | sensor_msgs/BatteryState                | 机器人电池电量的topic，软件订阅                                                                                                       |
+| mapTopic          | nav_msgs/OccupancyGrid                  | 机器人地图话题名，软件订阅                                                                                                            |
+| laserTopic        | sensor_msgs/LaserScan                   | 激光话题名，软件订阅                                                                                                                  |
+| localPathTopic    | nav_msgs/Path                           | 机器人局部路径话题名，软件订阅                                                                                                        |
+| globalPathTopic   | nav_msgs/Path                           | 机器人全局路径话题名，软件订阅                                                                                                        |
+| odomTopic         | nav_msgs/Odometry                       | 机器人里程计话题名，软件订阅                                                                                                          |
+| relocTopic        | geometry_msgs/PoseWithCovarianceStamped | 机器人重定位topic名，软件发布                                                                                                         |
+| navGoalTopic      | geometry_msgs/PoseStamped               | 机器人导航目标点话题名，软件发布                                                                                                      |
+| SpeedCtrlTopic    | geometry_msgs/Twist                     | 机器人速度控制话题名，软件发布                                                                                                        |
+| maxVx             | double                                  | 软件手动控制时最大vx速度                                                                                                              |
+| maxVydouble       | 软件手动控制时最大vy速度                |
+| maxVw             | double                                  | 软件手动控制时最大vw速度                                                                                                              |
+| mapFrameName      | string                                  | 地图坐标系tf fram名                                                                                                                   |
+| baseLinkFrameName | string                                  | 机器人底盘坐标系tf fram名                                                                                                             |
+| imagePort         | string                                  | 相机图像web video server 服务器短裤                                                                                                   |
+| imageTopic        | string                                  | 要展示的相机图像的topic                                                                                                               |
+| imageWidth        | int                                     | 要展示的相机图像的宽默认640                                                                                                           |
+| imageHeight       | int                                     | 要展示的相机图像的高默认480                                                                                                           |
+| ConfigTemplate    | string                                  | 模板配置，软件在升级与初始化时，会根据此模板配置做初始化支持类型("turtlebot3:ros2","turtlebot3:ros1","jackal","turtlebot4","walking") |
 
 设置完成后，点击connect按钮，连接到rosbridge_websocket，连接成功后，软件会自动订阅设置的topic，并显示topic数据：
 ![connect](./images/connect.png)
@@ -328,7 +330,7 @@ http://localhost:8080/stream?topic=/usb_cam/image_raw
 
 - 部分UI界面效果参考自[ros_navigation_command_app](https://github.com/Rongix/ros_navigation_command_app)，仅参考UI显示效果，本仓库的代码的实现均为原创
 - [roslibdart](https://pub.dev/packages/roslibdart)，实现flutter 中的ros bridge websocket的通信，借助此库可以直接与ros进行端对端通信
-- [matrix_gesture_detector](https://pub.dev/packages/matrix_gesture_detector) 软件的手势识别在此pub���的基础上做���
+- [matrix_gesture_detector](https://pub.dev/packages/matrix_gesture_detector) 软件的手势识别在此pub的基础上做
 
 ## 许可证
 
