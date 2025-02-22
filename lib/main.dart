@@ -49,21 +49,42 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  Locale _locale = Locale('en'); // 默认语言
 
   @override
   void initState() {
     super.initState();
-    // 关闭系统状态栏的显示
+    _loadLocale(); // 加载保存的语言设置
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     WakelockPlus.toggle(enable: true);
+
+    // 将 globalSetting.setLanguage 的赋值移到 initState 中
+    globalSetting.setLanguage = (Locale locale) {
+      setState(() {
+        _locale = locale;
+      });
+    };
+  }
+
+  Future<void> _loadLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final languageCode = prefs.getString('language') ?? 'en';
+    setState(() {
+      _locale = Locale(languageCode);
+    });
+  }
+
+  void setLocale(Locale newLocale) {
+    _locale = newLocale;
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Ros Flutter GUI App',
+      locale: _locale, // 设置应用的语言
       localizationsDelegates: [
-        AppLocalizations.delegate, // Add this line
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

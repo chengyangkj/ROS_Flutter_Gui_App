@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ros_flutter_gui_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -80,7 +81,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Navigator.pop(context);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                     SnackBar(
+                    SnackBar(
                       content: Text(AppLocalizations.of(context)!.config_saved),
                       duration: Duration(seconds: 2),
                     ),
@@ -216,12 +217,61 @@ class _SettingsPageState extends State<SettingsPage> {
 
   List<Widget> _buildSettingGroups() {
     return [
+      _buildLanguageSection(),
       _buildTempConfigTypeSection(),
       _buildBasicSection(),
       _buildTopicSection(),
       _buildOrientationSection(),
       // ... 其他设置组
     ];
+  }
+
+  Widget _buildLanguageSection() {
+    return _buildSection(
+      AppLocalizations.of(context)!.language,
+      [
+        ListTile(
+          title: Text(AppLocalizations.of(context)!.language),
+          trailing: DropdownButton<String>(
+            value: _settings['language'] == 'zh'
+                ? AppLocalizations.of(context)!.zh
+                : AppLocalizations.of(context)!.en,
+            dropdownColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.white,
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  if (newValue == AppLocalizations.of(context)!.en) {
+                    _settings['language'] = 'en';
+                    _saveLanguage('en');
+                    globalSetting.setLanguage(Locale('en'));
+                  } else if (newValue == AppLocalizations.of(context)!.zh) {
+                    _settings['language'] = 'zh';
+                    _saveLanguage('zh');
+                    globalSetting.setLanguage(Locale('zh'));
+                  }
+                });
+              }
+            },
+            items: [
+              AppLocalizations.of(context)!.en,
+              AppLocalizations.of(context)!.zh
+            ].map<DropdownMenuItem<String>>((String language) {
+              return DropdownMenuItem<String>(
+                value: language,
+                child: Text(language),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveLanguage(String language) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', language);
   }
 
   Widget _buildTempConfigTypeSection() {
@@ -256,8 +306,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: Text(AppLocalizations.of(context)!.confirm_change),
-                        content: Text(AppLocalizations.of(context)!.switch_template_will_reset_all_settings),
+                        title:
+                            Text(AppLocalizations.of(context)!.confirm_change),
+                        content: Text(AppLocalizations.of(context)!
+                            .switch_template_will_reset_all_settings),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -388,7 +440,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildBasicSection() {
     return _buildSection(
-      "基础设置",
+      AppLocalizations.of(context)!.basic_setting,
       [
         _buildSettingItem('robotIp', _settings['robotIp'] ?? '127.0.0.1'),
         _buildSettingItem('robotPort', _settings['robotPort'] ?? '9090'),
@@ -409,7 +461,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildTopicSection() {
     return _buildSection(
-      "话题设置",
+      AppLocalizations.of(context)!.topic_setting,
       [
         _buildSettingItem('mapTopic', _settings['mapTopic'] ?? 'map'),
         _buildSettingItem('laserTopic', _settings['laserTopic'] ?? 'scan'),
@@ -435,10 +487,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildOrientationSection() {
     return _buildSection(
-      "APP设置",
+      AppLocalizations.of(context)!.app_setting,
       [
         ListTile(
-          title: const Text("选择屏幕方向"),
+          title: Text(AppLocalizations.of(context)!.screen_orientation),
           trailing: DropdownButton<Orientation>(
             value: _selectedOrientation,
             dropdownColor: Theme.of(context).brightness == Brightness.dark
@@ -457,7 +509,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 .map<DropdownMenuItem<Orientation>>((Orientation orientation) {
               return DropdownMenuItem<Orientation>(
                 value: orientation,
-                child: Text(orientation == Orientation.portrait ? "竖屏" : "横屏"),
+                child: Text(orientation == Orientation.portrait
+                    ? AppLocalizations.of(context)!.portrait
+                    : AppLocalizations.of(context)!.landscape),
               );
             }).toList(),
           ),
@@ -504,7 +558,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: isDarkMode ? Colors.grey[900] : Colors.grey[100],
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text(AppLocalizations.of(context)!.setting),
         elevation: 0,
         actions: [
           Center(

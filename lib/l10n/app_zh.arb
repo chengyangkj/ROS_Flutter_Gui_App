@@ -35,5 +35,15 @@
   "image_width": "图像宽度",
   "image_height": "图像高度",
   "confirm_change": "确认切换",
-  "switch_template_will_reset_all_settings": "切换模板将重置所有设置"
+  "switch_template_will_reset_all_settings": "切换模板将重置所有设置",
+  "portrait": "竖屏",
+  "landscape": "横屏",
+  "language": "语言",
+  "switch_language": "切换语言",
+  "zh": "中文",
+  "en": "英文",
+  "setting": "设置",
+  "basic_setting": "基础设置",
+  "topic_setting": "话题设置",
+  "app_setting": "APP设置"
 }

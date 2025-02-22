@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,6 +112,9 @@ class Setting {
 
     return true;
   }
+
+  //设置语言回调
+  late Function(Locale locale) setLanguage;
 
   Future<void> _loadGamepadMapping() async {
     final mappingStr = prefs.getString('gamepadMapping');

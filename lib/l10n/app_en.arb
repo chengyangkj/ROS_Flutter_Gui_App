@@ -35,5 +35,15 @@
   "image_width": "Image Width",
   "image_height": "Image Height",
   "confirm_change": "Confirm Change",
-  "switch_template_will_reset_all_settings": "Switch template will reset all settings"
+  "switch_template_will_reset_all_settings": "Switch template will reset all settings",
+  "portrait": "Portrait",
+  "landscape": "Landscape",
+  "language": "Language",
+  "switch_language": "Switch Language",
+  "zh": "Chinese",
+  "en": "English",
+  "setting": "Setting",
+  "basic_setting": "Basic Setting",
+  "topic_setting": "Topic Setting",
+  "app_setting": "APP Setting"
 }
