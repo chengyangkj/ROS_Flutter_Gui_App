@@ -28,7 +28,6 @@ jobs:
     runs-on: macos-latest
     needs: create_release
     steps:
-    steps:
       - name: Clone repository
         uses: actions/checkout@v4
       - name: Set up JDK 17
