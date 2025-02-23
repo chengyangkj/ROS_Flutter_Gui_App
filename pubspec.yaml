@@ -52,7 +52,7 @@ dependencies:
   package_info_plus: ^8.1.0
   flutter_mjpeg: ^2.0.4
   http: ^0.13.6
-  fluttertoast: ^8.2.8
+  fluttertoast: ^8.2.12
   intl: any
   flutter_localizations:
     sdk: flutter
