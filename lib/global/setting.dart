@@ -30,24 +30,7 @@ class JoyStickEvent {
   bool reverse = false; //是否反转(反转填-1)Q
   double maxValue = 32767;
   double minValue = -32767;
-  double val = 0;
-
-  set value(double val) {
-    if (val > maxValue) {
-      val = maxValue;
-    } else if (val < minValue) {
-      val = minValue;
-    }
-    if (reverse) {
-      val = -val;
-    }
-  }
-
-  double get value {
-    //数值归一化-1到1
-    var normalizedValue = (val - minValue) / (maxValue - minValue) * 2 - 1;
-    return normalizedValue;
-  }
+  double value = 0;
 
   JoyStickEvent(this.keyName,
       {this.reverse = false, this.maxValue = 32767, this.minValue = -32767});

@@ -54,13 +54,22 @@ class _GamepadWidgetState extends State<GamepadWidget> {
               'current button not mapping! event key: ${event.key},value:${event.value}type:${event.type}');
         }
       } else {
-        if (globalSetting.axisMapping.containsKey(key)) {
-          var mappingEvent = globalSetting.axisMapping[key]!;
-          mappingEvent.value = value;
-          eventMap[mappingEvent.keyName] = mappingEvent;
-        } else {
-          print(
-              'current axis not mapping! event key: ${event.key},value:${event.value}type:${event.type}');
+        if (key == "AXIS_X") {
+          JoyStickEvent event = JoyStickEvent(KeyName.leftAxisX);
+          event.value = value;
+          eventMap[KeyName.leftAxisX] = event;
+        } else if (key == "AXIS_Y") {
+          JoyStickEvent event = JoyStickEvent(KeyName.leftAxisY);
+          event.value = value;
+          eventMap[KeyName.leftAxisY] = event;
+        } else if (key == "AXIS_Z") {
+          JoyStickEvent event = JoyStickEvent(KeyName.rightAxisX);
+          event.value = value;
+          eventMap[KeyName.rightAxisX] = event;
+        } else if (key == "AXIS_RZ") {
+          JoyStickEvent event = JoyStickEvent(KeyName.rightAxisY);
+          event.value = value;
+          eventMap[KeyName.rightAxisY] = event;
         }
       }
 
