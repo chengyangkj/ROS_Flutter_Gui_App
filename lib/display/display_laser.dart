@@ -56,9 +56,9 @@ class DisplayLaserState extends State<DisplayLaser> {
 class DisplayLaserPainter extends CustomPainter {
   final List<Offset> pointList;
   final Paint _paint = Paint()
-    ..color = Colors.red
-    ..strokeCap = StrokeCap.butt
-    ..strokeWidth = 1;
+    ..color = Colors.lightGreen
+    ..strokeCap = StrokeCap.round
+    ..strokeWidth = 3;
 
   DisplayLaserPainter({required this.pointList});
 

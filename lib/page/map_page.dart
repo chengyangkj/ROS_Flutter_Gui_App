@@ -973,7 +973,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                       listen: false)
                                   .battery_,
                               builder: (context, battery, child) {
-                                return Text('${battery.toStringAsFixed(2)} %');
+                                return Text('${battery.toStringAsFixed(0)} %');
                               }),
                         ),
                       ),

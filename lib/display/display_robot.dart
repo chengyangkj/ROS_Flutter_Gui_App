@@ -7,7 +7,7 @@ import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 
 class DisplayRobot extends StatefulWidget {
   late double size;
-  late Color color = const Color(0xFF0080ff);
+  late Color color = Colors.amberAccent;
   int count = 2;
   double direction = 0; //方向默认0度 车头朝向右侧
   DisplayRobot(

@@ -13,8 +13,8 @@ class DisplayPath extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
       ..color = color // 设置颜色为传入的颜色参数
-      ..strokeCap = StrokeCap.butt // 设置画笔的端点为圆形，以便绘制圆形点
-      ..strokeWidth = 1; // 设置画笔的宽度为1个像素
+      ..strokeCap = StrokeCap.round // 设置画笔的端点为圆形，以便绘制圆形点
+      ..strokeWidth = 2; // 设置画笔的宽度为1个像素
     canvas.drawPoints(PointMode.points, pointList, paint);
   }
 

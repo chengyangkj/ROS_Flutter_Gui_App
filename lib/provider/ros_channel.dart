@@ -52,7 +52,7 @@ class RosChannel extends ChangeNotifier {
   Timer? cmdVelTimer;
 
   bool manualCtrlMode_ = false;
-  ValueNotifier<double> battery_ = ValueNotifier(0);
+  ValueNotifier<double> battery_ = ValueNotifier(78);
   ValueNotifier<Uint8List> imageData = ValueNotifier(Uint8List(0));
   RobotSpeed cmdVel_ = RobotSpeed(vx: 0, vy: 0, vw: 0);
   double vxLeft_ = 0;
