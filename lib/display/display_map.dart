@@ -35,7 +35,8 @@ class _DisplayMapState extends State<DisplayMap> {
           int alpha = (mapValue * 2.55).clamp(0, 255).toInt();
           occPointList.add(MapPoint(point: point, value: alpha));
         } else if (mapValue == 0) {
-          freePointList.add(point);
+          //不显示free 提高绘制效率
+          // freePointList.add(point);
         }
       }
     }
