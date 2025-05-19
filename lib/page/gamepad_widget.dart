@@ -34,7 +34,6 @@ class _GamepadWidgetState extends State<GamepadWidget> {
       String key = event.key;
       double value = event.value;
       eventString.value = event.toString();
-
       if (event.type == KeyType.button) {
         if (globalSetting.buttonMapping.containsKey(key)) {
           var mappingEvent = globalSetting.buttonMapping[key]!;
@@ -156,12 +155,12 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                             .setVxRight(vx);
                       }
 
-                      if (details.x.abs() == 0) {
+                      if (details.y.abs() == 0) {
                         Provider.of<RosChannel>(context, listen: false)
                             .setVxRight(0);
                       }
 
-                      if (details.y.abs() == 0) {
+                      if (details.x.abs() == 0) {
                         Provider.of<RosChannel>(context, listen: false)
                             .setVw(0);
                       }

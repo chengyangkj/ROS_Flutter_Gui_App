@@ -13,8 +13,9 @@ import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
-import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
-import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
+import 'package:ros_flutter_gui_app/basic/action_status.dart';
+import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
+import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/math.dart';
 import 'package:ros_flutter_gui_app/basic/matrix_gesture_detector.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
@@ -808,6 +809,20 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               }),
                         ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: RawChip(
+                          avatar: const Icon(Icons.navigation,
+                              color: Colors.green, size: 16), // 图标放在文本前
+                          label: ValueListenableBuilder<ActionStatus>(
+                              valueListenable:
+                                  Provider.of<RosChannel>(context, listen: true)
+                                      .navStatus_,
+                              builder: (context, navStatus, child) {
+                                return Text('${navStatus.toString()}');
+                              }),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1008,6 +1023,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                           } else {
                             globalState.mode.value = Mode.addNavPoint;
                           }
+                          setState(() {});
                         },
                       ),
                     ),
@@ -1059,27 +1075,76 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   )
                 ],
               ))),
-          //左侧顶部状态栏
-          // Positioned(
-          //     right: 5,
-          //     top: 10,
-          //     child: Card(
-          //       color: Colors.white70,
-          //       elevation: 10,
-          //       child: Container(
-          //         child: Column(
-          //           children: [
-          //             IconButton(
-          //                 onPressed: () {}, icon: const Icon(Icons.layers)),
-          //             IconButton(
-          //                 onPressed: () {}, icon: const Icon(Icons.podcasts)),
-          //             IconButton(
-          //                 onPressed: () {},
-          //                 icon: Icon(Icons.location_on_outlined))
-          //           ],
-          //         ),
-          //       ),
-          //     )),
+          //底部状态栏
+          Positioned(
+              left: 5,
+              bottom: 10,
+              child: Container(
+                child: Row(
+                  children: [
+                    Card(
+                      color: Colors.red,
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.remove_circle_outline, // 使用警告图标
+                            size: 30,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            // 发送急停命令
+                            Provider.of<RosChannel>(context, listen: false)
+                                .sendEmergencyStop();
+                            // 显示提示
+                            Toast.show("已触发急停！",
+                                duration: Toast.lengthShort,
+                                gravity: Toast.bottom);
+                          },
+                        ),
+                      ),
+                    ),
+                    Container(
+                      child: ValueListenableBuilder<ActionStatus>(
+                          valueListenable:
+                              Provider.of<RosChannel>(context, listen: true)
+                                  .navStatus_,
+                          builder: (context, navStatus, child) {
+                            return Visibility(
+                              visible: navStatus == ActionStatus.executing ||
+                                  navStatus == ActionStatus.accepted,
+                              child: Card(
+                                color: Colors.blue,
+                                child: Container(
+                                  width: 50,
+                                  height: 50,
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.stop_circle, // 使用警告图标
+                                      size: 30,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      // 发送停止导航指令
+                                      Provider.of<RosChannel>(context,
+                                              listen: false)
+                                          .sendCancelNav();
+                                      // 显示提示
+                                      Toast.show("stop nav",
+                                          duration: Toast.lengthShort,
+                                          gravity: Toast.bottom);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                    ),
+                  ],
+                ),
+              )),
+
           //右方菜单栏
 
           Positioned(

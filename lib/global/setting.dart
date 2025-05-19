@@ -236,9 +236,9 @@ class Setting {
     prefs.setString('OdometryTopic', "/platform/odom/filtered");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
+    prefs.setString('MaxVx', "0.9");
+    prefs.setString('MaxVy', "0.9");
+    prefs.setString('MaxVw', "0.9");
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
@@ -258,9 +258,9 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
+    prefs.setString('MaxVx', "0.9");
+    prefs.setString('MaxVy', "0.9");
+    prefs.setString('MaxVw', "0.9");
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
@@ -280,9 +280,9 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
+    prefs.setString('MaxVx', "0.9");
+    prefs.setString('MaxVy', "0.9");
+    prefs.setString('MaxVw', "0.9");
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
@@ -302,9 +302,9 @@ class Setting {
     prefs.setString('OdometryTopic', "/wheel/odometry");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
+    prefs.setString('MaxVx', "0.9");
+    prefs.setString('MaxVy', "0.9");
+    prefs.setString('MaxVw', "0.9");
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
@@ -324,9 +324,9 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('MaxVx', "0.1");
-    prefs.setString('MaxVy', "0.1");
-    prefs.setString('MaxVw', "0.3");
+    prefs.setString('MaxVx', "0.9");
+    prefs.setString('MaxVy', "0.9");
+    prefs.setString('MaxVw', "0.9");
     prefs.setString('mapFrameName', "map");
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
@@ -373,6 +373,16 @@ class Setting {
 
   String get topologyMapTopic {
     return prefs.getString("topologyMapTopic") ?? "map/topology";
+  }
+
+  String get navToPoseStatusTopic {
+    return prefs.getString("navToPoseStatusTopic") ??
+        "navigate_to_pose/_action/status";
+  }
+
+  String get navThroughPosesStatusTopic {
+    return prefs.getString("navThroughPosesStatusTopic") ??
+        "navigate_through_poses/_action/status";
   }
 
   void setLaserTopic(String topic) {

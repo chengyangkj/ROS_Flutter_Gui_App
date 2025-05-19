@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/robot_path.dart';
 import 'package:ros_flutter_gui_app/basic/tf2_dart.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
@@ -47,10 +48,13 @@ class RosChannel {
   late Topic globalPathChannel_;
   late Topic relocChannel_;
   late Topic navGoalChannel_;
+  late Topic navGoalCancelChannel_;
   late Topic speedCtrlChannel_;
   late Topic odomChannel_;
   late Topic batteryChannel_;
   late Topic imageTopic_;
+  late Topic navToPoseStatusChannel_;
+  late Topic navThroughPosesStatusChannel_;
   Timer? cmdVelTimer;
 
   bool manualCtrlMode_ = false;
@@ -74,6 +78,7 @@ class RosChannel {
   ValueNotifier<List<Offset>> globalPath = ValueNotifier([]);
   ValueNotifier<LaserData> laserPointData = ValueNotifier(
       LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
+  ValueNotifier<ActionStatus> navStatus_ = ValueNotifier(ActionStatus.unknown);
 
   RosChannel() {
     //启动定时器 获取机器人实时坐标
@@ -157,6 +162,24 @@ class RosChannel {
         queueLength: 10,
         queueSize: 10);
     topologyMapChannel_.subscribe(topologyMapCallback);
+
+    navToPoseStatusChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.navToPoseStatusTopic,
+      type: "action_msgs/GoalStatusArray",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    navToPoseStatusChannel_.subscribe(navStatusCallback);
+
+    navThroughPosesStatusChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.navThroughPosesStatusTopic,
+      type: "action_msgs/GoalStatusArray",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    navThroughPosesStatusChannel_.subscribe(navStatusCallback);
 
     tfChannel_ = Topic(
       ros: ros,
@@ -249,6 +272,13 @@ class RosChannel {
       queueSize: 1,
       reconnectOnClose: true,
     );
+    navGoalCancelChannel_ = Topic(
+      ros: ros,
+      name: "${globalSetting.navGoalTopic}/cancel",
+      type: "std_msgs/Empty",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
     speedCtrlChannel_ = Topic(
       ros: ros,
       name: globalSetting.getConfig("SpeedCtrlTopic"),
@@ -289,6 +319,14 @@ class RosChannel {
     } catch (e) {
       print("Failed to send navigation goal: $e");
     }
+  }
+
+  Future<void> sendEmergencyStop() async {
+    await sendSpeed(0, 0, 0);
+  }
+
+  Future<void> sendCancelNav() async {
+    await navGoalCancelChannel_.publish({});
   }
 
   void destroyConnection() async {
@@ -625,5 +663,11 @@ class RosChannel {
 
     // 更新 ValueNotifier
     topologyMap_.value = updatedMap;
+  }
+
+  Future<void> navStatusCallback(Map<String, dynamic> msg) async {
+    GoalStatusArray goalStatusArray = GoalStatusArray.fromJson(msg);
+    print("last status:${goalStatusArray.statusList.last.status}");
+    navStatus_.value = goalStatusArray.statusList.last.status;
   }
 }
