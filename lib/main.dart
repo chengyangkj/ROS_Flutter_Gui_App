@@ -20,7 +20,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _setInitialOrientation();
   runApp(MultiProvider(providers: [
-    ChangeNotifierProvider<RosChannel>(create: (_) => RosChannel()),
+    Provider<RosChannel>(create: (_) => RosChannel()),
     ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
     ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState())
   ], child: MyApp()));

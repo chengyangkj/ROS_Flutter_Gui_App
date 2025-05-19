@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/robot_path.dart';
 import 'package:ros_flutter_gui_app/basic/tf2_dart.dart';
+import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/basic/transform.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:roslibdart/roslibdart.dart';
@@ -35,9 +36,10 @@ class RobotSpeed {
   RobotSpeed({required this.vx, required this.vy, required this.vw});
 }
 
-class RosChannel extends ChangeNotifier {
+class RosChannel {
   late Ros ros;
   late Topic mapChannel_;
+  late Topic topologyMapChannel_;
   late Topic tfChannel_;
   late Topic tfStaticChannel_;
   late Topic laserChannel_;
@@ -62,6 +64,8 @@ class RosChannel extends ChangeNotifier {
   TF2Dart tf_ = TF2Dart();
   ValueNotifier<OccupancyMap> map_ =
       ValueNotifier<OccupancyMap>(OccupancyMap());
+  ValueNotifier<TopologyMap> topologyMap_ =
+      ValueNotifier<TopologyMap>(TopologyMap(points: []));
   Status rosConnectState_ = Status.none;
   ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
@@ -144,6 +148,15 @@ class RosChannel extends ChangeNotifier {
         queueLength: 10,
         queueSize: 10);
     mapChannel_.subscribe(mapCallback);
+
+    topologyMapChannel_ = Topic(
+        ros: ros,
+        name: globalSetting.topologyMapTopic,
+        type: "nav2_msgs/TopologyMap",
+        reconnectOnClose: true,
+        queueLength: 10,
+        queueSize: 10);
+    topologyMapChannel_.subscribe(topologyMapCallback);
 
     tfChannel_ = Topic(
       ros: ros,
@@ -407,7 +420,6 @@ class RosChannel extends ChangeNotifier {
     double percentage = message['percentage'] * 100; // 假设电量百分比在 0-1 范围内
     battery_.value = percentage;
     // print("battery:$percentage");
-    notifyListeners();
   }
 
   Future<void> odomCallback(Map<String, dynamic> message) async {
@@ -421,19 +433,16 @@ class RosChannel extends ChangeNotifier {
     robotSpeed_.value.vy = vy;
     robotSpeed_.value.vw = vw;
     // print("vx:$vx,vy:$vy,vw:$vw");
-    notifyListeners();
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
     // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
-    notifyListeners();
   }
 
   Future<void> tfStaticCallback(Map<String, dynamic> msg) async {
     // print("${json.encode(msg)}");
     tf_.updateTF(TF.fromJson(msg));
-    notifyListeners();
   }
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
@@ -457,7 +466,6 @@ class RosChannel extends ChangeNotifier {
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       localPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
-    notifyListeners();
   }
 
   Future<void> globalPathCallback(Map<String, dynamic> msg) async {
@@ -480,7 +488,6 @@ class RosChannel extends ChangeNotifier {
       Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
       globalPath.value.add(Offset(poseScene.dx, poseScene.dy));
     }
-    notifyListeners();
   }
 
   Uint8List _hexToBytes(String hex) {
@@ -552,7 +559,6 @@ class RosChannel extends ChangeNotifier {
     }
     laserPointData.value = LaserData(
         robotPose: currRobotPose_.value, laserPoseBaseLink: laserPoint_.value);
-    notifyListeners();
   }
 
   DateTime? _lastMapCallbackTime;
@@ -590,12 +596,34 @@ class RosChannel extends ChangeNotifier {
     }
     map.setFlip();
     map_.value = map;
-    notifyListeners();
   }
 
   String msgReceived = '';
   Future<void> subscribeHandler(Map<String, dynamic> msg) async {
     msgReceived = json.encode(msg);
     print("recv ${msgReceived}");
+  }
+
+  Future<void> topologyMapCallback(Map<String, dynamic> msg) async {
+    final map = TopologyMap.fromJson(msg);
+
+    // 创建新的 points 列表
+    final updatedPoints = map.points.map((point) {
+      Offset pointScene = map_.value.xy2idx(Offset(point.x, point.y));
+      // 创建新的 NavPoint 对象
+      return NavPoint(
+        x: pointScene.dx,
+        y: pointScene.dy,
+        theta: point.theta,
+        name: point.name,
+        type: point.type,
+      );
+    }).toList();
+
+    // 创建新的 TopologyMap 对象
+    final updatedMap = TopologyMap(points: updatedPoints);
+
+    // 更新 ValueNotifier
+    topologyMap_.value = updatedMap;
   }
 }

@@ -18,6 +18,7 @@ import 'package:ros_flutter_gui_app/basic/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/math.dart';
 import 'package:ros_flutter_gui_app/basic/matrix_gesture_detector.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/display/display_laser.dart';
 import 'package:ros_flutter_gui_app/display/display_path.dart';
 import 'package:ros_flutter_gui_app/display/display_robot.dart';
@@ -40,8 +41,8 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   ValueNotifier<bool> manualCtrlMode_ = ValueNotifier(false);
-  ValueNotifier<List<RobotPose>> navPointList_ =
-      ValueNotifier<List<RobotPose>>([]);
+  ValueNotifier<TopologyMap> navPointList_ =
+      ValueNotifier<TopologyMap>(TopologyMap(points: []));
   final ValueNotifier<Matrix4> gestureTransform =
       ValueNotifier(Matrix4.identity());
 
@@ -180,134 +181,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     _overlayEntry = null;
   }
 
-  // 显示航点编辑窗口的方法
-  void showEditNavigationPoints(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        Offset offset = Offset.zero; // 初始偏移量
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return GestureDetector(
-              onPanUpdate: (details) {
-                // 更新偏移量，实现拖动效果
-                setState(() {
-                  offset += details.delta;
-                });
-              },
-              child: Transform.translate(
-                offset: offset,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 400), // 设置最大宽度
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: Container(
-                        padding: EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '航点编辑',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(height: 10),
-                            ValueListenableBuilder<List<RobotPose>>(
-                              valueListenable: navPointList_,
-                              builder: (context, navPointList, child) {
-                                return ConstrainedBox(
-                                  constraints: BoxConstraints(maxHeight: 300),
-                                  child: ReorderableListView(
-                                    shrinkWrap: true,
-                                    onReorder: (int oldIndex, int newIndex) {
-                                      if (newIndex > oldIndex) {
-                                        newIndex -= 1;
-                                      }
-                                      final item =
-                                          navPointList.removeAt(oldIndex);
-                                      navPointList.insert(newIndex, item);
-                                      navPointList_.value =
-                                          List.from(navPointList);
-                                    },
-                                    children: [
-                                      for (int index = 0;
-                                          index < navPointList.length;
-                                          index++)
-                                        ListTile(
-                                          key: ValueKey(index),
-                                          title: Text('航点 ${index + 1}'),
-                                          subtitle: Text(
-                                              '坐标: (${navPointList[index].x}, ${navPointList[index].y})'),
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              IconButton(
-                                                icon: Icon(Icons.edit),
-                                                onPressed: () {
-                                                  editNavigationPoint(
-                                                      context, index);
-                                                },
-                                              ),
-                                              IconButton(
-                                                icon: Icon(Icons.delete),
-                                                onPressed: () {
-                                                  navPointList_.value = List
-                                                      .from(navPointList_.value)
-                                                    ..removeAt(index);
-                                                },
-                                              ),
-                                              IconButton(
-                                                icon: Icon(Icons.navigation),
-                                                onPressed: () {
-                                                  executeNavigation(
-                                                      navPointList[index]);
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                            SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop(); // 关闭窗口
-                                  },
-                                  child: Text('关闭'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    executeMultipleNavigation();
-                                  },
-                                  child: Text('多点导航'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   // 示例：执行单点导航的函数
   void executeNavigation(RobotPose pose) {
     // 创建 pose 的副本，避免修改原始值
@@ -319,30 +192,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     print("执行单点导航到: (${pose.x}, ${pose.y}, ${pose.theta})");
 
     currentNavGoal_ = pose;
-  }
-
-  // 示例：执行多点导航的函数
-  // 异步函数执行多点导航
-  Future<void> executeMultipleNavigation() async {
-    List<RobotPose> points = List.from(navPointList_.value);
-
-    for (RobotPose point in points) {
-      // 创建 pose 的副本，避免修改原始值
-      RobotPose targetPose = RobotPose(point.x, point.y, point.theta);
-      // 发送导航目标
-      Provider.of<RosChannel>(context, listen: false)
-          .sendNavigationGoal(targetPose);
-      print("执行单点导航到: (${point.x}, ${point.y}, ${point.theta})");
-
-      currentNavGoal_ = point;
-
-      // 等待 hasReachedGoal_ 变为 true，表示已到达目标点
-      await waitForGoalReached();
-
-      print("已到达目标点: (${point.x}, ${point.y}, ${point.theta})");
-    }
-
-    print("多点导航完成");
   }
 
   // 等待函数，当 hasReachedGoal_ 变为 true 时返回
@@ -365,58 +214,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
     // 移除监听器，防止内存泄漏
     hasReachedGoal_.removeListener(listener);
-  }
-
-  // 编辑航点的方法
-  void editNavigationPoint(BuildContext context, int index) {
-    var point = navPointList_.value[index];
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        TextEditingController xController =
-            TextEditingController(text: point.x.toString());
-        TextEditingController yController =
-            TextEditingController(text: point.y.toString());
-
-        return AlertDialog(
-          title: Text('编辑航点'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: xController,
-                decoration: InputDecoration(labelText: 'X 坐标'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: yController,
-                decoration: InputDecoration(labelText: 'Y 坐标'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 关闭对话框
-              },
-              child: Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                // 更新航点的坐标
-                point.x = double.parse(xController.text);
-                point.y = double.parse(yController.text);
-                navPointList_.value = List.from(navPointList_.value)
-                  ..[index] = point;
-                Navigator.of(context).pop(); // 关闭对话框
-              },
-              child: Text('保存'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -508,10 +305,28 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                             .mode
                                             .value ==
                                         Mode.addNavPoint) {
-                                      navPointList_.value.add(RobotPose(
-                                          details.localPosition.dx,
-                                          details.localPosition.dy,
-                                          0));
+                                      // 生成基础名称
+                                      String baseName = "navGoal";
+
+                                      // 查找已存在的同名点
+                                      int suffix = 0;
+                                      String newName = baseName;
+
+                                      // 检查是否存在同名点，如果存在则增加后缀
+                                      while (navPointList_.value.points.any(
+                                          (point) => point.name == newName)) {
+                                        suffix++;
+                                        newName = "${baseName}_$suffix";
+                                      }
+
+                                      // 添加新的导航点
+                                      navPointList_.value.points.add(NavPoint(
+                                          x: details.localPosition.dx,
+                                          y: details.localPosition.dy,
+                                          theta: 0,
+                                          name: newName,
+                                          type: NavPointType.navGoal));
+
                                       setState(() {});
                                     }
                                   },
@@ -612,8 +427,18 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                   pointList: laserPointsScene));
                                         })),
                               ),
+                              ValueListenableBuilder<TopologyMap>(
+                                valueListenable: Provider.of<RosChannel>(
+                                        context,
+                                        listen: false)
+                                    .topologyMap_,
+                                builder: (context, topologyMap, child) {
+                                  navPointList_.value = topologyMap;
+                                  return Container();
+                                },
+                              ),
                               //导航点
-                              ...navPointList_.value.map((pose) {
+                              ...navPointList_.value.points.map((pose) {
                                 return Transform(
                                   transform: globalTransform,
                                   origin: originPose,
@@ -642,11 +467,13 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                           double dy =
                                               transDelta.dy / scaleValue;
                                           double tmpTheta = pose.theta;
-                                          pose = absoluteSum(
+                                          RobotPose poseRobot = absoluteSum(
                                               RobotPose(
                                                   pose.x, pose.y, pose.theta),
                                               RobotPose(dx, dy, 0));
                                           pose.theta = tmpTheta;
+                                          pose.x = poseRobot.x;
+                                          pose.y = poseRobot.y;
                                           setState(() {});
                                         }
                                       },
@@ -658,8 +485,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                   .value ==
                                               Mode.addNavPoint) {
                                             // 双击删除导航点
-                                            navPointList_.value =
-                                                List.from(navPointList_.value)
+                                            navPointList_.value.points =
+                                                List.from(
+                                                    navPointList_.value.points)
                                                   ..remove(pose);
                                             setState(() {});
                                           }
@@ -723,7 +551,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                                 pose.x,
                                                                 pose.y,
                                                                 pose.theta));
-                                                    currentNavGoal_ = pose;
+                                                    currentNavGoal_ = RobotPose(
+                                                        pose.x,
+                                                        pose.y,
+                                                        pose.theta);
                                                     setState(() {});
                                                   }
                                                 },
@@ -1158,9 +989,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   Card(
                     elevation: 10,
                     child: GestureDetector(
-                      onLongPress: () {
-                        showEditNavigationPoints(context); //长按显示编辑窗口
-                      },
                       child: IconButton(
                         icon: Icon(
                           const IconData(0xeba1, fontFamily: "NavPoint"),

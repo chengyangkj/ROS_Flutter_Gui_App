@@ -371,6 +371,10 @@ class Setting {
     return prefs.getString("mapTopic") ?? "map";
   }
 
+  String get topologyMapTopic {
+    return prefs.getString("topologyMapTopic") ?? "map/topology";
+  }
+
   void setLaserTopic(String topic) {
     prefs.setString('laserTopic', topic);
   }
