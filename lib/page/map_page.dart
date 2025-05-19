@@ -1076,72 +1076,76 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                 ],
               ))),
           //底部状态栏
-          Positioned(
-              left: 5,
-              bottom: 10,
-              child: Container(
-                child: Row(
-                  children: [
-                    Card(
-                      color: Colors.red,
-                      child: Container(
-                        width: 50,
-                        height: 50,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.remove_circle_outline, // 使用警告图标
-                            size: 30,
-                            color: Colors.white,
+          Visibility(
+              visible: !Provider.of<GlobalState>(context, listen: false)
+                  .isManualCtrl
+                  .value,
+              child: Positioned(
+                left: 5,
+                bottom: 10,
+                child: Container(
+                  child: Row(
+                    children: [
+                      Card(
+                        color: Colors.red,
+                        child: Container(
+                          width: 100,
+                          height: 50,
+                          child: TextButton(
+                            child: const Text(
+                              "STOP",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            onPressed: () {
+                              // 发送急停命令
+                              Provider.of<RosChannel>(context, listen: false)
+                                  .sendEmergencyStop();
+                              // 显示提示
+                              Toast.show("已触发急停！",
+                                  duration: Toast.lengthShort,
+                                  gravity: Toast.bottom);
+                            },
                           ),
-                          onPressed: () {
-                            // 发送急停命令
-                            Provider.of<RosChannel>(context, listen: false)
-                                .sendEmergencyStop();
-                            // 显示提示
-                            Toast.show("已触发急停！",
-                                duration: Toast.lengthShort,
-                                gravity: Toast.bottom);
-                          },
                         ),
                       ),
-                    ),
-                    Container(
-                      child: ValueListenableBuilder<ActionStatus>(
-                          valueListenable:
-                              Provider.of<RosChannel>(context, listen: true)
-                                  .navStatus_,
-                          builder: (context, navStatus, child) {
-                            return Visibility(
-                              visible: navStatus == ActionStatus.executing ||
-                                  navStatus == ActionStatus.accepted,
-                              child: Card(
-                                color: Colors.blue,
-                                child: Container(
-                                  width: 50,
-                                  height: 50,
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.stop_circle, // 使用警告图标
-                                      size: 30,
-                                      color: Colors.white,
+                      Container(
+                        child: ValueListenableBuilder<ActionStatus>(
+                            valueListenable:
+                                Provider.of<RosChannel>(context, listen: true)
+                                    .navStatus_,
+                            builder: (context, navStatus, child) {
+                              return Visibility(
+                                visible: navStatus == ActionStatus.executing ||
+                                    navStatus == ActionStatus.accepted,
+                                child: Card(
+                                  color: Colors.blue,
+                                  child: Container(
+                                    width: 50,
+                                    height: 50,
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.stop_circle, // 使用警告图标
+                                        size: 30,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        // 发送停止导航指令
+                                        Provider.of<RosChannel>(context,
+                                                listen: false)
+                                            .sendCancelNav();
+                                        // 显示提示
+                                        Toast.show("stop nav",
+                                            duration: Toast.lengthShort,
+                                            gravity: Toast.bottom);
+                                      },
                                     ),
-                                    onPressed: () {
-                                      // 发送停止导航指令
-                                      Provider.of<RosChannel>(context,
-                                              listen: false)
-                                          .sendCancelNav();
-                                      // 显示提示
-                                      Toast.show("stop nav",
-                                          duration: Toast.lengthShort,
-                                          gravity: Toast.bottom);
-                                    },
                                   ),
                                 ),
-                              ),
-                            );
-                          }),
-                    ),
-                  ],
+                              );
+                            }),
+                      ),
+                    ],
+                  ),
                 ),
               )),
 
