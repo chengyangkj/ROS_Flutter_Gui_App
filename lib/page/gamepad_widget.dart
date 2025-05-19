@@ -145,22 +145,19 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                       double max_vx =
                           double.parse(globalSetting.getConfig('MaxVx'));
 
-                      if (details.x.abs() > details.y.abs()) {
-                        double vw = max_vw * details.x * -1;
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVw(vw);
-                      } else if (details.x.abs() < details.y.abs()) {
-                        double vx = max_vx * details.y * -1;
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVxRight(vx);
-                      }
+                      double vw = max_vw * details.x * -1;
+                      Provider.of<RosChannel>(context, listen: false).setVw(vw);
+                      double vx = max_vx * details.y * -1;
+                      Provider.of<RosChannel>(context, listen: false)
+                          .setVxRight(vx);
 
-                      if (details.y.abs() == 0) {
+                      //死区
+                      if (details.y.abs() <= 0.2) {
                         Provider.of<RosChannel>(context, listen: false)
                             .setVxRight(0);
                       }
 
-                      if (details.x.abs() == 0) {
+                      if (details.x.abs() <= 0.2) {
                         Provider.of<RosChannel>(context, listen: false)
                             .setVw(0);
                       }
