@@ -236,6 +236,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/platform/odom/filtered");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -258,6 +260,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -280,6 +284,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -302,6 +308,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/wheel/odometry");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -324,6 +332,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
+    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -361,6 +371,22 @@ class Setting {
 
   String get robotPort {
     return prefs.getString("robotPort") ?? "9090";
+  }
+
+  String get robotFootprintTopic {
+    return prefs.getString("robotFootprintTopic") ?? "/local_costmap/published_footprint";
+  }
+
+  void setRobotFootprintTopic(String topic) {
+    prefs.setString('robotFootprintTopic', topic);
+  }
+
+  String get localCostmapTopic {
+    return prefs.getString("localCostmapTopic") ?? "/local_costmap/costmap";
+  } 
+
+  void setLocalCostmapTopic(String topic) {
+    prefs.setString('localCostmapTopic', topic);
   }
 
   void setMapTopic(String topic) {
@@ -567,10 +593,6 @@ class Setting {
 
   void setGlobalCostmapTopic(String topic) {
     prefs.setString('globalCostmapTopic', topic);
-  }
-
-  void setLocalCostmapTopic(String topic) {
-    prefs.setString('localCostmapTopic', topic);
   }
 
   void setGlobalPathTopic(String topic) {

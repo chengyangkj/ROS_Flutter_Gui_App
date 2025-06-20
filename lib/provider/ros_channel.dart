@@ -26,6 +26,7 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:image/image.dart' as img;
 import 'package:toast/toast.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/basic/polygon_stamped.dart';
 
 class LaserData {
   RobotPose robotPose;
@@ -58,6 +59,9 @@ class RosChannel {
   late Topic imageTopic_;
   late Topic navToPoseStatusChannel_;
   late Topic navThroughPosesStatusChannel_;
+  late Topic robotFootprintChannel_;
+  late Topic localCostmapChannel_;
+
   String rosUrl_ = "";
   Timer? cmdVelTimer;
   bool isReconnect_ = false;
@@ -84,6 +88,7 @@ class RosChannel {
   ValueNotifier<LaserData> laserPointData = ValueNotifier(
       LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
   ValueNotifier<ActionStatus> navStatus_ = ValueNotifier(ActionStatus.unknown);
+  ValueNotifier<List<Offset>> robotFootprint = ValueNotifier([]);
 
   RosChannel() {
     //启动定时器 获取机器人实时坐标
@@ -278,16 +283,24 @@ class RosChannel {
 
     batteryChannel_.subscribe(batteryCallback);
 
-    // imageTopic_ = Topic(
-    //   ros: ros,
-    //   name: globalSetting.imageTopic,
-    //   type: "sensor_msgs/Image",
-    //   reconnectOnClose: true,
-    //   queueLength: 10,
-    //   queueSize: 10,
-    // );
+    robotFootprintChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.robotFootprintTopic,
+      type: "geometry_msgs/PolygonStamped",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    robotFootprintChannel_.subscribe(robotFootprintCallback);
 
-    // imageTopic_.subscribe(imageCallback);
+    localCostmapChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.localCostmapTopic,
+      type: "nav_msgs/OccupancyGrid",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    localCostmapChannel_.subscribe(localCostmapCallback);
+    
 
 //发布者
     relocChannel_ = Topic(
@@ -503,6 +516,71 @@ class RosChannel {
     robotSpeed_.value.vy = vy;
     robotSpeed_.value.vw = vw;
     // print("vx:$vx,vy:$vy,vw:$vw");
+  }
+
+  Future<void> robotFootprintCallback(Map<String, dynamic> message) async {
+    try {
+      PolygonStamped polygonStamped = PolygonStamped.fromJson(message);
+
+      String framId = polygonStamped.header!.frameId!;
+      RobotPose transPose = RobotPose(0, 0, 0);
+      try {
+        transPose = tf_.lookUpForTransform(globalSetting.mapFrameName, framId);
+      } catch (e) {
+        print("not find robot footprint transfrom form:map to:$framId");
+        return;
+      }
+      
+      // 清空之前的点列表
+      robotFootprint.value.clear();
+      
+      if (polygonStamped.polygon != null) {
+        for (int i = 0; i < polygonStamped.polygon!.points.length; i++) {
+          Point32 point = polygonStamped.polygon!.points[i];
+          RobotPose pose = RobotPose(point.x, point.y, 0);
+          RobotPose poseMap = absoluteSum(transPose, pose);
+          Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
+          robotFootprint.value.add(Offset(poseScene.dx, poseScene.dy));
+        }
+      }
+    } catch (e) {
+      print("Error parsing robot footprint: $e");
+    }
+  }
+
+  Future<void> localCostmapCallback(Map<String, dynamic> msg) async {
+    
+    DateTime currentTime = DateTime.now(); // 获取当前时间
+
+    if (_lastMapCallbackTime != null) {
+      Duration difference = currentTime.difference(_lastMapCallbackTime!);
+      if (difference.inSeconds < 5) {
+        return;
+      }
+    }
+
+    _lastMapCallbackTime = currentTime; // 更新上一次回调时间
+
+    OccupancyMap map = OccupancyMap();
+    map.mapConfig.resolution = msg["info"]["resolution"];
+    map.mapConfig.width = msg["info"]["width"];
+    map.mapConfig.height = msg["info"]["height"];
+    map.mapConfig.originX = msg["info"]["origin"]["position"]["x"];
+    map.mapConfig.originY = msg["info"]["origin"]["position"]["y"];
+    List<int> dataList = List<int>.from(msg["data"]);
+    map.data = List.generate(
+      map.mapConfig.height, // 外层列表的长度
+      (i) => List.generate(
+        map.mapConfig.width, // 内层列表的长度
+        (j) => 0, // 初始化值
+      ),
+    );
+    for (int i = 0; i < dataList.length; i++) {
+      int x = i ~/ map.mapConfig.width;
+      int y = i % map.mapConfig.width;
+      map.data[x][y] = dataList[i];
+    }
+    map.setFlip();
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {

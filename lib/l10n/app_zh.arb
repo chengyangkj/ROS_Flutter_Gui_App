@@ -45,5 +45,7 @@
   "setting": "设置",
   "basic_setting": "基础设置",
   "topic_setting": "话题设置",
-  "app_setting": "APP设置"
+  "app_setting": "APP设置",
+  "robot_footprint_topic": "机器人尺寸话题",
+  "local_cost_map_topic": "局部代价地图话题"
 }

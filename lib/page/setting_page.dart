@@ -118,6 +118,8 @@ class _SettingsPageState extends State<SettingsPage> {
       'imageTopic': AppLocalizations.of(context)!.image_topic,
       'imageWidth': AppLocalizations.of(context)!.image_width,
       'imageHeight': AppLocalizations.of(context)!.image_height,
+      'robotFootprintTopic': AppLocalizations.of(context)!.robot_footprint_topic,
+      'localCostmapTopic': AppLocalizations.of(context)!.local_cost_map_topic,
     };
     return displayNames[key] ?? key;
   }
@@ -186,6 +188,12 @@ class _SettingsPageState extends State<SettingsPage> {
         break;
       case 'imageHeight':
         globalSetting.setImageHeight(double.parse(value));
+        break;
+      case 'robotFootprintTopic':
+        globalSetting.setRobotFootprintTopic(value);
+        break;
+      case 'localCostmapTopic':
+        globalSetting.setLocalCostmapTopic(value);
         break;
     }
 
@@ -481,6 +489,10 @@ class _SettingsPageState extends State<SettingsPage> {
             'BatteryTopic', _settings['BatteryTopic'] ?? '/battery_status'),
         _buildSettingItem(
             'imageTopic', _settings['imageTopic'] ?? '/camera/image_raw'),
+        _buildSettingItem(
+            'robotFootprintTopic', _settings['robotFootprintTopic'] ?? '/local_costmap/published_footprint'),
+        _buildSettingItem(
+            'localCostmapTopic', _settings['localCostmapTopic'] ?? '/local_costmap/costmap'),
       ],
     );
   }

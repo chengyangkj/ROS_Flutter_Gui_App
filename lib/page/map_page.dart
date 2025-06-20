@@ -32,6 +32,7 @@ import 'package:ros_flutter_gui_app/display/display_grid.dart';
 import 'package:toast/toast.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:ros_flutter_gui_app/display/display_waypoint.dart';
+import 'package:ros_flutter_gui_app/display/display_polygon.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -427,6 +428,31 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                               child: DisplayLaser(
                                                   pointList: laserPointsScene));
                                         })),
+                              ),
+                              //机器人足迹多边形
+                              Transform(
+                                transform: globalTransform,
+                                origin: originPose,
+                                child: RepaintBoundary(
+                                  child: ValueListenableBuilder<List<Offset>>(
+                                    valueListenable: Provider.of<RosChannel>(
+                                            context,
+                                            listen: false)
+                                        .robotFootprint,
+                                    builder: (context, footprint, child) {
+                                      if (footprint.isEmpty) return Container();
+                                      return Container(
+                                        child: CustomPaint(
+                                          painter: DisplayPolygon(
+                                            pointList: footprint,
+                                            color: Colors.red.withOpacity(0.3),
+                                            fill: true,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
                               ValueListenableBuilder<TopologyMap>(
                                 valueListenable: Provider.of<RosChannel>(
