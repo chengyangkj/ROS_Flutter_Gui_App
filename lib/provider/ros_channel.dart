@@ -60,7 +60,7 @@ class RosChannel {
   late Topic navThroughPosesStatusChannel_;
   String rosUrl_ = "";
   Timer? cmdVelTimer;
-  bool isConnect_ = false;
+  bool isReconnect_ = false;
 
   bool manualCtrlMode_ = false;
   ValueNotifier<double> battery_ = ValueNotifier(78);
@@ -106,14 +106,27 @@ class RosChannel {
         });
 
         //重连
-        Timer.periodic(const Duration(seconds: 10), (timer) {
-          if (isConnect_ && rosConnectState_ != Status.connected){
+        Timer.periodic(const Duration(seconds: 5), (timer) async {
+          if (isReconnect_ && rosConnectState_ != Status.connected){
             Toast.show(
-              "try reconnect to ${rosUrl_}!",
-              duration: Toast.lengthShort,
-              gravity: Toast.bottom,
+              "lost connection to ${rosUrl_} try reconnect...",
+              duration: 2,
+              gravity: Toast.top,
             );
-            connect(rosUrl_);
+            String error = await connect(rosUrl_);
+            if(error.isEmpty){
+              Toast.show(
+                "reconnect success to ${rosUrl_}!",
+                duration: 2,
+                gravity: Toast.top,
+              );
+            }else{
+              Toast.show(
+                "reconnect failed to ${rosUrl_} error: $error",
+                duration: 3,
+                gravity: Toast.top,
+              );
+            }
           }
         });
       
@@ -124,8 +137,7 @@ class RosChannel {
     return currRobotPose_.value;
   }
 
-  Future<bool> connect(String url) async {
-    isConnect_=false;
+  Future<String> connect(String url) async {
     rosUrl_ = url;
     rosConnectState_ = Status.none;
     ros = Ros(url: url);
@@ -133,103 +145,34 @@ class RosChannel {
     // 设置状态监听器
     ros.statusStream.listen(
       (Status data) {
-        print("connect state: $data");
         rosConnectState_ = data;
-        Toast.show(
-          "websocket connect ${data.toString()}!",
-          duration: Toast.lengthShort,
-          gravity: Toast.bottom,
-        );
       },
       onError: (error) {
-        print('Error occurred: $error'); // 打印错误信息
         rosConnectState_ = Status.errored;
-        Toast.show(
-          "websocket connect error:${error.toString()}!",
-          duration: Toast.lengthShort,
-          gravity: Toast.bottom,
-        );
       },
       onDone: () {
-        print('Stream closed'); // 打印流关闭信息
-        Toast.show(
-          "websocket connect closed!",
-          duration: Toast.lengthShort,
-          gravity: Toast.bottom,
-        );
         rosConnectState_ = Status.closed;
       },
       cancelOnError: false, // 改为 false，让监听器继续工作
     );
 
-    try {
       // 尝试连接
-      ros.connect();
-      
-      // 等待连接结果，使用超时机制
-      bool connected = false;
-      int timeoutCount = 0;
-      const int maxTimeout = 50; // 5秒超时 (50 * 100ms)
-      
-      while (!connected && timeoutCount < maxTimeout) {
-        await Future.delayed(Duration(milliseconds: 100));
-        
-        if (rosConnectState_ == Status.connected) {
-          connected = true;
-          print("ros connect success!");
-          isConnect_ = true;
-        } else if (rosConnectState_ == Status.errored || rosConnectState_ == Status.closed) {
-          print("ros connect failed!");
-          return false;
-        }
-        
-        timeoutCount++;
+      String error = await ros.connect();
+    
+      if (error != "") {
+        return error;
       }
-      
-      if (!connected) {
-        print("ros connect timeout!");
-        Toast.show(
-          "连接超时，请检查网络和服务器状态",
-          duration: Toast.lengthShort,
-          gravity: Toast.bottom,
-        );
-        return false;
+
+      if(!isReconnect_){
+        isReconnect_ = true;
       }
       
       // 连接成功，初始化通道
       Timer(const Duration(seconds: 1), () async {
         await initChannel();
       });
-      return true;
+      return "";
       
-    } on SocketException catch (e) {
-      print("SocketException in connect: $e");
-      rosConnectState_ = Status.errored;
-      Toast.show(
-        "网络连接失败: ${e.message}",
-        duration: Toast.lengthShort,
-        gravity: Toast.bottom,
-      );
-      return false;
-    } on Exception catch (e) {
-      print("Exception in connect: $e");
-      rosConnectState_ = Status.errored;
-      Toast.show(
-        "连接异常: ${e.toString()}",
-        duration: Toast.lengthShort,
-        gravity: Toast.bottom,
-      );
-      return false;
-    } catch (e) {
-      print("Unknown error in connect: $e");
-      rosConnectState_ = Status.errored;
-      Toast.show(
-        "未知连接错误: ${e.toString()}",
-        duration: Toast.lengthShort,
-        gravity: Toast.bottom,
-      );
-      return false;
-    }
   }
 
   ValueNotifier<OccupancyMap> get map => map_;

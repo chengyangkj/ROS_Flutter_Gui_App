@@ -2,9 +2,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
 import 'dart:io';
 
-WebSocketChannel initializeWebSocketChannel(String url) {
+Future<WebSocketChannel> initializeWebSocketChannel(String url) async {
   try {
-    return IOWebSocketChannel.connect(url);
+    WebSocket ws = await WebSocket.connect(url);
+    return IOWebSocketChannel(ws);
   } on SocketException catch (e) {
     print('SocketException in initializeWebSocketChannel: $e');
     rethrow; // 重新抛出异常，让上层处理

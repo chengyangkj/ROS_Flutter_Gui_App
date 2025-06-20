@@ -412,13 +412,13 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
       globalSetting.setRobotIp(ip);
       globalSetting.setRobotPort(_portController.text);
 
-      final success = await provider.connect("ws://$ip:$port");
-      if (success) {
+      final error = await provider.connect("ws://$ip:$port");
+      if (error.isEmpty) {
         Navigator.pushNamed(context, "/map");
       } else {
         Toast.show(
-          AppLocalizations.of(context)!.connect_error,
-          duration: Toast.lengthLong,
+          "connect to ROS failed: $error",
+          duration: 3,
           gravity: Toast.bottom,
         );
       }

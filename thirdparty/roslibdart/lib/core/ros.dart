@@ -71,16 +71,17 @@ class Ros {
   Status status = Status.none;
 
   /// Connect to the ROS node, the [url] can override what was provided in the constructor.
-  void connect({dynamic url}) {
+  Future<String> connect({dynamic url}) async {
     this.url = url ?? this.url;
     url ??= this.url;
     try {
       // Initialize the connection to the ROS node with a Websocket channel.
-      _channel = initializeWebSocketChannel(url);
+      _channel = await initializeWebSocketChannel(url);
+      //过了这行肯定成功，否者就抛异常了，在异常中处理
       stream =
           _channel.stream.asBroadcastStream().map((raw) => json.decode(raw));
       // Update the connection status.
-      status = Status.connecting;
+      status = Status.connected;
       _statusController.add(status);
       // Listen for messages on the connection to update the status.
       _channelListener = stream.listen((data) {
@@ -100,24 +101,20 @@ class Ros {
         _statusController.add(status);
       }, cancelOnError: false);
 
-      //添加5s定时器，5s后未报错，则认为连接成功
-      Timer(const Duration(seconds: 5), () {
-        if (status != Status.errored && status != Status.closed) {
-          status = Status.connected;
-          _statusController.add(status);
-        }
-      });
-    } on WebSocketChannelException  {
+      return "";
+
+    } on WebSocketChannelException catch (e) {
       status = Status.errored;
       _statusController.add(status);
+      return "$e";
     } on SocketException catch (e) {
       status = Status.errored;
       _statusController.add(status);
-      print('SocketException in ros.connect: $e');
+      return "$e";
     } catch (e) {
       status = Status.errored;
       _statusController.add(status);
-      print('Unknown error in ros.connect: $e');
+      return "$e";
     }
   }
 
