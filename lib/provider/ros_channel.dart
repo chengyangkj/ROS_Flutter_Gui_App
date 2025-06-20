@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:io';
 import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +24,8 @@ import "package:ros_flutter_gui_app/basic/math.dart";
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:image/image.dart' as img;
+import 'package:toast/toast.dart';
+import 'package:ros_flutter_gui_app/provider/global_state.dart';
 
 class LaserData {
   RobotPose robotPose;
@@ -55,7 +58,9 @@ class RosChannel {
   late Topic imageTopic_;
   late Topic navToPoseStatusChannel_;
   late Topic navThroughPosesStatusChannel_;
+  String rosUrl_ = "";
   Timer? cmdVelTimer;
+  bool isConnect_ = false;
 
   bool manualCtrlMode_ = false;
   ValueNotifier<double> battery_ = ValueNotifier(78);
@@ -83,9 +88,11 @@ class RosChannel {
   RosChannel() {
     //启动定时器 获取机器人实时坐标
     globalSetting.init().then((success) {
-      if (success) {
-        connect("ws://${globalSetting.robotIp}:${globalSetting.robotPort}");
+       //监听链接状态
+
+        //获取机器人实时坐标
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
+          if (rosConnectState_ != Status.connected) return;
           try {
             currRobotPose_.value = tf_.lookUpForTransform(
                 globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
@@ -97,7 +104,19 @@ class RosChannel {
             print("get robot pose error:${e}");
           }
         });
-      }
+
+        //重连
+        Timer.periodic(const Duration(seconds: 10), (timer) {
+          if (isConnect_ && rosConnectState_ != Status.connected){
+            Toast.show(
+              "try reconnect to ${rosUrl_}!",
+              duration: Toast.lengthShort,
+              gravity: Toast.bottom,
+            );
+            connect(rosUrl_);
+          }
+        });
+      
     });
   }
 
@@ -106,41 +125,111 @@ class RosChannel {
   }
 
   Future<bool> connect(String url) async {
+    isConnect_=false;
+    rosUrl_ = url;
     rosConnectState_ = Status.none;
     ros = Ros(url: url);
 
+    // 设置状态监听器
     ros.statusStream.listen(
       (Status data) {
         print("connect state: $data");
         rosConnectState_ = data;
+        Toast.show(
+          "websocket connect ${data.toString()}!",
+          duration: Toast.lengthShort,
+          gravity: Toast.bottom,
+        );
       },
       onError: (error) {
         print('Error occurred: $error'); // 打印错误信息
+        rosConnectState_ = Status.errored;
+        Toast.show(
+          "websocket connect error:${error.toString()}!",
+          duration: Toast.lengthShort,
+          gravity: Toast.bottom,
+        );
       },
       onDone: () {
         print('Stream closed'); // 打印流关闭信息
+        Toast.show(
+          "websocket connect closed!",
+          duration: Toast.lengthShort,
+          gravity: Toast.bottom,
+        );
+        rosConnectState_ = Status.closed;
       },
-      cancelOnError: false, // 是否在遇到错误时取消订阅，默认为false);
+      cancelOnError: false, // 改为 false，让监听器继续工作
     );
-    ros.connect();
 
-    // 等待连接成功
-    while (true) {
-      if (rosConnectState_ == Status.connected) {
-        print("ros connect success!");
-        break;
-      } else if (rosConnectState_ == Status.closed ||
-          rosConnectState_ == Status.errored) {
-        print("ros connect failed!");
+    try {
+      // 尝试连接
+      ros.connect();
+      
+      // 等待连接结果，使用超时机制
+      bool connected = false;
+      int timeoutCount = 0;
+      const int maxTimeout = 50; // 5秒超时 (50 * 100ms)
+      
+      while (!connected && timeoutCount < maxTimeout) {
+        await Future.delayed(Duration(milliseconds: 100));
+        
+        if (rosConnectState_ == Status.connected) {
+          connected = true;
+          print("ros connect success!");
+          isConnect_ = true;
+        } else if (rosConnectState_ == Status.errored || rosConnectState_ == Status.closed) {
+          print("ros connect failed!");
+          return false;
+        }
+        
+        timeoutCount++;
+      }
+      
+      if (!connected) {
+        print("ros connect timeout!");
+        Toast.show(
+          "连接超时，请检查网络和服务器状态",
+          duration: Toast.lengthShort,
+          gravity: Toast.bottom,
+        );
         return false;
       }
-      await Future.delayed(Duration(milliseconds: 100));
+      
+      // 连接成功，初始化通道
+      Timer(const Duration(seconds: 1), () async {
+        await initChannel();
+      });
+      return true;
+      
+    } on SocketException catch (e) {
+      print("SocketException in connect: $e");
+      rosConnectState_ = Status.errored;
+      Toast.show(
+        "网络连接失败: ${e.message}",
+        duration: Toast.lengthShort,
+        gravity: Toast.bottom,
+      );
+      return false;
+    } on Exception catch (e) {
+      print("Exception in connect: $e");
+      rosConnectState_ = Status.errored;
+      Toast.show(
+        "连接异常: ${e.toString()}",
+        duration: Toast.lengthShort,
+        gravity: Toast.bottom,
+      );
+      return false;
+    } catch (e) {
+      print("Unknown error in connect: $e");
+      rosConnectState_ = Status.errored;
+      Toast.show(
+        "未知连接错误: ${e.toString()}",
+        duration: Toast.lengthShort,
+        gravity: Toast.bottom,
+      );
+      return false;
     }
-    Timer(const Duration(seconds: 1), () async {
-      await initChannel();
-      // await chatter.subscribe();
-    });
-    return true;
   }
 
   ValueNotifier<OccupancyMap> get map => map_;

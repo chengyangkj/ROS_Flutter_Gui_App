@@ -1,5 +1,6 @@
-name: ros_flutter_gui_app
+name: subscriber
 description: A new Flutter project.
+
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -11,15 +12,13 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # build by specifying --build-name and --build-number, respectively.
 # In Android, build-name is used as versionName while build-number used as versionCode.
 # Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
-version: 1.0.5+5
+version: 1.0.0+1
 
 environment:
-  sdk: '>=3.1.5 <4.0.0'
+  sdk: ">=2.16.0-134.5.beta <3.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -30,74 +29,32 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  roslibdart:
+    path: ../../
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
-  gamepads: ^0.1.4
-  provider: ^6.1.2
-  easy_loading_button: ^0.3.2
-  toast: ^0.3.0
-  shared_preferences: ^2.2.3
-  flutter_expandable_fab: ^2.0.0
-  flutter_joystick: ^0.2.0
-  web: ^1.0.0
-  win32: ^5.5.4
-  flutter_launcher_icons: ^0.13.1
-  wakelock_plus: ^1.2.8
-  flame: ^1.19.0
-  package_info_plus: ^8.1.0
-  flutter_mjpeg: ^2.0.4
-  http: ^0.13.6
-  fluttertoast: ^8.2.12
-  intl: any
-  flutter_localizations:
-    sdk: flutter
-
-flutter_icons:
-  android: true
-  ios: true
-  image_path: "assets/icon/icon.png"  
-
-dependency_overrides:
-  gamepads_windows:
-    path: ./thirdparty/gamepads_windows  # 指向你自定义实现的路径
-  roslibdart:
-    path: ./thirdparty/roslibdart
-
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
-
+  flutter_lints: ^1.0.0
+dependency_overrides:
+  roslibdart:
+    path: ../../
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
-# The following section is specific to Flutter packages.
+# The following section is specific to Flutter.
 flutter:
-  generate: true 
-  fonts:
-    - family: Reloc
-      fonts:
-        - asset: assets/icons/reloc/iconfont.ttf
-    - family: NavPoint
-      fonts:
-        - asset: assets/icons/nav_point/iconfont.ttf
-    - family: GamePad
-      fonts:
-        - asset: assets/icons/gamepad/iconfont.ttf
-    - family: Speed
-      fonts:
-        - asset: assets/icons/speed/iconfont.ttf
-    - family: Battery
-      fonts:
-        - asset: assets/icons/battery/iconfont.ttf
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -109,7 +66,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware
+  # https://flutter.dev/assets-and-images/#resolution-aware.
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/assets-and-images/#from-packages

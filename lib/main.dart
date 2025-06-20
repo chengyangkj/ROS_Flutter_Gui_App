@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:gamepads/gamepads.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
@@ -18,6 +20,20 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 设置全局错误处理
+  FlutterError.onError = (FlutterErrorDetails details) {
+    print('Flutter Error: ${details.exception}');
+    print('Stack trace: ${details.stack}');
+  };
+  
+  // 捕获未处理的异步异常
+  PlatformDispatcher.instance.onError = (error, stack) {
+    print('Unhandled async error: $error');
+    print('Stack trace: $stack');
+    return true; // 防止程序崩溃
+  };
+  
   await _setInitialOrientation();
   runApp(MultiProvider(providers: [
     Provider<RosChannel>(create: (_) => RosChannel()),
