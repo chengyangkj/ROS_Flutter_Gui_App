@@ -53,20 +53,33 @@ class _DisplayPolygonState extends State<DisplayPolygon>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: _DisplayPolygonPainter(
-            pointList: widget.pointList,
-            color: widget.color,
-            fill: widget.fill,
-            animationValue: _animation.value,
-            enableWaterDropAnimation: widget.enableWaterDropAnimation,
-          ),
-          size: Size.infinite,
-        );
-      },
+    // 计算多边形的边界框
+    double minX = widget.pointList.isEmpty ? 0 : widget.pointList.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
+    double maxX = widget.pointList.isEmpty ? 0 : widget.pointList.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
+    double minY = widget.pointList.isEmpty ? 0 : widget.pointList.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
+    double maxY = widget.pointList.isEmpty ? 0 : widget.pointList.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
+    
+    double width = maxX - minX;
+    double height = maxY - minY;
+    
+    return Container(
+      width: width > 0 ? width : 100, // 最小宽度100
+      height: height > 0 ? height : 100, // 最小高度100
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return CustomPaint(
+            painter: _DisplayPolygonPainter(
+              pointList: widget.pointList,
+              color: widget.color,
+              fill: widget.fill,
+              animationValue: _animation.value,
+              enableWaterDropAnimation: widget.enableWaterDropAnimation,
+            ),
+            size: Size.infinite,
+          );
+        },
+      ),
     );
   }
 }

@@ -74,7 +74,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   bool isLandscape = false; // 用于跟踪屏幕方向
   int poseDirectionSwellSize = 10; //机器人方向旋转控件膨胀的大小
-  double navPoseSize = 15; //导航点的大小
+  double navPoseSize = 5; //导航点的大小
   double robotSize = 5; //机器人坐标的大小
   RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
   RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
@@ -447,7 +447,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                   pointList: laserPointsScene));
                                         })),
                               ),
-                              //机器人足迹多边形
+                              // //机器人足迹多边形
                               Transform(
                                 transform: globalTransform,
                                 origin: originPose,
@@ -458,12 +458,13 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                             listen: false)
                                         .robotFootprint,
                                     builder: (context, footprint, child) {
-                                      return DisplayPolygon(
-                                            pointList: footprint,
-                                            color: Colors.blue,
-                                            fill: true,
-                                            enableWaterDropAnimation: true,
-                                          );
+              
+                                      return  DisplayPolygon(
+                                          pointList: footprint,
+                                          color: Colors.blue,
+                                          fill: true,
+                                          enableWaterDropAnimation: true,
+                                        ) ;
                                     },
                                   ),
                                 ),
