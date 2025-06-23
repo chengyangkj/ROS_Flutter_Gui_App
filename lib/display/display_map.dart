@@ -85,17 +85,10 @@ class DisplayMapPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..strokeWidth = 1;
 
-    // 使用 PictureRecorder 缓存绘制内容
-    final recorder = PictureRecorder();
-    final recordingCanvas = Canvas(recorder);
-
-    // 保存 Canvas 状态
-    recordingCanvas.save();
-
     // 批量绘制占据点
     for (var mapPoint in occPointList) {
       paint.color = occBaseColor.withAlpha(mapPoint.value);
-      recordingCanvas.drawPoints(PointMode.points, [mapPoint.point], paint);
+      canvas.drawPoints(PointMode.points, [mapPoint.point], paint);
     }
 
     // 批量绘制自由区域
@@ -103,23 +96,13 @@ class DisplayMapPainter extends CustomPainter {
       paint.color = freeColor;
       final freePoints = Float32List.fromList(
           freePointList.expand((point) => [point.dx, point.dy]).toList());
-      recordingCanvas.drawRawPoints(PointMode.points, freePoints, paint);
+      canvas.drawRawPoints(PointMode.points, freePoints, paint);
     }
-
-    // 恢复 Canvas 状态
-    recordingCanvas.restore();
-
-    // 将录制的内容绘制到实际 Canvas 上
-    final picture = recorder.endRecording();
-    canvas.drawPicture(picture);
   }
 
   @override
   bool shouldRepaint(covariant DisplayMapPainter oldDelegate) {
-    return oldDelegate.occPointList != occPointList ||
-        oldDelegate.freePointList != freePointList ||
-        oldDelegate.freeColor != freeColor ||
-        oldDelegate.occBaseColor != occBaseColor;
+    return true;
   }
 }
 

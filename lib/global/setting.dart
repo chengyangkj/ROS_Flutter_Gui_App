@@ -607,31 +607,7 @@ class Setting {
   void setJointStatesTopic(String topic) {
     prefs.setString('jointStatesTopic', topic);
   }
-
-  // 获取各个配置的默认值方法
-  Map<String, String> getDefaultValues() {
-    return {
-      'robotIp': '192.168.1.100',
-      'robotPort': '9090',
-      'mapTopic': '/map',
-      'mapMetadataTopic': '/map_metadata',
-      'laserTopic': '/scan',
-      'initPoseTopic': '/initialpose',
-      'amclPoseTopic': '/amcl_pose',
-      'odomTopic': '/odom',
-      'moveBaseTopic': '/move_base',
-      'cmdVelTopic': '/cmd_vel',
-      'globalPlanTopic': '/move_base/GlobalPlanner/plan',
-      'localPlanTopic': '/move_base/local_plan',
-      'globalCostmapTopic': '/move_base/global_costmap/costmap',
-      'localCostmapTopic': '/move_base/local_costmap/costmap',
-      'globalPathTopic': '/move_base/NavfnROS/plan',
-      'localPathTopic': '/move_base/DWAPlannerROS/local_plan',
-      'robotStatusTopic': '/robot_status',
-      'batteryTopic': '/battery_state',
-      'jointStatesTopic': '/joint_states'
-    };
-  }
+  
 }
 
 Setting globalSetting = Setting();

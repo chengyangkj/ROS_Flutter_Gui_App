@@ -18,6 +18,8 @@
 | relocTopic | geometry_msgs/PoseWithCovarianceStamped | 重定位话题 | /initialpose |
 | navGoalTopic | geometry_msgs/PoseStamped | 导航目标点话题 | /move_base_simple/goal |
 | SpeedCtrlTopic | geometry_msgs/Twist | 速度控制话题 | /cmd_vel |
+| localCostmapTopic | nav_msgs/OccupancyGrid |局部代价地图话题| /local_costmap/costmap |
+
 
 ## 相机配置
 

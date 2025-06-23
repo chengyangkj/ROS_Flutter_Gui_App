@@ -89,6 +89,7 @@ class RosChannel {
       LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
   ValueNotifier<ActionStatus> navStatus_ = ValueNotifier(ActionStatus.unknown);
   ValueNotifier<List<Offset>> robotFootprint = ValueNotifier([]);
+  ValueNotifier<OccupancyMap> localCostmap = ValueNotifier(OccupancyMap());
 
   RosChannel() {
     //启动定时器 获取机器人实时坐标
@@ -178,6 +179,28 @@ class RosChannel {
       });
       return "";
       
+  }
+
+  void closeConnection() {
+    robotFootprint.value.clear();
+    map_.value.data.clear();
+    topologyMap_.value.points.clear();
+    laserPoint_.value.clear();
+    localPath.value.clear();
+    globalPath.value.clear();
+    laserPointData.value.laserPoseBaseLink.clear();
+    laserPointData.value.robotPose = RobotPose.zero();
+    robotSpeed_.value.vx = 0;
+    robotSpeed_.value.vy = 0;
+    robotSpeed_.value.vw = 0;
+    currRobotPose_.value = RobotPose.zero();
+    robotPoseScene.value = RobotPose.zero();
+    navStatus_.value = ActionStatus.unknown;
+    battery_.value = 0;
+    imageData.value = Uint8List(0);
+    cmdVel_.vx = 0;
+    cmdVel_.vy = 0;
+    ros.close();
   }
 
   ValueNotifier<OccupancyMap> get map => map_;
@@ -549,7 +572,6 @@ class RosChannel {
   }
 
   Future<void> localCostmapCallback(Map<String, dynamic> msg) async {
-    
     DateTime currentTime = DateTime.now(); // 获取当前时间
 
     if (_lastMapCallbackTime != null) {
@@ -561,26 +583,102 @@ class RosChannel {
 
     _lastMapCallbackTime = currentTime; // 更新上一次回调时间
 
-    OccupancyMap map = OccupancyMap();
-    map.mapConfig.resolution = msg["info"]["resolution"];
-    map.mapConfig.width = msg["info"]["width"];
-    map.mapConfig.height = msg["info"]["height"];
-    map.mapConfig.originX = msg["info"]["origin"]["position"]["x"];
-    map.mapConfig.originY = msg["info"]["origin"]["position"]["y"];
-    List<int> dataList = List<int>.from(msg["data"]);
-    map.data = List.generate(
-      map.mapConfig.height, // 外层列表的长度
-      (i) => List.generate(
-        map.mapConfig.width, // 内层列表的长度
-        (j) => 0, // 初始化值
-      ),
-    );
-    for (int i = 0; i < dataList.length; i++) {
-      int x = i ~/ map.mapConfig.width;
-      int y = i % map.mapConfig.width;
-      map.data[x][y] = dataList[i];
+    try {
+      // 解析局部代价地图数据
+      int width = msg["info"]["width"];
+      int height = msg["info"]["height"];
+      double resolution = msg["info"]["resolution"];
+      double originX = msg["info"]["origin"]["position"]["x"];
+      double originY = msg["info"]["origin"]["position"]["y"];
+      
+      // 解析四元数获取旋转角度
+      Map<String, dynamic> orientation = msg["info"]["origin"]["orientation"];
+      double qx = orientation["x"]?.toDouble() ?? 0.0;
+      double qy = orientation["y"]?.toDouble() ?? 0.0;
+      double qz = orientation["z"]?.toDouble() ?? 0.0;
+      double qw = orientation["w"]?.toDouble() ?? 1.0;
+      
+      // 四元数转欧拉角
+      vm.Quaternion quaternion = vm.Quaternion(qx, qy, qz, qw);
+      List<double> euler = quaternionToEuler(quaternion);
+      double originTheta = euler[0]; // yaw 角
+      
+      // 创建局部代价地图
+      OccupancyMap costmap = OccupancyMap();
+      costmap.mapConfig.resolution = resolution;
+      costmap.mapConfig.width = width;
+      costmap.mapConfig.height = height;
+      costmap.mapConfig.originX = originX;
+      costmap.mapConfig.originY = originY;
+      
+      List<int> dataList = List<int>.from(msg["data"]);
+      costmap.data = List.generate(
+        height,
+        (i) => List.generate(width, (j) => 0),
+      );
+      
+      for (int i = 0; i < dataList.length; i++) {
+        int x = i ~/ width;
+        int y = i % width;
+        costmap.data[x][y] = dataList[i];
+      }
+      costmap.setFlip();
+      
+      // 坐标系转换：将局部代价地图的基础坐标转换为 map 坐标系
+      String frameId = msg["header"]["frame_id"];
+      RobotPose originPose = RobotPose(0, 0, 0);
+      
+      try {
+        // 获取从局部坐标系到 map 坐标系的变换
+        RobotPose transPose = tf_.lookUpForTransform(globalSetting.mapFrameName, frameId);
+        
+        // 计算局部代价地图原点在 map 坐标系中的位置
+        RobotPose localOrigin = RobotPose(originX, originY, originTheta);
+        RobotPose mapOrigin = absoluteSum(transPose, localOrigin);
+        
+        // 调整 Y 坐标（考虑地图翻转）
+        mapOrigin.y += costmap.heightMap();
+        originPose = mapOrigin;
+
+        
+      } catch (e) {
+        print("getTransform localCostMapCallback error: $e");
+        return;
+      }
+      
+      // 将局部代价地图叠加到使用全局地图的size进行叠加
+      OccupancyMap sizedCostMap = map_.value;
+      //点全归零
+      sizedCostMap.setZero();
+      
+      // 使用 xy2idx 方法将代价地图左上角的世界坐标转换为栅格坐标
+      Offset occPoint = map_.value.xy2idx(Offset(originPose.x, originPose.y));
+      double mapOX = occPoint.dx;
+      double mapOY = occPoint.dy;
+      
+      // 清空目标区域
+      for (int x = 0; x < sizedCostMap.mapConfig.height; x++) {
+        for (int y = 0; y < sizedCostMap.mapConfig.width; y++) {
+          if (x > mapOX && y > mapOY && 
+              y < mapOY + costmap.mapConfig.height &&
+              x < mapOX + costmap.mapConfig.width) {
+            // 在局部代价地图范围内，使用局部代价地图的值
+            int localX = x - mapOX.toInt();
+            int localY = y - mapOY.toInt();
+            if (localX >= 0 && localX < costmap.mapConfig.height &&
+                localY >= 0 && localY < costmap.mapConfig.width) {
+              sizedCostMap.data[y][x] = costmap.data[localY][localX];
+            }
+          }
+          // 不在范围内，保持原值
+        }
+      }
+      
+      // 更新局部代价地图
+      localCostmap.value = sizedCostMap;
+    } catch (e) {
+      print("Error processing local costmap: $e");
     }
-    map.setFlip();
   }
 
   Future<void> tfCallback(Map<String, dynamic> msg) async {
@@ -645,34 +743,6 @@ class RosChannel {
       buffer[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
     }
     return buffer;
-  }
-
-  Future<void> imageCallback(Map<String, dynamic> msg) async {
-    //int width = msg['width'];
-    // int height = msg['height'];
-    // String encoding = msg['encoding'];
-    // String data = msg['data'].asString();
-    //int width = msg['width'];
-    // int height = msg['height'];
-    // String encoding = msg['encoding'];
-    // String data = msg['data'].asString();
-
-    // Uint8List bytes = _hexToBytes(data);
-    // print(data.length);
-    // print(data.length);
-    // Uint8L
-    // Uint8List bytes = Uint8List.fromList(data.cast<int>());
-
-    // img.Image? image;
-    // if (encoding == 'rgb8') {
-    //   image = img.Image.fromBytes(width: width, height: height, bytes: bytes);
-    // } else if (encoding == 'mono8') {
-    //   image = img.Image.fromBytes(width, height, bytes,
-    //       format: img.Format.luminance);
-    // } else {
-    //   print('Unsupported image encoding: $encoding');
-    //   return null;
-    // }
   }
 
   Future<void> laserCallback(Map<String, dynamic> msg) async {

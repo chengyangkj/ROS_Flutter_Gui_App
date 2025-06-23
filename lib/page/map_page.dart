@@ -33,6 +33,7 @@ import 'package:toast/toast.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:ros_flutter_gui_app/display/display_waypoint.dart';
 import 'package:ros_flutter_gui_app/display/display_polygon.dart';
+import 'package:ros_flutter_gui_app/display/display_costmap.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -49,6 +50,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       ValueNotifier(Matrix4.identity());
 
   bool showCamera = false;
+  bool showCostMap = true; // 控制代价地图显示
 
   Offset camPosition = Offset(30, 10); // 初始位置
   bool isCamFullscreen = false; // 是否全屏
@@ -295,6 +297,18 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   height: screenSize.height,
                                 ),
                               ),
+                              
+                              //局部代价地图
+                              Visibility(
+                                visible: true,
+                                child: Transform(
+                                  transform: globalTransform,
+                                  origin: Offset.zero,
+                                  child:  DisplayCostMap(
+                                            opacity: 0.6,
+                                          ),
+                                ),
+                              ),
                               //地图
                               Transform(
                                 transform: globalTransform,
@@ -378,6 +392,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   },
                                 )),
                               ),
+
 
                               //激光
                               Transform(
@@ -1236,6 +1251,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     onPressed: () {
                       // 退出操作
                       Navigator.pop(context); // 返回到上一个页面
+                      // Provider.of<RosChannel>(context, listen: false).closeConnection();
                     },
                     icon: const Icon(Icons.exit_to_app),
                     tooltip: '退出',
