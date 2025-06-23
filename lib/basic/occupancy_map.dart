@@ -190,4 +190,29 @@ class OccupancyMap {
     String defaultDir = './maps';
     saveMapToDirectory(defaultDir, fileName);
   }
+  
+  // 创建深拷贝
+  OccupancyMap copy() {
+    OccupancyMap newMap = OccupancyMap();
+    
+    // 复制 MapConfig
+    newMap.mapConfig.image = mapConfig.image;
+    newMap.mapConfig.resolution = mapConfig.resolution;
+    newMap.mapConfig.originX = mapConfig.originX;
+    newMap.mapConfig.originY = mapConfig.originY;
+    newMap.mapConfig.originTheta = mapConfig.originTheta;
+    newMap.mapConfig.width = mapConfig.width;
+    newMap.mapConfig.height = mapConfig.height;
+    newMap.mapConfig.freeThresh = mapConfig.freeThresh;
+    newMap.mapConfig.occupiedThresh = mapConfig.occupiedThresh;
+    newMap.mapConfig.negate = mapConfig.negate;
+    
+    // 深拷贝数据数组
+    newMap.data = List.generate(
+      data.length,
+      (i) => List<int>.from(data[i]),
+    );
+    
+    return newMap;
+  }
 }

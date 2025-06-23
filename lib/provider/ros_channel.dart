@@ -647,8 +647,7 @@ class RosChannel {
       }
       
       // 将局部代价地图叠加到使用全局地图的size进行叠加
-      OccupancyMap sizedCostMap = map_.value;
-      //点全归零
+      OccupancyMap sizedCostMap = map_.value.copy();
       sizedCostMap.setZero();
       
       // 使用 xy2idx 方法将代价地图左上角的世界坐标转换为栅格坐标

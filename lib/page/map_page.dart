@@ -75,7 +75,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   bool isLandscape = false; // 用于跟踪屏幕方向
   int poseDirectionSwellSize = 10; //机器人方向旋转控件膨胀的大小
   double navPoseSize = 15; //导航点的大小
-  double robotSize = 20; //机器人坐标的大小
+  double robotSize = 5; //机器人坐标的大小
   RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
   RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
   double calculateApexAngle(double r, double d) {
@@ -283,6 +283,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
                           return Stack(
                             children: [
+                           
                               //网格
                               Container(
                                 child: DisplayGrid(
@@ -297,18 +298,18 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   height: screenSize.height,
                                 ),
                               ),
-                              
-                              //局部代价地图
+                                                           //局部代价地图
                               Visibility(
                                 visible: true,
                                 child: Transform(
                                   transform: globalTransform,
                                   origin: Offset.zero,
-                                  child:  DisplayCostMap(
+                                  child: DisplayCostMap(
                                             opacity: 0.6,
                                           ),
                                 ),
                               ),
+                      
                               //地图
                               Transform(
                                 transform: globalTransform,
@@ -316,6 +317,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 child: GestureDetector(
                                   child: const DisplayMap(),
                                   onTapDown: (details) {
+                                    print("addNavPoint tapDown");
                                     if (Provider.of<GlobalState>(context,
                                                 listen: false)
                                             .mode
@@ -348,6 +350,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   },
                                 ),
                               ),
+
 
                               //全局路径
                               Transform(
@@ -455,16 +458,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                             listen: false)
                                         .robotFootprint,
                                     builder: (context, footprint, child) {
-                                      if (footprint.isEmpty) return Container();
-                                      return Container(
-                                        child: CustomPaint(
-                                          painter: DisplayPolygon(
+                                      return DisplayPolygon(
                                             pointList: footprint,
-                                            color: Colors.red.withOpacity(0.3),
+                                            color: Colors.blue,
                                             fill: true,
-                                          ),
-                                        ),
-                                      );
+                                            enableWaterDropAnimation: true,
+                                          );
                                     },
                                   ),
                                 ),
@@ -632,10 +631,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     transform: Matrix4.identity()
                                       ..scale(cameraFixedScaleValue_),
                                     child: DisplayRobot(
-                                      direction: deg2rad(-90),
                                       size: robotSize,
                                       color: Colors.blue,
-                                      count: 2,
                                     ),
                                   ),
                                 ),
@@ -768,14 +765,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                     //机器人图标
                                                     DisplayRobot(
                                                       size: robotSize,
-                                                      color: Colors.blue,
-                                                      count: 2,
+                                                      color: Colors.blue
                                                     ),
-                                                    // IconButton(
-                                                    //   onPressed: () {},
-                                                    //   iconSize: robotSize / 2,
-                                                    //   icon: Icon(Icons.check),
-                                                    // ),
                                                   ],
                                                 ),
                                               ),
@@ -1044,8 +1035,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   //设置导航目标点
                   Card(
                     elevation: 10,
-                    child: GestureDetector(
-                      child: IconButton(
+                    child:  IconButton(
                         icon: Icon(
                           const IconData(0xeba1, fontFamily: "NavPoint"),
                           color:
@@ -1068,7 +1058,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         },
                       ),
                     ),
-                  ),
                   //显示相机图像
                   Card(
                     elevation: 10,
