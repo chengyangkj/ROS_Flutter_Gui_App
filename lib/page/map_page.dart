@@ -74,8 +74,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   bool isLandscape = false; // 用于跟踪屏幕方向
   int poseDirectionSwellSize = 10; //机器人方向旋转控件膨胀的大小
-  double navPoseSize = 5; //导航点的大小
-  double robotSize = 5; //机器人坐标的大小
+  double navPoseSize = 10; //导航点的大小
+  double robotSize = 10; //机器人坐标的大小
   RobotPose poseSceneStartReloc = RobotPose(0, 0, 0);
   RobotPose poseSceneOnReloc = RobotPose(0, 0, 0);
   double calculateApexAngle(double r, double d) {

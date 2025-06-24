@@ -109,7 +109,7 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 
 ## 致谢
 
-- [ros_navigation_command_app参考界面显示效果](https://github.com/Rongix/ros_navigation_command_app)
+- [ros_navigation_command_app 参考界面显示效果](https://github.com/Rongix/ros_navigation_command_app)
 - [roslibdart ros通信库](https://pub.dev/packages/roslibdart)
 - [matrix_gesture_detector 手势识别](https://pub.dev/packages/matrix_gesture_detector)
 
