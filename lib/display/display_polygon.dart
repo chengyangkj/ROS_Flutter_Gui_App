@@ -33,7 +33,7 @@ class _DisplayPolygonState extends State<DisplayPolygon>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 4000),
       vsync: this,
     );
 
@@ -135,27 +135,28 @@ class _DisplayPolygonPainter extends CustomPainter {
     double maxDistance = _calculateMaxDistanceFromCenter(center);
     
     // 创建多个同心多边形，从内向外扩散
-    int numLayers = 3; // 水滴层数
+    int numLayers = 5; // 增加水滴层数以获得更平滑的效果
     
-    // 参考机器人动画的方式，创建连续的动画效果
-    for (int i = numLayers; i >= 0; i--) {
-      // 计算当前层的动画进度，类似机器人的动画逻辑
-      final double progress = (i + animationValue) / (numLayers + 1);
-      final double opacity = (1.0 - progress);
+    // 修改动画逻辑，创建连续的水滴效果
+    for (int i = 0; i < numLayers; i++) {
+      // 计算当前层的动画进度，使用连续的动画值
+      final double baseProgress = animationValue + (i * 0.2); // 每层间隔0.2
+      final double progress = (baseProgress % 1.0); // 确保进度在0-1之间
+      final double opacity = (1.0 - progress) * 0.6; // 降低最大透明度
       
       if (opacity <= 0.0) continue;
       
-      // 计算当前层的缩放比例
-      double scale = progress;
+      // 计算当前层的缩放比例，从0.1开始到1.0
+      double scale = 0.1 + (progress * 0.9);
       
       // 创建缩放后的点列表
       List<Offset> scaledPoints = _scalePolygonFromCenter(center, scale);
       
       // 绘制当前层
       Paint paint = Paint()
-        ..color = color.withOpacity(opacity * 0.8)
+        ..color = color.withOpacity(opacity)
         ..strokeWidth = 1
-        ..style = PaintingStyle.stroke;
+        ..style = PaintingStyle.fill;
       
       Path path = Path();
       path.moveTo(scaledPoints[0].dx, scaledPoints[0].dy);
