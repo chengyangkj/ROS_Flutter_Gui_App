@@ -806,6 +806,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                       .robotSpeed_,
                               builder: (context, speed, child) {
                                 currentRobotSpeed_.value = speed.vx;
+                                // print("speed.vx:${speed.vx}");
                                 return Text(
                                     '${(speed.vx).toStringAsFixed(2)} m/s');
                               }),

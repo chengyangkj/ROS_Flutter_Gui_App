@@ -535,9 +535,8 @@ class RosChannel {
 
     // 解析角速度 (vw)
     double vw = message['twist']['twist']['angular']['z'];
-    robotSpeed_.value.vx = vx;
-    robotSpeed_.value.vy = vy;
-    robotSpeed_.value.vw = vw;
+    RobotSpeed speed = RobotSpeed(vx: vx, vy: vy, vw: vw);
+    robotSpeed_.value = speed;
     // print("vx:$vx,vy:$vy,vw:$vw");
   }
 
