@@ -102,6 +102,7 @@ class RosChannel {
           try {
             currRobotPose_.value = tf_.lookUpForTransform(
                 globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
+            print("currRobotPose_:${currRobotPose_.value} mapFrameName:${globalSetting.mapFrameName} baseLinkFrameName:${globalSetting.baseLinkFrameName}");
             Offset poseScene = map_.value
                 .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
             robotPoseScene.value = RobotPose(
@@ -845,7 +846,6 @@ class RosChannel {
 
   Future<void> navStatusCallback(Map<String, dynamic> msg) async {
     GoalStatusArray goalStatusArray = GoalStatusArray.fromJson(msg);
-    print("last status:${goalStatusArray.statusList.last.status}");
     navStatus_.value = goalStatusArray.statusList.last.status;
   }
 }

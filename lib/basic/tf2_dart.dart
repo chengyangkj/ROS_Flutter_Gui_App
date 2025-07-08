@@ -13,6 +13,14 @@ class TF2Dart {
       String parentFrame = trans.header!.frameId;
       String childFrame = trans.childFrameId;
 
+      if (!parentFrame.startsWith("/")) {
+        parentFrame = "/$parentFrame";
+      }
+
+      if (!childFrame.startsWith("/")) {
+        childFrame = "/$childFrame";
+      }
+
       // 添加正向边
       if (!adj.containsKey(parentFrame)) {
         adj[parentFrame] = {};
@@ -31,11 +39,22 @@ class TF2Dart {
       }
       adjTrasnform[parentFrame]!
           .removeWhere((element) => element.childFrameId == childFrame);
-      adjTrasnform[parentFrame]?.add(trans);
+      adjTrasnform[parentFrame]?.add(TransformElement(
+        header: Header(seq: 0, stamp: null, frameId: parentFrame),
+        childFrameId: childFrame,
+        transform: trans.transform,
+      ));
     }
   }
 
   RobotPose lookUpForTransform(String from, String to) {
+    if (!from.startsWith("/")) {
+      from = "/$from";
+    }
+    if (!to.startsWith("/")) {
+      to = "/$to";
+    }
+
     try {
       var path = shortPath(from, to);
       if (path.isEmpty) {
