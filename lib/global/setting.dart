@@ -229,6 +229,7 @@ class Setting {
     prefs.setInt("tempConfig", TempConfigType.Jackal.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "/sensors/lidar_0/scan");
+    prefs.setString('pointCloud2Topic', "/sensors/lidar_0/points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/plan");
     prefs.setString('relocTopic', "/initialpose");
@@ -253,6 +254,7 @@ class Setting {
     prefs.setInt("tempConfig", TempConfigType.TurtleBot4.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
+    prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
     prefs.setString('relocTopic', "/initialpose");
@@ -277,6 +279,7 @@ class Setting {
     prefs.setInt("tempConfig", TempConfigType.TurtleBot3.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
+    prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
     prefs.setString('relocTopic', "/initialpose");
@@ -301,6 +304,7 @@ class Setting {
     prefs.setInt("tempConfig", TempConfigType.ROS2Default.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
+    prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
     prefs.setString('relocTopic', "/initialpose");
@@ -325,6 +329,7 @@ class Setting {
     prefs.setInt("tempConfig", TempConfigType.ROS1.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
+    prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/move_base/DWAPlannerROS/global_plan");
     prefs.setString('localPathTopic', "/move_base/DWAPlannerROS/local_plan");
     prefs.setString('relocTopic', "/initialpose");
@@ -417,6 +422,14 @@ class Setting {
 
   String get laserTopic {
     return prefs.getString("laserTopic") ?? "scan";
+  }
+
+  void setPointCloud2Topic(String topic) {
+    prefs.setString('pointCloud2Topic', topic);
+  }
+
+  String get pointCloud2Topic {
+    return prefs.getString("pointCloud2Topic") ?? "points";
   }
 
   void setGloalPathTopic(String topic) {

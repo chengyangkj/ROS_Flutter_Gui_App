@@ -14,7 +14,8 @@ class DisplayRobot extends StatefulWidget {
   
   DisplayRobot({
     required this.size,
-    required this.color
+    required this.color,
+    required this.direction,
   });
 
   @override

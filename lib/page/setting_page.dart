@@ -120,6 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'imageHeight': AppLocalizations.of(context)!.image_height,
       'robotFootprintTopic': AppLocalizations.of(context)!.robot_footprint_topic,
       'localCostmapTopic': AppLocalizations.of(context)!.local_cost_map_topic,
+      'pointCloud2Topic': AppLocalizations.of(context)!.pointcloud2_topic,
     };
     return displayNames[key] ?? key;
   }
@@ -194,6 +195,9 @@ class _SettingsPageState extends State<SettingsPage> {
         break;
       case 'localCostmapTopic':
         globalSetting.setLocalCostmapTopic(value);
+        break;
+      case 'pointCloud2Topic':
+        globalSetting.setPointCloud2Topic(value);
         break;
     }
 
@@ -493,6 +497,8 @@ class _SettingsPageState extends State<SettingsPage> {
             'robotFootprintTopic', _settings['robotFootprintTopic'] ?? '/local_costmap/published_footprint'),
         _buildSettingItem(
             'localCostmapTopic', _settings['localCostmapTopic'] ?? '/local_costmap/costmap'),
+        _buildSettingItem(
+            'pointCloud2Topic', _settings['pointCloud2Topic'] ?? '/pointcloud2'),
       ],
     );
   }

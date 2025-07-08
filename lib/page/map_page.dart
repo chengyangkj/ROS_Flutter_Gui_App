@@ -34,6 +34,8 @@ import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:ros_flutter_gui_app/display/display_waypoint.dart';
 import 'package:ros_flutter_gui_app/display/display_polygon.dart';
 import 'package:ros_flutter_gui_app/display/display_costmap.dart';
+import 'package:ros_flutter_gui_app/display/display_pointcloud.dart';
+import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -447,6 +449,34 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                   pointList: laserPointsScene));
                                         })),
                               ),
+                              // 点云显示
+                              Transform(
+                                transform: globalTransform,
+                                origin: originPose,
+                                child: RepaintBoundary(
+                                  child: ValueListenableBuilder<OccupancyMap>(
+                                    valueListenable: Provider.of<RosChannel>(
+                                            context,
+                                            listen: false)
+                                        .map,
+                                    builder: (context, map, child) {
+                                      return ValueListenableBuilder<List<Point3D>>(
+                                        valueListenable: Provider.of<RosChannel>(
+                                                context,
+                                                listen: false)
+                                            .pointCloud2Data,
+                                        builder: (context, pointCloudData, child) {
+                                          return IgnorePointer(
+                                              ignoring: true,
+                                              child: DisplayPointCloud(
+                                                  pointList: pointCloudData,
+                                                  map: map));
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
                               // //机器人足迹多边形
                               Transform(
                                 transform: globalTransform,
@@ -475,7 +505,25 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                         listen: false)
                                     .topologyMap_,
                                 builder: (context, topologyMap, child) {
-                                  navPointList_.value = topologyMap;
+                                  // 合并更新navPointList_，已有的保持不变，只新增
+                                  List<NavPoint> mergedPoints = List.from(navPointList_.value.points);
+                                  
+                                  for (var newPoint in topologyMap.points) {
+                                    // 检查是否已存在相同的点（坐标相同）
+                                    bool pointExists = mergedPoints.any((existingPoint) =>
+                                        (existingPoint.x - newPoint.x).abs() < 0.001 &&
+                                        (existingPoint.y - newPoint.y).abs() < 0.001 &&
+                                        (existingPoint.theta - newPoint.theta).abs() < 0.001);
+                                    
+                                    // 如果不存在，则添加新点
+                                    if (!pointExists) {
+                                      mergedPoints.add(newPoint);
+                                    }
+                                  }
+                                  
+                                  // 更新导航点列表
+                                  navPointList_.value = TopologyMap(points: mergedPoints);
+                                  
                                   return Container();
                                 },
                               ),
@@ -634,6 +682,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     child: DisplayRobot(
                                       size: robotSize,
                                       color: Colors.blue,
+                                      direction: deg2rad(-45),
                                     ),
                                   ),
                                 ),
@@ -766,7 +815,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                     //机器人图标
                                                     DisplayRobot(
                                                       size: robotSize,
-                                                      color: Colors.blue
+                                                      color: Colors.blue,
+                                                      direction: deg2rad(45),
                                                     ),
                                                   ],
                                                 ),

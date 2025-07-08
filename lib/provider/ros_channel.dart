@@ -27,6 +27,7 @@ import 'package:image/image.dart' as img;
 import 'package:toast/toast.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/basic/polygon_stamped.dart';
+import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 
 class LaserData {
   RobotPose robotPose;
@@ -61,6 +62,7 @@ class RosChannel {
   late Topic navThroughPosesStatusChannel_;
   late Topic robotFootprintChannel_;
   late Topic localCostmapChannel_;
+  late Topic pointCloud2Channel_;
 
   String rosUrl_ = "";
   Timer? cmdVelTimer;
@@ -90,6 +92,7 @@ class RosChannel {
   ValueNotifier<ActionStatus> navStatus_ = ValueNotifier(ActionStatus.unknown);
   ValueNotifier<List<Offset>> robotFootprint = ValueNotifier([]);
   ValueNotifier<OccupancyMap> localCostmap = ValueNotifier(OccupancyMap());
+  ValueNotifier<List<Point3D>> pointCloud2Data = ValueNotifier([]);
 
   RosChannel() {
     //启动定时器 获取机器人实时坐标
@@ -102,7 +105,6 @@ class RosChannel {
           try {
             currRobotPose_.value = tf_.lookUpForTransform(
                 globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
-            print("currRobotPose_:${currRobotPose_.value} mapFrameName:${globalSetting.mapFrameName} baseLinkFrameName:${globalSetting.baseLinkFrameName}");
             Offset poseScene = map_.value
                 .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
             robotPoseScene.value = RobotPose(
@@ -199,6 +201,7 @@ class RosChannel {
     navStatus_.value = ActionStatus.unknown;
     battery_.value = 0;
     imageData.value = Uint8List(0);
+    pointCloud2Data.value.clear();
     cmdVel_.vx = 0;
     cmdVel_.vy = 0;
     ros.close();
@@ -325,6 +328,14 @@ class RosChannel {
     );
     localCostmapChannel_.subscribe(localCostmapCallback);
     
+    pointCloud2Channel_ = Topic(
+      ros: ros,
+      name: globalSetting.pointCloud2Topic,
+      type: "sensor_msgs/PointCloud2",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    pointCloud2Channel_.subscribe(pointCloud2Callback);
 
 //发布者
     relocChannel_ = Topic(
@@ -847,5 +858,78 @@ class RosChannel {
   Future<void> navStatusCallback(Map<String, dynamic> msg) async {
     GoalStatusArray goalStatusArray = GoalStatusArray.fromJson(msg);
     navStatus_.value = goalStatusArray.statusList.last.status;
+  }
+
+  Future<void> pointCloud2Callback(Map<String, dynamic> msg) async {
+    try {
+      PointCloud2 pointCloud = PointCloud2.fromJson(msg);
+      
+      // 获取点云数据
+      List<Point3D> points = pointCloud.getPoints();
+      
+      // 转换坐标系：从点云坐标系到map坐标系
+      String frameId = pointCloud.header!.frameId!;
+      RobotPose transPose = RobotPose(0, 0, 0);
+      
+      try {
+        transPose = tf_.lookUpForTransform(globalSetting.mapFrameName, frameId);
+      } catch (e) {
+        print("not find pointcloud transform from:map to:$frameId");
+        return;
+      }
+      
+      // 转换所有点到map坐标系
+      List<Point3D> transformedPoints = [];
+      for (Point3D point in points) {
+        RobotPose pointPose = RobotPose(point.x, point.y, 0);
+        RobotPose mapPose = absoluteSum(transPose, pointPose);
+        transformedPoints.add(Point3D(mapPose.x, mapPose.y, point.z));
+      }
+      
+      // 合并和更新点云数据
+      List<Point3D> mergedPoints = _mergePointCloudData(transformedPoints);
+      
+      // 更新点云数据
+      pointCloud2Data.value = mergedPoints;
+      
+    } catch (e) {
+      print("Error processing PointCloud2 data: $e");
+    }
+  }
+
+  // 合并点云数据的方法
+  List<Point3D> _mergePointCloudData(List<Point3D> newPoints) {
+    List<Point3D> existingPoints = pointCloud2Data.value;
+    List<Point3D> mergedPoints = List.from(existingPoints);
+    
+    // 定义坐标比较的容差
+    const double tolerance = 0.1; // 10cm的容差
+    
+    for (Point3D newPoint in newPoints) {
+      bool found = false;
+      
+      // 检查是否已存在相同坐标的点
+      for (int i = 0; i < mergedPoints.length; i++) {
+        Point3D existingPoint = mergedPoints[i];
+        
+        // 比较x, y, z坐标是否在容差范围内
+        if ((newPoint.x - existingPoint.x).abs() < tolerance &&
+            (newPoint.y - existingPoint.y).abs() < tolerance &&
+            (newPoint.z - existingPoint.z).abs() < tolerance) {
+          
+          // 坐标相同，更新为新的点（保持最新数据）
+          mergedPoints[i] = newPoint;
+          found = true;
+          break;
+        }
+      }
+      
+      // 如果没有找到相同坐标的点，添加新点
+      if (!found) {
+        mergedPoints.add(newPoint);
+      }
+    }
+    
+    return mergedPoints;
   }
 }
