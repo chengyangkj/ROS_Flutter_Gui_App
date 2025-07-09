@@ -53,6 +53,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   bool showCamera = false;
   bool showCostMap = true; // 控制代价地图显示
+  
+  // 图层开关状态
+  bool showLayerControl = false; // 控制图层开关面板的展开/收起
 
   Offset camPosition = Offset(30, 10); // 初始位置
   bool isCamFullscreen = false; // 是否全屏
@@ -221,6 +224,14 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     // 移除监听器，防止内存泄漏
     hasReachedGoal_.removeListener(listener);
   }
+  
+  // 保存图层配置
+  void _saveLayerConfig() {
+    globalSetting.setShowGlobalCostmap(Provider.of<GlobalState>(context, listen: false).showGlobalCostmap.value);
+    globalSetting.setShowLocalCostmap(Provider.of<GlobalState>(context, listen: false).showLocalCostmap.value);
+    globalSetting.setShowLaser(Provider.of<GlobalState>(context, listen: false).showLaser.value);
+    globalSetting.setShowPointCloud(Provider.of<GlobalState>(context, listen: false).showPointCloud.value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +241,19 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    
+    // 初始化图层开关状态（只在第一次构建时）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final globalState = Provider.of<GlobalState>(context, listen: false);
+      if (!globalState.showGlobalCostmap.value && !globalState.showLocalCostmap.value && 
+          !globalState.showLaser.value && !globalState.showPointCloud.value) {
+        globalState.showGlobalCostmap.value = globalSetting.showGlobalCostmap;
+        globalState.showLocalCostmap.value = globalSetting.showLocalCostmap;
+        globalState.showLaser.value = globalSetting.showLaser;
+        globalState.showPointCloud.value = globalSetting.showPointCloud;
+      }
+    });
     camWidgetWidth = screenSize.width / 3.5;
     camWidgetHeight =
         camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
@@ -301,31 +325,41 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 ),
                               ),
                                                            //全局代价地图
-                              Visibility(
-                                visible: true,
-                                child: Transform(
-                                  transform: globalTransform,
-                                  origin: Offset.zero,
-                                  child: IgnorePointer(
-                                    ignoring: true,
-                                    child: DisplayCostMap(
-                                      opacity: 0.4,
-                                      isGlobal: true,
+                              ValueListenableBuilder<bool>(
+                                valueListenable: Provider.of<GlobalState>(context, listen: false).showGlobalCostmap,
+                                builder: (context, showGlobalCostmap, child) {
+                                  return Visibility(
+                                    visible: showGlobalCostmap,
+                                    child: Transform(
+                                      transform: globalTransform,
+                                      origin: Offset.zero,
+                                      child: IgnorePointer(
+                                        ignoring: true,
+                                        child: DisplayCostMap(
+                                          opacity: 0.4,
+                                          isGlobal: true,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
                               //局部代价地图
-                              Visibility(
-                                visible: true,
-                                child: Transform(
-                                  transform: globalTransform,
-                                  origin: Offset.zero,
-                                  child: DisplayCostMap(
-                                    opacity: 0.6,
-                                    isGlobal: false,
-                                  ),
-                                ),
+                              ValueListenableBuilder<bool>(
+                                valueListenable: Provider.of<GlobalState>(context, listen: false).showLocalCostmap,
+                                builder: (context, showLocalCostmap, child) {
+                                  return Visibility(
+                                    visible: showLocalCostmap,
+                                    child: Transform(
+                                      transform: globalTransform,
+                                      origin: Offset.zero,
+                                      child: DisplayCostMap(
+                                        opacity: 0.6,
+                                        isGlobal: false,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                       
                               //地图
@@ -416,82 +450,98 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
 
                               //激光
-                              Transform(
-                                transform: globalTransform,
-                                origin: originPose,
-                                child: RepaintBoundary(
-                                    child: ValueListenableBuilder<LaserData>(
-                                        valueListenable:
-                                            Provider.of<RosChannel>(context,
-                                                    listen: false)
-                                                .laserPointData,
-                                        builder: (context, laserData, child) {
-                                          RobotPose robotPoseMap =
-                                              laserData.robotPose;
-                                          var map = Provider.of<RosChannel>(
-                                                  context,
-                                                  listen: false)
-                                              .map
-                                              .value;
-                                          //重定位模式 从图层坐标转换
-                                          if (Provider.of<GlobalState>(context,
-                                                      listen: false)
-                                                  .mode
-                                                  .value ==
-                                              Mode.reloc) {
-                                            Offset poseMap = map.idx2xy(Offset(
-                                                poseSceneOnReloc.x,
-                                                poseSceneOnReloc.y));
-                                            robotPoseMap = RobotPose(
-                                                poseMap.dx,
-                                                poseMap.dy,
-                                                poseSceneOnReloc.theta);
-                                          }
+                              ValueListenableBuilder<bool>(
+                                valueListenable: Provider.of<GlobalState>(context, listen: false).showLaser,
+                                builder: (context, showLaser, child) {
+                                  return Visibility(
+                                    visible: showLaser,
+                                    child: Transform(
+                                      transform: globalTransform,
+                                      origin: originPose,
+                                      child: RepaintBoundary(
+                                          child: ValueListenableBuilder<LaserData>(
+                                              valueListenable:
+                                                  Provider.of<RosChannel>(context,
+                                                          listen: false)
+                                                      .laserPointData,
+                                              builder: (context, laserData, child) {
+                                                RobotPose robotPoseMap =
+                                                    laserData.robotPose;
+                                                var map = Provider.of<RosChannel>(
+                                                        context,
+                                                        listen: false)
+                                                    .map
+                                                    .value;
+                                                //重定位模式 从图层坐标转换
+                                                if (Provider.of<GlobalState>(context,
+                                                            listen: false)
+                                                        .mode
+                                                        .value ==
+                                                    Mode.reloc) {
+                                                  Offset poseMap = map.idx2xy(Offset(
+                                                      poseSceneOnReloc.x,
+                                                      poseSceneOnReloc.y));
+                                                  robotPoseMap = RobotPose(
+                                                      poseMap.dx,
+                                                      poseMap.dy,
+                                                      poseSceneOnReloc.theta);
+                                                }
 
-                                          List<Offset> laserPointsScene = [];
-                                          for (var point
-                                              in laserData.laserPoseBaseLink) {
-                                            RobotPose pointMap = absoluteSum(
-                                                robotPoseMap,
-                                                RobotPose(
-                                                    point.dx, point.dy, 0));
-                                            Offset pointScene = map.xy2idx(
-                                                Offset(pointMap.x, pointMap.y));
-                                            laserPointsScene.add(pointScene);
-                                          }
-                                          return IgnorePointer(
-                                              ignoring: true,
-                                              child: DisplayLaser(
-                                                  pointList: laserPointsScene));
-                                        })),
+                                                List<Offset> laserPointsScene = [];
+                                                for (var point
+                                                    in laserData.laserPoseBaseLink) {
+                                                  RobotPose pointMap = absoluteSum(
+                                                      robotPoseMap,
+                                                      RobotPose(
+                                                          point.dx, point.dy, 0));
+                                                  Offset pointScene = map.xy2idx(
+                                                      Offset(pointMap.x, pointMap.y));
+                                                  laserPointsScene.add(pointScene);
+                                                }
+                                                return IgnorePointer(
+                                                    ignoring: true,
+                                                    child: DisplayLaser(
+                                                        pointList: laserPointsScene));
+                                              })),
+                                    ),
+                                  );
+                                },
                               ),
                               // 点云显示
-                              Transform(
-                                transform: globalTransform,
-                                origin: originPose,
-                                child: RepaintBoundary(
-                                  child: ValueListenableBuilder<OccupancyMap>(
-                                    valueListenable: Provider.of<RosChannel>(
-                                            context,
-                                            listen: false)
-                                        .map,
-                                    builder: (context, map, child) {
-                                      return ValueListenableBuilder<List<Point3D>>(
-                                        valueListenable: Provider.of<RosChannel>(
-                                                context,
-                                                listen: false)
-                                            .pointCloud2Data,
-                                        builder: (context, pointCloudData, child) {
-                                          return IgnorePointer(
-                                              ignoring: true,
-                                              child: DisplayPointCloud(
-                                                  pointList: pointCloudData,
-                                                  map: map));
-                                        },
-                                      );
-                                    },
-                                  ),
-                                ),
+                              ValueListenableBuilder<bool>(
+                                valueListenable: Provider.of<GlobalState>(context, listen: false).showPointCloud,
+                                builder: (context, showPointCloud, child) {
+                                  return Visibility(
+                                    visible: showPointCloud,
+                                    child: Transform(
+                                      transform: globalTransform,
+                                      origin: originPose,
+                                      child: RepaintBoundary(
+                                        child: ValueListenableBuilder<OccupancyMap>(
+                                          valueListenable: Provider.of<RosChannel>(
+                                                  context,
+                                                  listen: false)
+                                              .map,
+                                          builder: (context, map, child) {
+                                            return ValueListenableBuilder<List<Point3D>>(
+                                              valueListenable: Provider.of<RosChannel>(
+                                                      context,
+                                                      listen: false)
+                                                  .pointCloud2Data,
+                                              builder: (context, pointCloudData, child) {
+                                                return IgnorePointer(
+                                                    ignoring: true,
+                                                    child: DisplayPointCloud(
+                                                        pointList: pointCloudData,
+                                                        map: map));
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                               // //机器人足迹多边形
                               Transform(
@@ -1013,6 +1063,83 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  //图层开关控制
+                  Card(
+                    elevation: 10,
+                    child: Container(
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.layers),
+                            color: showLayerControl ? Colors.green : theme.iconTheme.color,
+                            onPressed: () {
+                              setState(() {
+                                showLayerControl = !showLayerControl;
+                              });
+                            },
+                          ),
+                          if (showLayerControl) ...[
+                            // 全局代价地图开关
+                            ValueListenableBuilder<bool>(
+                              valueListenable: Provider.of<GlobalState>(context, listen: false).showGlobalCostmap,
+                              builder: (context, showGlobalCostmap, child) {
+                                return IconButton(
+                                  icon: Icon(Icons.map, size: 20),
+                                  color: showGlobalCostmap ? Colors.green : Colors.grey,
+                                  onPressed: () {
+                                    Provider.of<GlobalState>(context, listen: false).showGlobalCostmap.value = !showGlobalCostmap;
+                                    _saveLayerConfig();
+                                  },
+                                );
+                              },
+                            ),
+                            // 局部代价地图开关
+                            ValueListenableBuilder<bool>(
+                              valueListenable: Provider.of<GlobalState>(context, listen: false).showLocalCostmap,
+                              builder: (context, showLocalCostmap, child) {
+                                return IconButton(
+                                  icon: Icon(Icons.map_outlined, size: 20),
+                                  color: showLocalCostmap ? Colors.green : Colors.grey,
+                                  onPressed: () {
+                                    Provider.of<GlobalState>(context, listen: false).showLocalCostmap.value = !showLocalCostmap;
+                                    _saveLayerConfig();
+                                  },
+                                );
+                              },
+                            ),
+                            // 激光开关
+                            ValueListenableBuilder<bool>(
+                              valueListenable: Provider.of<GlobalState>(context, listen: false).showLaser,
+                              builder: (context, showLaser, child) {
+                                return IconButton(
+                                  icon: Icon(Icons.radar, size: 20),
+                                  color: showLaser ? Colors.green : Colors.grey,
+                                  onPressed: () {
+                                    Provider.of<GlobalState>(context, listen: false).showLaser.value = !showLaser;
+                                    _saveLayerConfig();
+                                  },
+                                );
+                              },
+                            ),
+                            // 点云开关
+                            ValueListenableBuilder<bool>(
+                              valueListenable: Provider.of<GlobalState>(context, listen: false).showPointCloud,
+                              builder: (context, showPointCloud, child) {
+                                return IconButton(
+                                  icon: Icon(Icons.cloud, size: 20),
+                                  color: showPointCloud ? Colors.green : Colors.grey,
+                                  onPressed: () {
+                                    Provider.of<GlobalState>(context, listen: false).showPointCloud.value = !showPointCloud;
+                                    _saveLayerConfig();
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                   Card(
                     elevation: 10,
                     child: Container(
@@ -1170,7 +1297,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         }
                       },
                     ),
-                  )
+                  ),
+                
                 ],
               ))),
           //底部状态栏

@@ -10,4 +10,10 @@ enum Mode {
 class GlobalState extends ChangeNotifier {
    ValueNotifier<Mode> mode = ValueNotifier(Mode.normal);
    ValueNotifier<bool> isManualCtrl = ValueNotifier(false);
+   
+   // 图层开关状态
+   ValueNotifier<bool> showGlobalCostmap = ValueNotifier(false);
+   ValueNotifier<bool> showLocalCostmap = ValueNotifier(false);
+   ValueNotifier<bool> showLaser = ValueNotifier(false);
+   ValueNotifier<bool> showPointCloud = ValueNotifier(false);
 }

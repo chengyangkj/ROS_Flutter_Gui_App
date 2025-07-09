@@ -630,6 +630,39 @@ class Setting {
     prefs.setString('jointStatesTopic', topic);
   }
   
+  // 图层开关配置相关方法
+  void setShowGlobalCostmap(bool show) {
+    prefs.setBool('showGlobalCostmap', show);
+  }
+  
+  bool get showGlobalCostmap {
+    return prefs.getBool('showGlobalCostmap') ?? false;
+  }
+  
+  void setShowLocalCostmap(bool show) {
+    prefs.setBool('showLocalCostmap', show);
+  }
+  
+  bool get showLocalCostmap {
+    return prefs.getBool('showLocalCostmap') ?? false;
+  }
+  
+  void setShowLaser(bool show) {
+    prefs.setBool('showLaser', show);
+  }
+  
+  bool get showLaser {
+    return prefs.getBool('showLaser') ?? false;
+  }
+  
+  void setShowPointCloud(bool show) {
+    prefs.setBool('showPointCloud', show);
+  }
+  
+  bool get showPointCloud {
+    return prefs.getBool('showPointCloud') ?? false;
+  }
+  
 }
 
 Setting globalSetting = Setting();
