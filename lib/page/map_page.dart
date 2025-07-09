@@ -34,7 +34,6 @@ import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:ros_flutter_gui_app/display/display_waypoint.dart';
 import 'package:ros_flutter_gui_app/display/display_polygon.dart';
 import 'package:ros_flutter_gui_app/display/display_costmap.dart';
-import 'package:ros_flutter_gui_app/display/display_global_costmap.dart';
 import 'package:ros_flutter_gui_app/display/display_pointcloud.dart';
 import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 
@@ -309,8 +308,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   origin: Offset.zero,
                                   child: IgnorePointer(
                                     ignoring: true,
-                                    child: DisplayGlobalCostMap(
+                                    child: DisplayCostMap(
                                       opacity: 0.4,
+                                      isGlobal: true,
                                     ),
                                   ),
                                 ),
@@ -322,8 +322,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                   transform: globalTransform,
                                   origin: Offset.zero,
                                   child: DisplayCostMap(
-                                            opacity: 0.6,
-                                          ),
+                                    opacity: 0.6,
+                                    isGlobal: false,
+                                  ),
                                 ),
                               ),
                       

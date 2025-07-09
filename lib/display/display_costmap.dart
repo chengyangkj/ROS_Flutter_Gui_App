@@ -9,10 +9,12 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 
 class DisplayCostMap extends StatefulWidget {
   final double opacity;
+  final bool isGlobal; // 标识是全局还是局部代价地图
 
   const DisplayCostMap({
     super.key,
     this.opacity = 0.5,
+    this.isGlobal = false, // 默认为局部代价地图
   });
 
   @override
@@ -73,24 +75,23 @@ class _DisplayCostMapState extends State<DisplayCostMap> {
   Widget build(BuildContext context) {
     
     return RepaintBoundary(
-      child:ValueListenableBuilder<OccupancyMap>(
-      valueListenable: Provider.of<RosChannel>(
-              context,
-              listen: true)
-          .localCostmap,
-      builder: (context, costMap, child) {
-        _processCostMapData(costMap);
-        return Container(
-          width: costMap.width().toDouble() + 1,
-          height: costMap.height().toDouble() + 1,
-          child: CustomPaint(
-          painter: DisplayCostMapPainter(
-            costMapPoints: costMapPoints,
-          ),
-        ),
-      );
-    },
-    ),
+      child: ValueListenableBuilder<OccupancyMap>(
+        valueListenable: widget.isGlobal 
+          ? Provider.of<RosChannel>(context, listen: true).globalCostmap
+          : Provider.of<RosChannel>(context, listen: true).localCostmap,
+        builder: (context, costMap, child) {
+          _processCostMapData(costMap);
+          return Container(
+            width: costMap.width().toDouble() + 1,
+            height: costMap.height().toDouble() + 1,
+            child: CustomPaint(
+              painter: DisplayCostMapPainter(
+                costMapPoints: costMapPoints,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
