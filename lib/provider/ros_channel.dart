@@ -846,7 +846,7 @@ class RosChannel {
   }
 
   Future<void> topologyMapCallback(Map<String, dynamic> msg) async {
-    // 延迟1秒执行
+    // 延迟1秒执行 避免地图还未加载，点位就发过来了（只发送一次）
     await Future.delayed(Duration(seconds: 1));
     
     final map = TopologyMap.fromJson(msg);
