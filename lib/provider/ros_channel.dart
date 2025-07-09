@@ -846,6 +846,9 @@ class RosChannel {
   }
 
   Future<void> topologyMapCallback(Map<String, dynamic> msg) async {
+    // 延迟1秒执行
+    await Future.delayed(Duration(seconds: 1));
+    
     final map = TopologyMap.fromJson(msg);
 
     // 创建新的 points 列表

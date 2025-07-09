@@ -644,7 +644,7 @@ class Setting {
   }
   
   bool get showLocalCostmap {
-    return prefs.getBool('showLocalCostmap') ?? false;
+    return prefs.getBool('showLocalCostmap') ?? true;
   }
   
   void setShowLaser(bool show) {
@@ -652,7 +652,7 @@ class Setting {
   }
   
   bool get showLaser {
-    return prefs.getBool('showLaser') ?? false;
+    return prefs.getBool('showLaser') ?? true;
   }
   
   void setShowPointCloud(bool show) {

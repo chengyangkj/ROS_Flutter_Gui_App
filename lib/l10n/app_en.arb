@@ -48,5 +48,6 @@
   "app_setting": "APP Setting",
   "robot_footprint_topic": "robot foot print topic",
   "local_cost_map_topic": "local cost map topic",
-  "pointcloud2_topic": "point cloud topic"
+  "pointcloud2_topic": "point cloud topic",
+  "global_costmap_topic": "global cost map topic"
 }
