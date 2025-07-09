@@ -62,6 +62,7 @@ class RosChannel {
   late Topic navThroughPosesStatusChannel_;
   late Topic robotFootprintChannel_;
   late Topic localCostmapChannel_;
+  late Topic globalCostmapChannel_;
   late Topic pointCloud2Channel_;
 
   String rosUrl_ = "";
@@ -92,6 +93,7 @@ class RosChannel {
   ValueNotifier<ActionStatus> navStatus_ = ValueNotifier(ActionStatus.unknown);
   ValueNotifier<List<Offset>> robotFootprint = ValueNotifier([]);
   ValueNotifier<OccupancyMap> localCostmap = ValueNotifier(OccupancyMap());
+  ValueNotifier<OccupancyMap> globalCostmap = ValueNotifier(OccupancyMap());
   ValueNotifier<List<Point3D>> pointCloud2Data = ValueNotifier([]);
 
   RosChannel() {
@@ -202,6 +204,8 @@ class RosChannel {
     battery_.value = 0;
     imageData.value = Uint8List(0);
     pointCloud2Data.value.clear();
+    localCostmap.value.data.clear();
+    globalCostmap.value.data.clear();
     cmdVel_.vx = 0;
     cmdVel_.vy = 0;
     ros.close();
@@ -327,6 +331,15 @@ class RosChannel {
       reconnectOnClose: true,
     );
     localCostmapChannel_.subscribe(localCostmapCallback);
+
+    globalCostmapChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.globalCostmapTopic,
+      type: "nav_msgs/OccupancyGrid",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    globalCostmapChannel_.subscribe(globalCostmapCallback);
     
     pointCloud2Channel_ = Topic(
       ros: ros,
@@ -931,5 +944,65 @@ class RosChannel {
     }
     
     return mergedPoints;
+  }
+
+  Future<void> globalCostmapCallback(Map<String, dynamic> msg) async {
+    DateTime currentTime = DateTime.now(); // 获取当前时间
+
+    if (_lastMapCallbackTime != null) {
+      Duration difference = currentTime.difference(_lastMapCallbackTime!);
+      if (difference.inSeconds < 5) {
+        return;
+      }
+    }
+
+    _lastMapCallbackTime = currentTime; // 更新上一次回调时间
+
+    try {
+      // 解析全局代价地图数据
+      int width = msg["info"]["width"];
+      int height = msg["info"]["height"];
+      double resolution = msg["info"]["resolution"];
+      double originX = msg["info"]["origin"]["position"]["x"];
+      double originY = msg["info"]["origin"]["position"]["y"];
+      
+      // 解析四元数获取旋转角度
+      Map<String, dynamic> orientation = msg["info"]["origin"]["orientation"];
+      double qx = orientation["x"]?.toDouble() ?? 0.0;
+      double qy = orientation["y"]?.toDouble() ?? 0.0;
+      double qz = orientation["z"]?.toDouble() ?? 0.0;
+      double qw = orientation["w"]?.toDouble() ?? 1.0;
+      
+      // 四元数转欧拉角
+      vm.Quaternion quaternion = vm.Quaternion(qx, qy, qz, qw);
+      List<double> euler = quaternionToEuler(quaternion);
+      double originTheta = euler[0]; // yaw 角
+      
+      // 创建全局代价地图
+      OccupancyMap costmap = OccupancyMap();
+      costmap.mapConfig.resolution = resolution;
+      costmap.mapConfig.width = width;
+      costmap.mapConfig.height = height;
+      costmap.mapConfig.originX = originX;
+      costmap.mapConfig.originY = originY;
+      
+      List<int> dataList = List<int>.from(msg["data"]);
+      costmap.data = List.generate(
+        height,
+        (i) => List.generate(width, (j) => 0),
+      );
+      
+      for (int i = 0; i < dataList.length; i++) {
+        int x = i ~/ width;
+        int y = i % width;
+        costmap.data[x][y] = dataList[i];
+      }
+      costmap.setFlip();
+      
+      // 直接更新全局代价地图，不需要resize
+      globalCostmap.value = costmap;
+    } catch (e) {
+      print("Error processing global costmap: $e");
+    }
   }
 }

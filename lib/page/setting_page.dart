@@ -196,6 +196,9 @@ class _SettingsPageState extends State<SettingsPage> {
       case 'localCostmapTopic':
         globalSetting.setLocalCostmapTopic(value);
         break;
+      case 'globalCostmapTopic':
+        globalSetting.setGlobalCostmapTopic(value);
+        break;
       case 'pointCloud2Topic':
         globalSetting.setPointCloud2Topic(value);
         break;
@@ -497,6 +500,8 @@ class _SettingsPageState extends State<SettingsPage> {
             'robotFootprintTopic', _settings['robotFootprintTopic'] ?? '/local_costmap/published_footprint'),
         _buildSettingItem(
             'localCostmapTopic', _settings['localCostmapTopic'] ?? '/local_costmap/costmap'),
+        _buildSettingItem(
+            'globalCostmapTopic', _settings['globalCostmapTopic'] ?? '/global_costmap/costmap'),
         _buildSettingItem(
             'pointCloud2Topic', _settings['pointCloud2Topic'] ?? '/pointcloud2'),
       ],

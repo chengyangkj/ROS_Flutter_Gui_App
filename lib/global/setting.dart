@@ -239,6 +239,7 @@ class Setting {
     prefs.setString('BatteryTopic', "/battery_status");
     prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
+    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -264,6 +265,7 @@ class Setting {
     prefs.setString('BatteryTopic', "/battery_status");
     prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
+    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -289,6 +291,7 @@ class Setting {
     prefs.setString('BatteryTopic', "/battery_status");
     prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
+    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -314,6 +317,7 @@ class Setting {
     prefs.setString('BatteryTopic', "/battery_status");
     prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
+    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -339,6 +343,7 @@ class Setting {
     prefs.setString('BatteryTopic', "/battery_status");
     prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
+    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
     prefs.setString('MaxVy', "0.9");
     prefs.setString('MaxVw', "0.9");
@@ -392,6 +397,10 @@ class Setting {
 
   void setLocalCostmapTopic(String topic) {
     prefs.setString('localCostmapTopic', topic);
+  }
+
+  String get globalCostmapTopic {
+    return prefs.getString("globalCostmapTopic") ?? "/global_costmap/costmap";
   }
 
   void setMapTopic(String topic) {
