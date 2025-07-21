@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 
 class PointCloud2 {
   Header? header;
@@ -35,15 +36,34 @@ class PointCloud2 {
 
       // 解析字段信息
       if (json['fields'] != null) {
-        fields = (json['fields'] as List<dynamic>)
-            .map((field) => PointField.fromJson(field))
-            .toList();
+        if (json['fields'] is List) {
+          fields = (json['fields'] as List<dynamic>)
+              .map((field) => PointField.fromJson(field))
+              .toList();
+        } else {
+          print("Warning: 'fields' is not a List, received: ${json['fields'].runtimeType}");
+          fields = [];
+        }
       }
 
       // 解析点云数据
       if (json['data'] != null) {
-        List<int> dataList = List<int>.from(json['data']);
-        data = Uint8List.fromList(dataList);
+        if (json['data'] is List) {
+          List<int> dataList = List<int>.from(json['data']);
+          data = Uint8List.fromList(dataList);
+        } else if (json['data'] is String) {
+          // 尝试解析 Base64 编码的数据
+          try {
+            data = base64Decode(json['data']);
+            // print("Successfully decoded Base64 data, length: ${data!.length}");
+          } catch (e) {
+            print("Error decoding Base64 data: $e");
+            data = Uint8List(0);
+          }
+        } else {
+          print("Warning: 'data' is not a List or String, received: ${json['data'].runtimeType}");
+          data = Uint8List(0);
+        }
       }
     } catch (e) {
       print("Error parsing PointCloud2 data: $e");
@@ -81,7 +101,9 @@ class PointCloud2 {
   List<Point3D> getPoints() {
     List<Point3D> points = [];
     
-    if (data == null || fields == null || pointStep == null) {
+    if (data == null || fields == null || pointStep == null || 
+        height == null || width == null || pointStep! <= 0) {
+      print("Warning: Invalid PointCloud2 data for parsing points");
       return points;
     }
 
@@ -102,18 +124,30 @@ class PointCloud2 {
     }
 
     if (xOffset == null || yOffset == null || zOffset == null) {
+      print("Warning: Missing x, y, or z field in PointCloud2");
       return points;
     }
 
     // 解析每个点
-    for (int i = 0; i < pointCount; i++) {
-      int baseOffset = i * pointStep!;
-      
-      double x = _getFloatFromBytes(data!, baseOffset + xOffset!);
-      double y = _getFloatFromBytes(data!, baseOffset + yOffset!);
-      double z = _getFloatFromBytes(data!, baseOffset + zOffset!);
-      
-      points.add(Point3D(x, y, z));
+    try {
+      for (int i = 0; i < pointCount; i++) {
+        int baseOffset = i * pointStep!;
+        
+        if (baseOffset + xOffset! + 3 >= data!.length ||
+            baseOffset + yOffset! + 3 >= data!.length ||
+            baseOffset + zOffset! + 3 >= data!.length) {
+          print("Warning: Data buffer too small for point $i");
+          break;
+        }
+        
+        double x = _getFloatFromBytes(data!, baseOffset + xOffset!);
+        double y = _getFloatFromBytes(data!, baseOffset + yOffset!);
+        double z = _getFloatFromBytes(data!, baseOffset + zOffset!);
+        
+        points.add(Point3D(x, y, z));
+      }
+    } catch (e) {
+      print("Error parsing points: $e");
     }
 
     return points;
@@ -121,10 +155,17 @@ class PointCloud2 {
 
   // 从字节数组中提取浮点数
   double _getFloatFromBytes(Uint8List bytes, int offset) {
-    if (offset + 3 >= bytes.length) return 0.0;
+    if (offset < 0 || offset + 3 >= bytes.length) {
+      return 0.0;
+    }
     
-    ByteData byteData = ByteData.sublistView(bytes, offset, offset + 4);
-    return byteData.getFloat32(0, Endian.little);
+    try {
+      ByteData byteData = ByteData.sublistView(bytes, offset, offset + 4);
+      return byteData.getFloat32(0, Endian.little);
+    } catch (e) {
+      print("Error reading float from bytes at offset $offset: $e");
+      return 0.0;
+    }
   }
 }
 

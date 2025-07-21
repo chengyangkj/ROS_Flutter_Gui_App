@@ -71,7 +71,7 @@ class DisplayPointCloudState extends State<DisplayPointCloud> {
 class DisplayPointCloudPainter extends CustomPainter {
   final List<Offset> pointList;
   final Paint _paint = Paint()
-    ..color = Colors.blue
+    ..color = Colors.orange
     ..strokeCap = StrokeCap.round
     ..strokeWidth = 2;
 
