@@ -73,7 +73,7 @@ class DisplayPointCloudPainter extends CustomPainter {
   final Paint _paint = Paint()
     ..color = Colors.orange
     ..strokeCap = StrokeCap.round
-    ..strokeWidth = 2;
+    ..strokeWidth = 1;
 
   DisplayPointCloudPainter({required this.pointList});
 

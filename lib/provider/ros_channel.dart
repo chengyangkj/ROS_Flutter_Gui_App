@@ -902,51 +902,13 @@ class RosChannel {
         transformedPoints.add(Point3D(mapPose.x, mapPose.y, point.z));
       }
       
-      // 合并和更新点云数据
-      List<Point3D> mergedPoints = _mergePointCloudData(transformedPoints);
       
       // 更新点云数据
-      pointCloud2Data.value = mergedPoints;
+      pointCloud2Data.value = transformedPoints;
       
     } catch (e) {
       print("Error processing PointCloud2 data: $e");
     }
-  }
-
-  // 合并点云数据的方法
-  List<Point3D> _mergePointCloudData(List<Point3D> newPoints) {
-    List<Point3D> existingPoints = pointCloud2Data.value;
-    List<Point3D> mergedPoints = List.from(existingPoints);
-    
-    // 定义坐标比较的容差
-    const double tolerance = 0.1; // 10cm的容差
-    
-    for (Point3D newPoint in newPoints) {
-      bool found = false;
-      
-      // 检查是否已存在相同坐标的点
-      for (int i = 0; i < mergedPoints.length; i++) {
-        Point3D existingPoint = mergedPoints[i];
-        
-        // 比较x, y, z坐标是否在容差范围内
-        if ((newPoint.x - existingPoint.x).abs() < tolerance &&
-            (newPoint.y - existingPoint.y).abs() < tolerance &&
-            (newPoint.z - existingPoint.z).abs() < tolerance) {
-          
-          // 坐标相同，更新为新的点（保持最新数据）
-          mergedPoints[i] = newPoint;
-          found = true;
-          break;
-        }
-      }
-      
-      // 如果没有找到相同坐标的点，添加新点
-      if (!found) {
-        mergedPoints.add(newPoint);
-      }
-    }
-    
-    return mergedPoints;
   }
 
   Future<void> globalCostmapCallback(Map<String, dynamic> msg) async {
