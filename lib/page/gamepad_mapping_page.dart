@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../global/setting.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class GamepadMappingPage extends StatefulWidget {
   const GamepadMappingPage({super.key});
@@ -349,11 +350,11 @@ class _GamepadMappingPageState extends State<GamepadMappingPage> {
                     setState(() {
                       _editingKey = key;
                       _mappingResults = {};
-                      _msg = "请推动摇杆或按键至该位置，开始映射";
+                      _msg = AppLocalizations.of(context)!.start_mapping_message;
                       _startListening();
                     });
                   },
-                  child: const Text('重新映射'),
+                  child: Text(AppLocalizations.of(context)!.remap),
                 ),
               ],
             ],
@@ -364,19 +365,19 @@ class _GamepadMappingPageState extends State<GamepadMappingPage> {
   }
 
   String _translateKey(String key) {
-    const translations = {
-      "AXIS_X": "左摇杆 X",
-      "AXIS_Y": "左摇杆 Y",
-      "AXIS_Z": "右摇杆 X",
-      "AXIS_RZ": "右摇杆 Y",
+    final translations = {
+      "AXIS_X": AppLocalizations.of(context)!.left_stick_x,
+      "AXIS_Y": AppLocalizations.of(context)!.left_stick_y,
+      "AXIS_Z": AppLocalizations.of(context)!.right_stick_x,
+      "AXIS_RZ": AppLocalizations.of(context)!.right_stick_y,
       // "triggerRight": "右扳机",
       // "triggerLeft": "左扳机",
       // "buttonLeftRight": "方向键 左/右",
       // "buttonUpDown": "方向键 上/下",
-      "KEYCODE_BUTTON_A": "按钮 A",
-      "KEYCODE_BUTTON_B": "按钮 B",
-      "KEYCODE_BUTTON_X": "按钮 X",
-      "KEYCODE_BUTTON_Y": "按钮 Y",
+      "KEYCODE_BUTTON_A": AppLocalizations.of(context)!.button_a,
+      "KEYCODE_BUTTON_B": AppLocalizations.of(context)!.button_b,
+      "KEYCODE_BUTTON_X": AppLocalizations.of(context)!.button_x,
+      "KEYCODE_BUTTON_Y": AppLocalizations.of(context)!.button_y,
       // "KEYCODE_BUTTON_L1": "按钮 L1",
       // "KEYCODE_BUTTON_R1": "按钮 R1",
     };
@@ -387,14 +388,14 @@ class _GamepadMappingPageState extends State<GamepadMappingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('手柄按键映射'),
+        title: Text(AppLocalizations.of(context)!.gamepad_mapping),
         actions: [
           IconButton(
             icon: const Icon(Icons.reset_tv),
             onPressed: () async {
               await globalSetting.resetGamepadMapping();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('映射已恢复默认设置')),
+                SnackBar(content: Text(AppLocalizations.of(context)!.mapping_reset)),
               );
               setState(() {});
             },
