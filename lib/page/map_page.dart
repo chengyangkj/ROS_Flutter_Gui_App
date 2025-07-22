@@ -332,11 +332,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     visible: showGlobalCostmap,
                                     child: Transform(
                                       transform: globalTransform,
-                                      origin: Offset.zero,
+                                      origin: originPose,
                                       child: IgnorePointer(
                                         ignoring: true,
                                         child: DisplayCostMap(
-                                          opacity: 0.4,
+                                          opacity: 0.2,
                                           isGlobal: true,
                                         ),
                                       ),
@@ -352,9 +352,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     visible: showLocalCostmap,
                                     child: Transform(
                                       transform: globalTransform,
-                                      origin: Offset.zero,
+                                      origin: originPose,
                                       child: DisplayCostMap(
-                                        opacity: 0.6,
+                                        opacity: 0.2,
                                         isGlobal: false,
                                       ),
                                     ),

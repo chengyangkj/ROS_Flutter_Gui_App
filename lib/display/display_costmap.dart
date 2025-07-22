@@ -12,7 +12,7 @@ class DisplayCostMap extends StatefulWidget {
 
   const DisplayCostMap({
     super.key,
-    this.opacity = 0.5,
+    this.opacity = 0.2,
     this.isGlobal = false,
   });
 
@@ -23,7 +23,7 @@ class DisplayCostMap extends StatefulWidget {
 class _DisplayCostMapState extends State<DisplayCostMap> {
   ui.Image? _cachedImage;
   OccupancyMap? _lastProcessedMap;
-  double _lastOpacity = 0.5;
+  double _lastOpacity = 0.3;
   bool _isProcessing = false;
 
   @override
@@ -61,14 +61,6 @@ class _DisplayCostMapState extends State<DisplayCostMap> {
 
       // 获取代价地图的颜色数据
       List<int> costMapColors = costMap.getCostMapData();
-      
-      // 应用透明度到像素数据
-      for (int i = 0; i < costMapColors.length; i += 4) {
-        if (i + 3 < costMapColors.length) {
-          // 应用透明度到alpha通道
-          costMapColors[i + 3] = (costMapColors[i + 3] * widget.opacity).round();
-        }
-      }
       
       // 创建图像数据
       final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
@@ -125,6 +117,7 @@ class _DisplayCostMapState extends State<DisplayCostMap> {
             child: CustomPaint(
               painter: DisplayCostMapPainter(
                 cachedImage: _cachedImage,
+                opacity: widget.opacity,
               ),
             ),
           );
@@ -136,9 +129,11 @@ class _DisplayCostMapState extends State<DisplayCostMap> {
 
 class DisplayCostMapPainter extends CustomPainter {
   final ui.Image? cachedImage;
+  final double opacity;
 
   DisplayCostMapPainter({
     this.cachedImage,
+    required this.opacity,
   });
 
   @override
@@ -147,12 +142,18 @@ class DisplayCostMapPainter extends CustomPainter {
       return;
     }
 
-    // 直接绘制缓存的图像
-    canvas.drawImage(cachedImage!, Offset.zero, Paint());
+    // 应用透明度绘制图像
+    final Paint paint = Paint()
+      ..colorFilter = ColorFilter.mode(
+        Colors.white.withOpacity(opacity),
+        BlendMode.modulate,
+      );
+    
+    canvas.drawImage(cachedImage!, Offset.zero, paint);
   }
 
   @override
   bool shouldRepaint(covariant DisplayCostMapPainter oldDelegate) {
-    return oldDelegate.cachedImage != cachedImage;
+    return oldDelegate.cachedImage != cachedImage || oldDelegate.opacity != opacity;
   }
 }
