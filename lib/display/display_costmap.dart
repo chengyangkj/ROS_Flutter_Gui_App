@@ -4,17 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 
 class DisplayCostMap extends StatefulWidget {
   final double opacity;
-  final bool isGlobal; // 标识是全局还是局部代价地图
+  final bool isGlobal;
 
   const DisplayCostMap({
     super.key,
     this.opacity = 0.5,
-    this.isGlobal = false, // 默认为局部代价地图
+    this.isGlobal = false,
   });
 
   @override
@@ -22,58 +21,96 @@ class DisplayCostMap extends StatefulWidget {
 }
 
 class _DisplayCostMapState extends State<DisplayCostMap> {
-  List<CostMapPoint> costMapPoints = [];
+  ui.Image? _cachedImage;
+  OccupancyMap? _lastProcessedMap;
+  double _lastOpacity = 0.5;
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
+    _lastOpacity = widget.opacity;
   }
 
-  void _processCostMapData(OccupancyMap costMap) {
-    costMapPoints.clear();
-    
-    if (costMap.data.isEmpty || costMap.mapConfig.width == 0 || costMap.mapConfig.height == 0) {
+  @override
+  void dispose() {
+    _cachedImage?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _processCostMapData(OccupancyMap costMap) async {
+    // 检查是否需要重新处理
+    if (_lastProcessedMap == costMap && _lastOpacity == widget.opacity && _cachedImage != null) {
       return;
     }
 
-    // 获取代价地图的颜色数据
-    List<int> costMapColors = costMap.getCostMapData();
-    
-    // 创建图像数据
-    final int width = costMap.mapConfig.width;
-    final int height = costMap.mapConfig.height;
-    
-    // 处理每个像素
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        final int index = (y * width + x) * 4; // 每个像素4个值 (RGBA)
-        
-        if (index + 3 < costMapColors.length) {
-          final int r = costMapColors[index];
-          final int g = costMapColors[index + 1];
-          final int b = costMapColors[index + 2];
-          final int a = costMapColors[index + 3];
-          
-          // 如果像素不是透明的，则添加到绘制列表
-          if (a > 0) {
-            costMapPoints.add(CostMapPoint(
-              point: Offset(x.toDouble(), y.toDouble()),
-              color: Color.fromARGB(
-                (a * widget.opacity).round(),
-                r,
-                g,
-                b,
-              ),
-            ));
-          }
+    if (_isProcessing) return;
+    _isProcessing = true;
+
+    try {
+      if (costMap.data.isEmpty || costMap.mapConfig.width == 0 || costMap.mapConfig.height == 0) {
+        _cachedImage?.dispose();
+        _cachedImage = null;
+        _lastProcessedMap = costMap;
+        _lastOpacity = widget.opacity;
+        return;
+      }
+
+      final int width = costMap.mapConfig.width;
+      final int height = costMap.mapConfig.height;
+
+      // 获取代价地图的颜色数据
+      List<int> costMapColors = costMap.getCostMapData();
+      
+      // 应用透明度到像素数据
+      for (int i = 0; i < costMapColors.length; i += 4) {
+        if (i + 3 < costMapColors.length) {
+          // 应用透明度到alpha通道
+          costMapColors[i + 3] = (costMapColors[i + 3] * widget.opacity).round();
         }
       }
+      
+      // 创建图像数据
+      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
+        Uint8List.fromList(costMapColors),
+      );
+      
+      // 创建图像描述符
+      final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
+        buffer,
+        width: width,
+        height: height,
+        pixelFormat: ui.PixelFormat.rgba8888,
+      );
+      
+      // 解码图像
+      final ui.Codec codec = await descriptor.instantiateCodec();
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final ui.Image image = frameInfo.image;
+      
+      // 释放资源
+      buffer.dispose();
+      descriptor.dispose();
+      codec.dispose();
+      
+      // 更新缓存
+      _cachedImage?.dispose();
+      _cachedImage = image;
+      _lastProcessedMap = costMap;
+      _lastOpacity = widget.opacity;
+      
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error processing costmap: $e');
+    } finally {
+      _isProcessing = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    
     return RepaintBoundary(
       child: ValueListenableBuilder<OccupancyMap>(
         valueListenable: widget.isGlobal 
@@ -81,12 +118,13 @@ class _DisplayCostMapState extends State<DisplayCostMap> {
           : Provider.of<RosChannel>(context, listen: true).localCostmap,
         builder: (context, costMap, child) {
           _processCostMapData(costMap);
+          
           return Container(
             width: costMap.width().toDouble() + 1,
             height: costMap.height().toDouble() + 1,
             child: CustomPaint(
               painter: DisplayCostMapPainter(
-                costMapPoints: costMapPoints,
+                cachedImage: _cachedImage,
               ),
             ),
           );
@@ -97,40 +135,24 @@ class _DisplayCostMapState extends State<DisplayCostMap> {
 }
 
 class DisplayCostMapPainter extends CustomPainter {
-  final List<CostMapPoint> costMapPoints;
+  final ui.Image? cachedImage;
 
   DisplayCostMapPainter({
-    required this.costMapPoints,
+    this.cachedImage,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (costMapPoints.isEmpty) {
+    if (cachedImage == null) {
       return;
     }
 
-    Paint paint = Paint()
-      ..strokeCap = StrokeCap.butt
-      ..style = PaintingStyle.fill
-      ..strokeWidth = 1;
-
-    // 批量绘制代价地图点
-    for (var costMapPoint in costMapPoints) {
-      paint.color = costMapPoint.color;
-      canvas.drawPoints(ui.PointMode.points, [costMapPoint.point], paint);
-    }
+    // 直接绘制缓存的图像
+    canvas.drawImage(cachedImage!, Offset.zero, Paint());
   }
 
   @override
   bool shouldRepaint(covariant DisplayCostMapPainter oldDelegate) {
-    return true;
+    return oldDelegate.cachedImage != cachedImage;
   }
-}
-
-// 新建 CostMapPoint 类来存储位置信息和颜色
-class CostMapPoint {
-  final Offset point;
-  final Color color;
-
-  CostMapPoint({required this.point, required this.color});
 }
