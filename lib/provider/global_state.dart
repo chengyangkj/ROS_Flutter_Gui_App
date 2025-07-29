@@ -16,4 +16,5 @@ class GlobalState extends ChangeNotifier {
    ValueNotifier<bool> showLocalCostmap = ValueNotifier(false);
    ValueNotifier<bool> showLaser = ValueNotifier(false);
    ValueNotifier<bool> showPointCloud = ValueNotifier(false);
+   ValueNotifier<bool> showTopologyPath = ValueNotifier(true);
 }

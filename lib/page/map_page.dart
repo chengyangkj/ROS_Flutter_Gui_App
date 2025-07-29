@@ -24,6 +24,7 @@ import 'package:ros_flutter_gui_app/display/display_laser.dart';
 import 'package:ros_flutter_gui_app/display/display_path.dart';
 import 'package:ros_flutter_gui_app/display/display_robot.dart';
 import 'package:ros_flutter_gui_app/display/display_pose_direction.dart';
+import 'package:ros_flutter_gui_app/display/display_topology_line.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
@@ -607,38 +608,67 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                         listen: false)
                                     .topologyMap_,
                                 builder: (context, topologyMap, child) {
-                                  // 合并更新navPointList_，已有的保持不变，只新增
-                                  List<NavPoint> mergedPoints =
-                                      List.from(navPointList_.value.points);
+                                  // 使用addPostFrameCallback延迟更新，避免在构建期间修改状态
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    // 合并更新navPointList_，已有的保持不变，只新增
+                                    List<NavPoint> mergedPoints =
+                                        List.from(navPointList_.value.points);
 
-                                  for (var newPoint in topologyMap.points) {
-                                    // 检查是否已存在相同的点（坐标相同）
-                                    bool pointExists = mergedPoints.any(
-                                        (existingPoint) =>
-                                            (existingPoint.x -
-                                                        newPoint.x)
-                                                    .abs() <
-                                                0.001 &&
-                                            (existingPoint.y - newPoint.y)
-                                                    .abs() <
-                                                0.001 &&
-                                            (existingPoint.theta -
-                                                        newPoint.theta)
-                                                    .abs() <
-                                                0.001);
+                                    for (var newPoint in topologyMap.points) {
+                                      // 检查是否已存在相同的点（坐标相同）
+                                      bool pointExists = mergedPoints.any(
+                                          (existingPoint) =>
+                                              (existingPoint.x -
+                                                          newPoint.x)
+                                                      .abs() <
+                                                  0.001 &&
+                                              (existingPoint.y - newPoint.y)
+                                                      .abs() <
+                                                  0.001 &&
+                                              (existingPoint.theta -
+                                                          newPoint.theta)
+                                                      .abs() <
+                                                  0.001);
 
-                                    // 如果不存在，则添加新点
-                                    if (!pointExists) {
-                                      mergedPoints.add(newPoint);
+                                      // 如果不存在，则添加新点
+                                      if (!pointExists) {
+                                        mergedPoints.add(newPoint);
+                                      }
                                     }
-                                  }
 
-                                  // 更新导航点列表
-                                  navPointList_.value =
-                                      TopologyMap(points: mergedPoints);
+                                    // 检查是否需要更新（避免不必要的更新）
+                                    if (mergedPoints.length != navPointList_.value.points.length ||
+                                        topologyMap.routes.length != navPointList_.value.routes.length) {
+                                      navPointList_.value =
+                                          TopologyMap(points: mergedPoints, routes: topologyMap.routes);
+                                    }
+                                  });
 
                                   return Container();
                                 },
+                              ),
+                              //拓扑路径显示
+                              Transform(
+                                transform: globalTransform,
+                                origin: originPose,
+                                child: RepaintBoundary(
+                                                                      child: ValueListenableBuilder<TopologyMap>(
+                                      valueListenable: Provider.of<RosChannel>(context, listen: false).topologyMap_,
+                                      builder: (context, topologyMap, child) {
+                                        if (topologyMap.points.isEmpty || topologyMap.routes.isEmpty) {
+                                          return Container();
+                                        }
+                                        
+                                        // 直接使用已经转换好的屏幕坐标
+                                        return DisplayTopologyLine(
+                                          points: topologyMap.points,
+                                          routes: topologyMap.routes,
+                                          mapResolution: 1.0, // 屏幕坐标已转换，分辨率设为1
+                                          mapOrigin: Offset.zero,
+                                        );
+                                      },
+                                    ),
+                                ),
                               ),
                               //导航点
                               ...navPointList_.value.points.map((pose) {
@@ -1226,6 +1256,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 );
                               },
                             ),
+
                           ],
                         ],
                       ),

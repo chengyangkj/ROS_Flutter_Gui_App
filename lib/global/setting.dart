@@ -663,6 +663,14 @@ class Setting {
     return prefs.getBool('showPointCloud') ?? false;
   }
   
+  void setShowTopologyPath(bool show) {
+    prefs.setBool('showTopologyPath', show);
+  }
+  
+  bool get showTopologyPath {
+    return prefs.getBool('showTopologyPath') ?? true;
+  }
+  
 }
 
 Setting globalSetting = Setting();

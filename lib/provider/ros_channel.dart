@@ -225,7 +225,7 @@ class RosChannel {
     topologyMapChannel_ = Topic(
         ros: ros,
         name: globalSetting.topologyMapTopic,
-        type: "nav2_msgs/TopologyMap",
+        type: "topology_msgs/TopologyMap",
         reconnectOnClose: true,
         queueLength: 10,
         queueSize: 10);
@@ -849,7 +849,10 @@ class RosChannel {
     // 延迟1秒执行 避免地图还未加载，点位就发过来了（只发送一次）
     await Future.delayed(Duration(seconds: 1));
     
+    // print("收到拓扑地图数据: $msg");
+    
     final map = TopologyMap.fromJson(msg);
+    print("解析后的拓扑地图 - 点数量: ${map.points.length}, 路径数量: ${map.routes.length}");
 
     // 创建新的 points 列表
     final updatedPoints = map.points.map((point) {
@@ -864,9 +867,16 @@ class RosChannel {
       );
     }).toList();
 
-    // 创建新的 TopologyMap 对象
-    final updatedMap = TopologyMap(points: updatedPoints);
+    // 创建新的 TopologyMap 对象，包含转换后的点和原始路径信息
+    final updatedMap = TopologyMap(
+      points: updatedPoints, 
+      routes: map.routes,
+      mapName: map.mapName,
+      mapProperty: map.mapProperty,
+    );
 
+    print("更新后的拓扑地图 - 点数量: ${updatedMap.points.length}, 路径数量: ${updatedMap.routes.length}");
+    
     // 更新 ValueNotifier
     topologyMap_.value = updatedMap;
   }
