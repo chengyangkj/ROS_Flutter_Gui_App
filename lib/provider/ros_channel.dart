@@ -849,7 +849,7 @@ class RosChannel {
     // 延迟1秒执行 避免地图还未加载，点位就发过来了（只发送一次）
     await Future.delayed(Duration(seconds: 1));
     
-    // print("收到拓扑地图数据: $msg");
+    print("收到拓扑地图数据: $msg");
     
     final map = TopologyMap.fromJson(msg);
     print("解析后的拓扑地图 - 点数量: ${map.points.length}, 路径数量: ${map.routes.length}");

@@ -78,7 +78,7 @@ class TopologyLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..strokeWidth = 2.0
+      ..strokeWidth = 1.0
       ..strokeCap = StrokeCap.round;
 
     final Map<String, Offset> pointMap = {};
@@ -119,7 +119,7 @@ class TopologyLinePainter extends CustomPainter {
   }
 
   Map<String, Offset> _adjustLineToPointEdges(Offset from, Offset to) {
-    const double pointRadius = 4.0; // 导航点半径
+    const double pointRadius = 4.0; // 点位两端缩短距离
     
     final direction = to - from;
     final distance = direction.distance;
@@ -145,7 +145,7 @@ class TopologyLinePainter extends CustomPainter {
     
     // 绘制底层路径
     paint.color = Color(0xFF6B7280).withOpacity(0.4); // 现代灰色
-    paint.strokeWidth = 2.0;
+    paint.strokeWidth = 1.0;
     canvas.drawLine(adjustedFrom, adjustedTo, paint);
     
     // 绘制箭头流动效果
@@ -160,7 +160,7 @@ class TopologyLinePainter extends CustomPainter {
     
     final direction = (adjustedTo - adjustedFrom).normalize();
     final perpendicular = Offset(-direction.dy, direction.dx);
-    final offset = perpendicular * 2.0;
+    final offset = perpendicular * 1.5;
 
     final line1Start = adjustedFrom + offset;
     final line1End = adjustedTo + offset;
@@ -169,7 +169,7 @@ class TopologyLinePainter extends CustomPainter {
 
     // 绘制底层路径
     paint.color = Color(0xFF6B7280).withOpacity(0.4); // 现代灰色
-    paint.strokeWidth = 2.0;
+    paint.strokeWidth = 1.0;
     canvas.drawLine(line1Start, line1End, paint);
     canvas.drawLine(line2Start, line2End, paint);
 
@@ -187,8 +187,8 @@ class TopologyLinePainter extends CustomPainter {
     final perpendicular = Offset(-normalizedDirection.dy, normalizedDirection.dx);
     
     // 箭头参数
-    final arrowSpacing = 40.0;
-    final triangleSize = 4.0; // 三角形大小，确保在路径内
+    final arrowSpacing = 10.0;
+    final triangleSize = 1.0; // 三角形大小，确保在路径内
     
     // 动画偏移（修正方向）
     double animationOffset = animationValue * arrowSpacing % arrowSpacing;

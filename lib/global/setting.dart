@@ -412,7 +412,7 @@ class Setting {
   }
 
   String get topologyMapTopic {
-    return prefs.getString("topologyMapTopic") ?? "map/topology";
+    return prefs.getString("topologyMapTopic") ?? "/map/topology";
   }
 
   String get navToPoseStatusTopic {
