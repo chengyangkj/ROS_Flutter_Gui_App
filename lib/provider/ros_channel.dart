@@ -24,7 +24,7 @@ import "package:ros_flutter_gui_app/basic/math.dart";
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:image/image.dart' as img;
-import 'package:toast/toast.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/basic/polygon_stamped.dart';
 import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
@@ -119,23 +119,23 @@ class RosChannel {
         //重连
         Timer.periodic(const Duration(seconds: 5), (timer) async {
           if (isReconnect_ && rosConnectState_ != Status.connected){
-            Toast.show(
-              "lost connection to ${rosUrl_} try reconnect...",
-              duration: 2,
-              gravity: Toast.top,
+            Fluttertoast.showToast(
+              msg: "lost connection to ${rosUrl_} try reconnect...",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.TOP,
             );
             String error = await connect(rosUrl_);
             if(error.isEmpty){
-              Toast.show(
-                "reconnect success to ${rosUrl_}!",
-                duration: 2,
-                gravity: Toast.top,
+              Fluttertoast.showToast(
+                msg: "reconnect success to ${rosUrl_}!",
+                toastLength: Toast.LENGTH_SHORT,
+                gravity: ToastGravity.TOP,
               );
             }else{
-              Toast.show(
-                "reconnect failed to ${rosUrl_} error: $error",
-                duration: 3,
-                gravity: Toast.top,
+              Fluttertoast.showToast(
+                msg: "reconnect failed to ${rosUrl_} error: $error",
+                toastLength: Toast.LENGTH_LONG,
+                gravity: ToastGravity.TOP,
               );
             }
           }

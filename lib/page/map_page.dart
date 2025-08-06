@@ -30,14 +30,16 @@ import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/display/display_map.dart';
 import 'package:ros_flutter_gui_app/display/display_grid.dart';
-import 'package:toast/toast.dart';
+
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:ros_flutter_gui_app/display/display_waypoint.dart';
 import 'package:ros_flutter_gui_app/display/display_polygon.dart';
 import 'package:ros_flutter_gui_app/display/display_costmap.dart';
 import 'package:ros_flutter_gui_app/display/display_pointcloud.dart';
+import 'package:ros_flutter_gui_app/display/display_nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -244,7 +246,6 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    ToastContext().init(context);
     final _key = GlobalKey<ExpandableFabState>();
     final screenSize = MediaQuery.of(context).size;
     final screenCenter = Offset(screenSize.width / 2, screenSize.height / 2);
@@ -288,10 +289,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               .mode
                               .value ==
                           Mode.robotFixedCenter) {
-                        Toast.show(
-                            AppLocalizations.of(context)!.camera_fixed_no_layer,
-                            duration: Toast.lengthShort,
-                            gravity: Toast.bottom);
+                        Fluttertoast.showToast(
+                            msg: AppLocalizations.of(context)!.camera_fixed_no_layer,
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM);
                         return;
                       }
 
@@ -671,156 +672,41 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 ),
                               ),
                               //导航点
-                              ...navPointList_.value.points.map((pose) {
-                                return Transform(
-                                  transform: globalTransform,
-                                  origin: originPose,
-                                  child: Transform(
-                                    alignment: Alignment.center,
-                                    transform: Matrix4.identity()
-                                      ..translate(
-                                          pose.x -
-                                              navPoseSize / 2 -
-                                              poseDirectionSwellSize / 2,
-                                          pose.y -
-                                              navPoseSize / 2 -
-                                              poseDirectionSwellSize / 2)
-                                      ..rotateZ(-pose.theta),
-                                    child: MatrixGestureDetector(
-                                      onMatrixUpdate: (matrix, transDelta,
-                                          scaleDelta, rotateDelta) {
-                                        if (Provider.of<GlobalState>(context,
-                                                    listen: false)
-                                                .mode
-                                                .value ==
-                                            Mode.addNavPoint) {
-                                          // 移动距离的delta距离需要除于当前的scale的值
-                                          double dx =
-                                              transDelta.dx / scaleValue;
-                                          double dy =
-                                              transDelta.dy / scaleValue;
-                                          double tmpTheta = pose.theta;
-                                          RobotPose poseRobot = absoluteSum(
-                                              RobotPose(
-                                                  pose.x, pose.y, pose.theta),
-                                              RobotPose(dx, dy, 0));
-                                          pose.theta = tmpTheta;
-                                          pose.x = poseRobot.x;
-                                          pose.y = poseRobot.y;
-                                          setState(() {});
-                                        }
-                                      },
-                                      child: GestureDetector(
-                                        onDoubleTap: () {
-                                          if (Provider.of<GlobalState>(context,
-                                                      listen: false)
-                                                  .mode
-                                                  .value ==
-                                              Mode.addNavPoint) {
-                                            // 双击删除导航点
-                                            navPointList_.value.points =
-                                                List.from(
-                                                    navPointList_.value.points)
-                                                  ..remove(pose);
+                              ...navPointList_.value.points.map((point) {
+                                return DisplayNavPoint(
+                                  point: point,
+                                  size: navPoseSize + poseDirectionSwellSize,
+                                  currentNavGoal: currentNavGoal_,
+                                  globalTransform: globalTransform,
+                                  originPose: originPose,
+                                  scaleValue: scaleValue,
+                                  onSendNavigationGoal: (pose) {
+                                    if (Provider.of<GlobalState>(context, listen: false).isManualCtrl.value ||
+                                        Provider.of<GlobalState>(context, listen: false).mode.value != Mode.normal) {
+                                      Fluttertoast.showToast(
+                                        msg: AppLocalizations.of(context)!.not_allow_send_nav_goal,
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.BOTTOM,
+                                        backgroundColor: Colors.red,
+                                      );
+                                      return;
+                                    }
+                                    Provider.of<RosChannel>(context, listen: false).sendNavigationGoal(pose);
+                                    currentNavGoal_ = pose;
+                                  },
+                                  onDeletePoint: (point) {
+                                    navPointList_.value.points = List.from(navPointList_.value.points)..remove(point);
                                             setState(() {});
-                                          }
-                                        },
-                                        onPanUpdate: (details) {
-                                          if (Provider.of<GlobalState>(context,
-                                                      listen: false)
-                                                  .mode
-                                                  .value ==
-                                              Mode.addNavPoint) {
-                                            // 更新导航点位置
-                                            double dx =
-                                                details.delta.dx / scaleValue;
-                                            double dy =
-                                                details.delta.dy / scaleValue;
-                                            pose.x += dx;
-                                            pose.y += dy;
+                                  },
+                                  onUpdatePointPosition: (point, dx, dy) {
+                                    point.x += dx;
+                                    point.y += dy;
                                             setState(() {});
-                                          }
                                         },
-                                        child: Container(
-                                          height: navPoseSize +
-                                              poseDirectionSwellSize,
-                                          width: navPoseSize +
-                                              poseDirectionSwellSize,
-                                          child: Stack(
-                                            alignment: Alignment.center,
-                                            children: [
-                                              Visibility(
-                                                visible:
-                                                    Provider.of<GlobalState>(
-                                                                context,
-                                                                listen: false)
-                                                            .mode
-                                                            .value ==
-                                                        Mode.addNavPoint,
-                                                child: DisplayPoseDirection(
-                                                  size: navPoseSize +
-                                                      poseDirectionSwellSize,
-                                                  initAngle: -pose.theta,
-                                                  resetAngle: false,
-                                                  onRotateCallback: (angle) {
-                                                    pose.theta = -angle;
+                                  onUpdatePointAngle: (point, angle) {
+                                    point.theta = angle;
                                                     setState(() {});
                                                   },
-                                                ),
-                                              ),
-                                              GestureDetector(
-                                                onTapDown: (details) {
-                                                  if (Provider.of<GlobalState>(
-                                                              context,
-                                                              listen: false)
-                                                          .isManualCtrl
-                                                          .value ||
-                                                      Provider.of<GlobalState>(
-                                                                  context,
-                                                                  listen: false)
-                                                              .mode
-                                                              .value !=
-                                                          Mode.normal) {
-                                                    Toast.show(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .not_allow_send_nav_goal,
-                                                      duration:
-                                                          Toast.lengthShort,
-                                                      gravity: Toast.bottom,
-                                                      backgroundColor:
-                                                          Colors.red,
-                                                    );
-                                                    return;
-                                                  }
-
-                                                  Provider.of<RosChannel>(
-                                                          context,
-                                                          listen: false)
-                                                      .sendNavigationGoal(
-                                                          RobotPose(
-                                                              pose.x,
-                                                              pose.y,
-                                                              pose.theta));
-                                                  currentNavGoal_ = RobotPose(
-                                                      pose.x,
-                                                      pose.y,
-                                                      pose.theta);
-                                                },
-                                                child: DisplayWayPoint(
-                                                  size: navPoseSize,
-                                                  color: currentNavGoal_ == pose
-                                                      ? Colors.pink
-                                                      : Colors.green,
-                                                  count: 4,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                                 );
                               }).toList(),
                               //机器人位置（固定视角）
@@ -1447,11 +1333,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                               Provider.of<RosChannel>(context, listen: false)
                                   .sendEmergencyStop();
                               // 显示提示
-                              Toast.show(
-                                  AppLocalizations.of(context)!
+                              Fluttertoast.showToast(
+                                  msg: AppLocalizations.of(context)!
                                       .emergency_stop_triggered,
-                                  duration: Toast.lengthShort,
-                                  gravity: Toast.bottom);
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM);
                             },
                           ),
                         ),
@@ -1482,11 +1368,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                                 listen: false)
                                             .sendCancelNav();
                                         // 显示提示
-                                        Toast.show(
-                                            AppLocalizations.of(context)!
+                                        Fluttertoast.showToast(
+                                            msg: AppLocalizations.of(context)!
                                                 .stop_nav,
-                                            duration: Toast.lengthShort,
-                                            gravity: Toast.bottom);
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.BOTTOM);
                                       },
                                     ),
                                   ),

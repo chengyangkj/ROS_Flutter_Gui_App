@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
-import 'package:toast/toast.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RobotConnectionPage extends StatefulWidget {
@@ -20,7 +20,6 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    ToastContext().init(context);
 
     return Scaffold(
       body: FutureBuilder<bool>(
@@ -416,10 +415,10 @@ class _RobotConnectionPageState extends State<RobotConnectionPage> {
       if (error.isEmpty) {
         Navigator.pushNamed(context, "/map");
       } else {
-        Toast.show(
-          "connect to ROS failed: $error",
-          duration: 3,
-          gravity: Toast.bottom,
+        Fluttertoast.showToast(
+          msg: "connect to ROS failed: $error",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
         );
       }
     } finally {
