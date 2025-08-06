@@ -142,7 +142,7 @@ class _DisplayPolygonPainter extends CustomPainter {
       // 计算当前层的动画进度，使用连续的动画值
       final double baseProgress = animationValue + (i * 0.2); // 每层间隔0.2
       final double progress = (baseProgress % 1.0); // 确保进度在0-1之间
-      final double opacity = (1.0 - progress) * 0.8; // 降低最大透明度
+      final double opacity = (1.0 - progress) * 0.9; // 降低最大透明度
       
       if (opacity <= 0.0) continue;
       
