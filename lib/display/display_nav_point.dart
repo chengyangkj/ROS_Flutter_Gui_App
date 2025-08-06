@@ -315,7 +315,7 @@ class _DisplayNavPointState extends State<DisplayNavPoint> {
                   ),
                 // 导航点图标
                 DisplayWayPoint(
-                  size: widget.size * 0.6,
+                  size: widget.size * 0.3,
                   color: widget.currentNavGoal?.x == widget.point.x &&
                           widget.currentNavGoal?.y == widget.point.y &&
                           widget.currentNavGoal?.theta == widget.point.theta

@@ -119,7 +119,7 @@ class TopologyLinePainter extends CustomPainter {
   }
 
   Map<String, Offset> _adjustLineToPointEdges(Offset from, Offset to) {
-    const double pointRadius = 4.0; // 点位两端缩短距离
+    const double pointRadius = 2.0; // 点位两端缩短距离
     
     final direction = to - from;
     final distance = direction.distance;
@@ -160,7 +160,7 @@ class TopologyLinePainter extends CustomPainter {
     
     final direction = (adjustedTo - adjustedFrom).normalize();
     final perpendicular = Offset(-direction.dy, direction.dx);
-    final offset = perpendicular * 1.5;
+    final offset = perpendicular;
 
     final line1Start = adjustedFrom + offset;
     final line1End = adjustedTo + offset;
