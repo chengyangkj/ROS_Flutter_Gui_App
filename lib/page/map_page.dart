@@ -694,6 +694,33 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                     Provider.of<RosChannel>(context, listen: false).sendNavigationGoal(pose);
                                     currentNavGoal_ = pose;
                                   },
+                                  onSendTopologyGoal: (name) async {
+                                    Map<String, dynamic> result = await Provider.of<RosChannel>(context, listen: false).sendTopologyGoal(name);
+                                    if (result.containsKey("is_success")) {
+                                      if(result["is_success"] != true) {
+                                        Fluttertoast.showToast(
+                                          msg: result["message"],
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.BOTTOM,
+                                          backgroundColor: Colors.green,
+                                        );
+                                      }else{
+                                        Fluttertoast.showToast(
+                                          msg: "task id: ${result["task_id"]}",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.BOTTOM,
+                                          backgroundColor: Colors.green,
+                                        );
+                                      }
+                                    }else{
+                                      Fluttertoast.showToast(
+                                        msg: "发送拓扑点导航失败",
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.BOTTOM,
+                                        backgroundColor: Colors.red,
+                                      );
+                                    }
+                                  },
                                   onDeletePoint: (point) {
                                     navPointList_.value.points = List.from(navPointList_.value.points)..remove(point);
                                             setState(() {});

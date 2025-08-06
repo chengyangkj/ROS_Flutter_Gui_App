@@ -17,6 +17,7 @@ class DisplayNavPoint extends StatefulWidget {
   final Offset originPose;
   final double scaleValue;
   final Function(RobotPose) onSendNavigationGoal;
+  final Function(String) onSendTopologyGoal;
   final Function(NavPoint) onDeletePoint;
   final Function(NavPoint, double, double) onUpdatePointPosition;
   final Function(NavPoint, double) onUpdatePointAngle;
@@ -30,6 +31,7 @@ class DisplayNavPoint extends StatefulWidget {
     required this.originPose,
     required this.scaleValue,
     required this.onSendNavigationGoal,
+    required this.onSendTopologyGoal,
     required this.onDeletePoint,
     required this.onUpdatePointPosition,
     required this.onUpdatePointAngle,
@@ -211,7 +213,22 @@ class _DisplayNavPointState extends State<DisplayNavPoint> {
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                     ),
-                                    child: const Text('导航'),
+                                    child: const Text('单点导航'),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      widget.onSendTopologyGoal(widget.point.name);
+                                      _removeOverlay();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: const Text('拓扑点导航'),
                                   ),
                                 ),
                                 if (isEditMode) ...[

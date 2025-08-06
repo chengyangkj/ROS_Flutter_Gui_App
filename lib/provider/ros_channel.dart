@@ -64,6 +64,7 @@ class RosChannel {
   late Topic localCostmapChannel_;
   late Topic globalCostmapChannel_;
   late Topic pointCloud2Channel_;
+  late Service topologyGoalService_;
 
   String rosUrl_ = "";
   Timer? cmdVelTimer;
@@ -379,6 +380,42 @@ class RosChannel {
       queueSize: 1,
       reconnectOnClose: true,
     );
+
+    topologyGoalService_ = Service(
+      ros: ros,
+      name: "/nav_to_topology_point",
+      type: "topology_msgs/srv/NavToTopologyPoint"
+    );
+
+  }
+
+  Future<Map<String, dynamic>> sendTopologyGoal(String name) async {
+    Map<String, dynamic> msg = {
+      "point_name": name
+    };
+    
+    try {
+      var result = await topologyGoalService_.call(msg);
+      print("result: $result");
+      
+      // 检查result是否为字符串（错误信息）
+      if (result is String) {
+        return {
+          "is_success": false,
+          "message": result
+        };
+      }
+      
+      Map<String, dynamic> resultMap = result.toJson();
+      print("sendTopologyGoal result: $resultMap");
+      return resultMap;
+    } catch (e) {
+      print("sendTopologyGoal error: $e");
+      return {
+        "is_success": false,
+        "message": e.toString()
+      };
+    }
   }
 
   Future<void> sendNavigationGoal(RobotPose pose) async {
