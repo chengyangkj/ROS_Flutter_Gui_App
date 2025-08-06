@@ -406,7 +406,7 @@ class RosChannel {
         };
       }
       
-      Map<String, dynamic> resultMap = result.toJson();
+      Map<String, dynamic> resultMap =result;
       print("sendTopologyGoal result: $resultMap");
       return resultMap;
     } catch (e) {
