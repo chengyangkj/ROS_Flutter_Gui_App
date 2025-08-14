@@ -27,7 +27,7 @@ jobs:
       - name: Set Gradle properties
         run: |
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
-          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
           echo "android.enableJetifier.force=false" >> android/gradle.properties
       - name: Clean Flutter
         run: flutter clean
