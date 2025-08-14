@@ -18,12 +18,20 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: 'temurin'
-          java-version: '11'
+          java-version: '17'
       - name: Set up Flutter
         uses: subosito/flutter-action@v2.16.0
         with:
           channel: stable
           flutter-version: "3.27.4"
+      - name: Set Gradle properties
+        run: |
+          echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
+          echo "android.enableJetifier.force=false" >> android/gradle.properties
+      - name: Clean Flutter
+        run: flutter clean
       - run: flutter pub cache clean
       - run: flutter pub get
-      - run: flutter build apk
+      - name: Build APK
+        run: flutter build apk --release --no-tree-shake-icons
