@@ -7,7 +7,7 @@ import 'package:ros_flutter_gui_app/display/display_pose_direction.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 class DisplayNavPoint extends StatefulWidget {
   final NavPoint point;
