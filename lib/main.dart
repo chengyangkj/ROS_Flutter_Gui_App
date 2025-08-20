@@ -98,6 +98,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Ros Flutter GUI App',
+      debugShowCheckedModeBanner: false,
       locale: _locale, // 设置应用的语言
       localizationsDelegates: [
         AppLocalizations.delegate,
