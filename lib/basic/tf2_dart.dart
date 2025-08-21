@@ -13,12 +13,12 @@ class TF2Dart {
       String parentFrame = trans.header!.frameId;
       String childFrame = trans.childFrameId;
 
-      if (!parentFrame.startsWith("/")) {
-        parentFrame = "/$parentFrame";
+      if (parentFrame.startsWith("/")) {
+        parentFrame = parentFrame.replaceFirst("/", "");
       }
 
-      if (!childFrame.startsWith("/")) {
-        childFrame = "/$childFrame";
+      if (childFrame.startsWith("/")) {
+        childFrame = childFrame.replaceFirst("/", "");
       }
 
       // 添加正向边
@@ -48,11 +48,11 @@ class TF2Dart {
   }
 
   RobotPose lookUpForTransform(String from, String to) {
-    if (!from.startsWith("/")) {
-      from = "/$from";
+    if (from.startsWith("/")) {
+      from = from.replaceFirst("/", "");
     }
-    if (!to.startsWith("/")) {
-      to = "/$to";
+    if (to.startsWith("/")) {
+      to = to.replaceFirst("/", "");
     }
 
     try {
@@ -96,7 +96,7 @@ class TF2Dart {
   List<String> shortPath(String from, String to) {
     if (from == to) return [from];
     if (!adj.containsKey(from)) {
-      print("Warning: Frame '$from' not found in TF tree");
+      // print("Warning: Frame '$from' not found in TF tree");
       return [];
     }
 

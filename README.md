@@ -25,7 +25,7 @@
 
 ## 简介
 
-ROS Flutter GUI App 是一个基于 Flutter 开发的跨平台 ROS 机器人人机交互界面，支持 ROS1/ROS2，可运行于 Android、iOS、Web、Linux、Windows 等多个平台。通过 rosbridge websocket 实现与 ROS 系统的通信。
+ROS Flutter GUI App 是一个基于 Flutter Flame 游戏框架开发的跨平台 ROS 机器人人机交互界面，支持 ROS1/ROS2，可运行于 Android、iOS、Web、Linux、Windows 等多个平台。通过 rosbridge websocket 实现与 ROS 系统的通信。
 
 ### 主要特性
 
@@ -57,7 +57,7 @@ ROS Flutter GUI App 是一个基于 Flutter 开发的跨平台 ROS 机器人人�
 | 电池监控       | ✅    |                       |
 | 相机显示       | ✅    | 需要 web_video_server |
 | 地图编辑       | ❌    | 开发中                |
-| 拓扑地图       | ❌    | 计划中                |
+| 拓扑地图       | ✅    |                 |
 
 ## 快速开始
 
@@ -111,7 +111,6 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 
 - [ros_navigation_command_app 参考界面显示效果](https://github.com/Rongix/ros_navigation_command_app)
 - [roslibdart ros通信库](https://pub.dev/packages/roslibdart)
-- [matrix_gesture_detector 手势识别](https://pub.dev/packages/matrix_gesture_detector)
 
 ## 许可证
 

@@ -6,12 +6,12 @@ import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
-class RobotConnectionPage extends StatefulWidget {
+class ConnectPage extends StatefulWidget {
   @override
-  _RobotConnectionPageState createState() => _RobotConnectionPageState();
+  _ConnectPageState createState() => _ConnectPageState();
 }
 
-class _RobotConnectionPageState extends State<RobotConnectionPage> {
+class _ConnectPageState extends State<ConnectPage> {
   final TextEditingController _ipController =
       TextEditingController(text: '127.0.0.1');
   final TextEditingController _portController =

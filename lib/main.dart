@@ -1,16 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/services.dart';
-import 'package:gamepads/gamepads.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/page/map_page.dart';
-import 'package:ros_flutter_gui_app/page/robot_connect_page.dart';
+import 'package:ros_flutter_gui_app/page/main_page.dart';
+import 'package:ros_flutter_gui_app/page/connect_page.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/setting_page.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -64,7 +62,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.system;
   Locale _locale = Locale('en'); // 默认语言
 
   @override
@@ -112,8 +109,8 @@ class _MyAppState extends State<MyApp> {
       ],
       initialRoute: "/connect",
       routes: {
-        "/connect": ((context) => RobotConnectionPage()),
-        "/map": ((context) => MapPage()),
+        "/connect": ((context) => ConnectPage()),
+        "/map": ((context) => MainFlamePage()),
         "/setting": ((context) => SettingsPage()),
         // "/gamepad":((context) => GamepadPage()),
       },
@@ -184,7 +181,7 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
       ),
-      home: RobotConnectionPage(),
+      home: ConnectPage(),
     );
   }
 }
