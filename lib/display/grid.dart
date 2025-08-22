@@ -6,10 +6,10 @@ import 'package:flutter/rendering.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:flame/components.dart';
-class DisplayGrid extends RectangleComponent with HasGameRef {
+class GridComponent extends RectangleComponent with HasGameRef {
   final RosChannel? rosChannel;
   
-  DisplayGrid({required Vector2 size, this.rosChannel}) : super(
+  GridComponent({required Vector2 size, this.rosChannel}) : super(
     size: size,
     paint: Paint()..color = const Color(0xFF2C2C2C), // 深灰色背景
   );
@@ -29,6 +29,7 @@ class DisplayGrid extends RectangleComponent with HasGameRef {
       // 1米 / 分辨率(米/像素) = 像素数
       gridStepPixels = 1.0 / rosChannel!.map_.value.mapConfig.resolution;
     }
+
     
     // 网格线画笔
     final paint = Paint()
@@ -39,6 +40,8 @@ class DisplayGrid extends RectangleComponent with HasGameRef {
     // 计算需要绘制的网格范围（基于画布大小，不考虑相机）
     final canvasSize = size;
     
+    canvas.save();
+    canvas.translate(-canvasSize.x/2, -canvasSize.y/2);
     // 绘制垂直线（每1米一条）
     for (double x = 0; x <= canvasSize.x; x += gridStepPixels) {
       canvas.drawLine(
@@ -56,7 +59,7 @@ class DisplayGrid extends RectangleComponent with HasGameRef {
         paint,
       );
     }
-    
+    canvas.restore();
   }
   
   @override

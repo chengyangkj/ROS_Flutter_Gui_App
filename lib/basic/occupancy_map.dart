@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
 import 'dart:convert';
+import 'package:vector_math/vector_math_64.dart' as vm;
 
 class MapConfig {
   String image = "./";
@@ -111,22 +112,22 @@ class OccupancyMap {
    * @description: 输入栅格地图的坐标，返回该位置的全局坐标
    * @return {*}
    */
-  Offset idx2xy(Offset occPoint) {
+  vm.Vector2 idx2xy(vm.Vector2 occPoint) {
     double y =
-        (height() - occPoint.dy) * mapConfig.resolution + mapConfig.originY;
-    double x = occPoint.dx * mapConfig.resolution + mapConfig.originX;
-    return Offset(x, y);
+        (height() - occPoint.y) * mapConfig.resolution + mapConfig.originY;
+    double x = occPoint.x * mapConfig.resolution + mapConfig.originX;
+    return vm.Vector2(x, y);
   }
 
   /**
    * @description: 输入全局坐标，返回栅格地图的行与列号
    * @return {*}
    */
-  Offset xy2idx(Offset mapPoint) {
-    double x = (mapPoint.dx - mapConfig.originX) / mapConfig.resolution;
+  vm.Vector2 xy2idx(vm.Vector2 mapPoint) {
+    double x = (mapPoint.x - mapConfig.originX) / mapConfig.resolution;
     double y =
-        height() - (mapPoint.dy - mapConfig.originY) / mapConfig.resolution;
-    return Offset(x, y);
+        height() - (mapPoint.y - mapConfig.originY) / mapConfig.resolution;
+    return vm.Vector2(x, y);
   }
 
   void saveMap(String path) {

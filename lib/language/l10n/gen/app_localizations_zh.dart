@@ -214,4 +214,85 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get stop => '停止';
+
+  @override
+  String get layer_grid => '网格图层';
+
+  @override
+  String get layer_global_costmap => '全局代价地图';
+
+  @override
+  String get layer_local_costmap => '局部代价地图';
+
+  @override
+  String get layer_laser => '激光雷达数据';
+
+  @override
+  String get layer_pointcloud => '点云数据';
+
+  @override
+  String get layer_global_path => '全局路径';
+
+  @override
+  String get layer_local_path => '局部路径';
+
+  @override
+  String get layer_topology => '拓扑地图';
+
+  @override
+  String get map_edit => '地图编辑';
+
+  @override
+  String get zoom_in => '放大';
+
+  @override
+  String get zoom_out => '缩小';
+
+  @override
+  String get center_on_robot => '定位到机器人';
+
+  @override
+  String get exit => '退出';
+
+  @override
+  String get layers => '图层';
+
+  @override
+  String get reloc => '重定位';
+
+  @override
+  String get camera => '相机';
+
+  @override
+  String get manual_control => '手动控制';
+
+  @override
+  String get emergency_stop => '急停';
+
+  @override
+  String get stop_navigation => '停止导航';
+
+  @override
+  String get open_file => '打开文件';
+
+  @override
+  String get save_file => '保存文件';
+
+  @override
+  String get undo => '撤销';
+
+  @override
+  String get redo => '重做';
+
+  @override
+  String get exit_edit_mode => '退出编辑模式';
+
+  @override
+  String get add_nav_point => '添加导航点';
+
+  @override
+  String get draw_obstacle => '绘制障碍物';
+
+  @override
+  String get erase_obstacle => '擦除障碍物';
 }

@@ -1,73 +1,64 @@
 import 'dart:math';
 import 'dart:ui';
-
+import 'package:flame/components.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 
-class DisplayTopologyLine extends StatefulWidget {
+class TopologyLine extends Component with HasGameRef {
   final List<NavPoint> points;
   final List<TopologyRoute> routes;
   final double mapResolution;
   final Offset mapOrigin;
+  late Timer animationTimer;
+  double animationValue = 0.0;
 
-  const DisplayTopologyLine({
-    Key? key,
+  TopologyLine({
     required this.points,
     required this.routes,
     required this.mapResolution,
     required this.mapOrigin,
-  }) : super(key: key);
+  });
 
   @override
-  _DisplayTopologyLineState createState() => _DisplayTopologyLineState();
-}
-
-class _DisplayTopologyLineState extends State<DisplayTopologyLine>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: TopologyLinePainter(
-            points: widget.points,
-            routes: widget.routes,
-            mapResolution: widget.mapResolution,
-            mapOrigin: widget.mapOrigin,
-            animationValue: _animationController.value,
-          ),
-        );
+  Future<void> onLoad() async {
+    animationTimer = Timer(
+      2.0,
+      onTick: () {
+        animationValue = 0.0;
       },
+      repeat: true,
     );
+    add(TopologyLineRenderer(
+      points: points,
+      routes: routes,
+      mapResolution: mapResolution,
+      mapOrigin: mapOrigin,
+      animationValue: animationValue,
+    ));
+  }
+
+  @override
+  void update(double dt) {
+    animationTimer.update(dt);
+    animationValue = (animationTimer.progress * 2.0) % 1.0;
+    super.update(dt);
+  }
+
+  @override
+  void onRemove() {
+    super.onRemove();
   }
 }
 
-class TopologyLinePainter extends CustomPainter {
+class TopologyLineRenderer extends Component with HasGameRef {
   final List<NavPoint> points;
   final List<TopologyRoute> routes;
   final double mapResolution;
   final Offset mapOrigin;
   final double animationValue;
 
-  TopologyLinePainter({
+  TopologyLineRenderer({
     required this.points,
     required this.routes,
     required this.mapResolution,
@@ -76,40 +67,49 @@ class TopologyLinePainter extends CustomPainter {
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..strokeWidth = 1.0
-      ..strokeCap = StrokeCap.round;
-
-    final Map<String, Offset> pointMap = {};
-    for (final point in points) {
-      pointMap[point.name] = Offset(point.x, point.y);
+  void render(Canvas canvas) {
+    // 添加安全检查
+    if (!isMounted) {
+      return;
     }
+    
+    try {
+      final paint = Paint()
+        ..strokeWidth = 1.0
+        ..strokeCap = StrokeCap.round;
 
-    // 统计每条路径的连接数量以判断是否为双向
-    final Map<String, List<TopologyRoute>> connectionMap = {};
-    for (final route in routes) {
-      final key = _getConnectionKey(route.fromPoint, route.toPoint);
-      connectionMap.putIfAbsent(key, () => []).add(route);
-    }
+      final Map<String, Offset> pointMap = {};
+      for (final point in points) {
+        pointMap[point.name] = Offset(point.x, point.y);
+      }
 
-    // 绘制路径
-    for (final entry in connectionMap.entries) {
-      final routeList = entry.value;
-      final firstRoute = routeList.first;
-      
-      final fromPoint = pointMap[firstRoute.fromPoint];
-      final toPoint = pointMap[firstRoute.toPoint];
-      
-      if (fromPoint != null && toPoint != null) {
-        final isBidirectional = routeList.length > 1;
+      // 统计每条路径的连接数量以判断是否为双向
+      final Map<String, List<TopologyRoute>> connectionMap = {};
+      for (final route in routes) {
+        final key = _getConnectionKey(route.fromPoint, route.toPoint);
+        connectionMap.putIfAbsent(key, () => []).add(route);
+      }
+
+      // 绘制路径
+      for (final entry in connectionMap.entries) {
+        final routeList = entry.value;
+        final firstRoute = routeList.first;
         
-        if (isBidirectional) {
-          _drawBidirectionalPath(canvas, fromPoint, toPoint, paint);
-        } else {
-          _drawUnidirectionalPath(canvas, fromPoint, toPoint, paint);
+        final fromPoint = pointMap[firstRoute.fromPoint];
+        final toPoint = pointMap[firstRoute.toPoint];
+        
+        if (fromPoint != null && toPoint != null) {
+          final isBidirectional = routeList.length > 1;
+          
+          if (isBidirectional) {
+            _drawBidirectionalPath(canvas, fromPoint, toPoint, paint);
+          } else {
+            _drawUnidirectionalPath(canvas, fromPoint, toPoint, paint);
+          }
         }
       }
+    } catch (e) {
+      print('Error rendering topology line: $e');
     }
   }
 
@@ -225,9 +225,6 @@ class TopologyLinePainter extends CustomPainter {
       currentDistance += arrowSpacing;
     }
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 extension OffsetExtension on Offset {
@@ -236,4 +233,4 @@ extension OffsetExtension on Offset {
     if (length == 0) return Offset.zero;
     return this / length;
   }
-} 
+}

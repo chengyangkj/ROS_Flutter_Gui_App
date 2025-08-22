@@ -7,7 +7,7 @@ import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:flame/components.dart';
 
-class DisplayMap extends PositionComponent {
+class MapComponent extends PositionComponent {
   OccupancyMap? _currentMap;
   ui.Image? _mapImage;
   bool _isProcessing = false;
@@ -17,7 +17,7 @@ class DisplayMap extends PositionComponent {
   OccupancyMap? get currentMap => _currentMap;
   
   // 构造函数接收RosChannel
-  DisplayMap({RosChannel? rosChannel}) {
+  MapComponent({RosChannel? rosChannel}) {
     _rosChannel = rosChannel;
   }
   

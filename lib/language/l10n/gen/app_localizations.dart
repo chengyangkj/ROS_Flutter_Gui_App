@@ -511,6 +511,168 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'停止'**
   String get stop;
+
+  /// No description provided for @layer_grid.
+  ///
+  /// In zh, this message translates to:
+  /// **'网格图层'**
+  String get layer_grid;
+
+  /// No description provided for @layer_global_costmap.
+  ///
+  /// In zh, this message translates to:
+  /// **'全局代价地图'**
+  String get layer_global_costmap;
+
+  /// No description provided for @layer_local_costmap.
+  ///
+  /// In zh, this message translates to:
+  /// **'局部代价地图'**
+  String get layer_local_costmap;
+
+  /// No description provided for @layer_laser.
+  ///
+  /// In zh, this message translates to:
+  /// **'激光雷达数据'**
+  String get layer_laser;
+
+  /// No description provided for @layer_pointcloud.
+  ///
+  /// In zh, this message translates to:
+  /// **'点云数据'**
+  String get layer_pointcloud;
+
+  /// No description provided for @layer_global_path.
+  ///
+  /// In zh, this message translates to:
+  /// **'全局路径'**
+  String get layer_global_path;
+
+  /// No description provided for @layer_local_path.
+  ///
+  /// In zh, this message translates to:
+  /// **'局部路径'**
+  String get layer_local_path;
+
+  /// No description provided for @layer_topology.
+  ///
+  /// In zh, this message translates to:
+  /// **'拓扑地图'**
+  String get layer_topology;
+
+  /// No description provided for @map_edit.
+  ///
+  /// In zh, this message translates to:
+  /// **'地图编辑'**
+  String get map_edit;
+
+  /// No description provided for @zoom_in.
+  ///
+  /// In zh, this message translates to:
+  /// **'放大'**
+  String get zoom_in;
+
+  /// No description provided for @zoom_out.
+  ///
+  /// In zh, this message translates to:
+  /// **'缩小'**
+  String get zoom_out;
+
+  /// No description provided for @center_on_robot.
+  ///
+  /// In zh, this message translates to:
+  /// **'定位到机器人'**
+  String get center_on_robot;
+
+  /// No description provided for @exit.
+  ///
+  /// In zh, this message translates to:
+  /// **'退出'**
+  String get exit;
+
+  /// No description provided for @layers.
+  ///
+  /// In zh, this message translates to:
+  /// **'图层'**
+  String get layers;
+
+  /// No description provided for @reloc.
+  ///
+  /// In zh, this message translates to:
+  /// **'重定位'**
+  String get reloc;
+
+  /// No description provided for @camera.
+  ///
+  /// In zh, this message translates to:
+  /// **'相机'**
+  String get camera;
+
+  /// No description provided for @manual_control.
+  ///
+  /// In zh, this message translates to:
+  /// **'手动控制'**
+  String get manual_control;
+
+  /// No description provided for @emergency_stop.
+  ///
+  /// In zh, this message translates to:
+  /// **'急停'**
+  String get emergency_stop;
+
+  /// No description provided for @stop_navigation.
+  ///
+  /// In zh, this message translates to:
+  /// **'停止导航'**
+  String get stop_navigation;
+
+  /// No description provided for @open_file.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开文件'**
+  String get open_file;
+
+  /// No description provided for @save_file.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存文件'**
+  String get save_file;
+
+  /// No description provided for @undo.
+  ///
+  /// In zh, this message translates to:
+  /// **'撤销'**
+  String get undo;
+
+  /// No description provided for @redo.
+  ///
+  /// In zh, this message translates to:
+  /// **'重做'**
+  String get redo;
+
+  /// No description provided for @exit_edit_mode.
+  ///
+  /// In zh, this message translates to:
+  /// **'退出编辑模式'**
+  String get exit_edit_mode;
+
+  /// No description provided for @add_nav_point.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加导航点'**
+  String get add_nav_point;
+
+  /// No description provided for @draw_obstacle.
+  ///
+  /// In zh, this message translates to:
+  /// **'绘制障碍物'**
+  String get draw_obstacle;
+
+  /// No description provided for @erase_obstacle.
+  ///
+  /// In zh, this message translates to:
+  /// **'擦除障碍物'**
+  String get erase_obstacle;
 }
 
 class _AppLocalizationsDelegate

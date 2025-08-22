@@ -1,12 +1,15 @@
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flame/game.dart';
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:ros_flutter_gui_app/page/connect_page.dart';
 import 'package:ros_flutter_gui_app/page/main_flame.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
+import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 
 class MainFlamePage extends StatefulWidget {
@@ -23,29 +26,47 @@ class _MainFlamePageState extends State<MainFlamePage> {
   void initState() {
     super.initState();
     final rosChannel = Provider.of<RosChannel>(context, listen: false);
-    game = MainFlame(rosChannel: rosChannel);
+    final globalState = Provider.of<GlobalState>(context, listen: false);
+    game = MainFlame(rosChannel: rosChannel, globalState: globalState);
+    // 加载图层设置
+    Provider.of<GlobalState>(context, listen: false).loadLayerSettings();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final globalState = Provider.of<GlobalState>(context, listen: false);
+    final isMapEditMode = globalState.mode.value == Mode.mapEdit;
+
     return Scaffold(
       body: Stack(
         children: [
-          
+          // 游戏画布
           GameWidget(game: game),
-
-          // 顶部菜单栏
-          _buildTopMenuBar(context, theme),
-
-          // 左侧工具栏
-          _buildLeftToolbar(context, theme),
-
-          // 右侧工具栏
-          _buildRightToolbar(context, theme),
-
-          // 底部控制栏
-          _buildBottomControls(context, theme),
+          
+          // 根据模式显示不同的工具栏
+          if (!isMapEditMode) ...[
+            // 正常模式下的工具栏
+            _buildTopMenuBar(context, theme),
+            _buildLeftToolbar(context, theme),
+            _buildRightToolbar(context, theme),
+            _buildBottomControls(context, theme),
+          ] else ...[
+            // 地图编辑模式下只显示退出按钮
+            Positioned(
+              right: 20,
+              top: 20,
+              child: FloatingActionButton(
+                onPressed: () {
+                  globalState.exitMapEditMode();
+                  Navigator.pop(context);
+                },
+                backgroundColor: Colors.red,
+                child: const Icon(Icons.close, color: Colors.white),
+                tooltip: '退出地图编辑模式',
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -164,34 +185,88 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     },
                   ),
                   if (showLayerControl) ...[
-                    IconButton(
-                      icon: Icon(Icons.map, size: 20),
-                      color: Colors.green,
-                      onPressed: () {
-                        // 全局代价地图切换逻辑
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.map_outlined, size: 20),
-                      color: Colors.green,
-                      onPressed: () {
-                        // 局部代价地图切换逻辑
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.radar, size: 20),
-                      color: Colors.green,
-                      onPressed: () {
-                        // 激光雷达数据切换逻辑
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.cloud, size: 20),
-                      color: Colors.green,
-                      onPressed: () {
-                        // 点云数据切换逻辑
-                      },
-                    ),
+                    // 使用循环生成图层控制按钮
+                    ...Provider.of<GlobalState>(context, listen: true).layerNames.map((layerName) {
+                      // 定义每个图层的图标和颜色配置
+                      final layerConfig = <String, Map<String, dynamic>>{
+                        'showGrid': {
+                          'icon': Icons.grid_on,
+                          'iconOff': Icons.grid_off,
+                          'color': Colors.green,
+                          'tooltip': '网格图层',
+                        },
+                        'showGlobalCostmap': {
+                          'icon': Icons.map,
+                          'iconOff': Icons.map_outlined,
+                          'color': Colors.green,
+                          'tooltip': '全局代价地图',
+                        },
+                        'showLocalCostmap': {
+                          'icon': Icons.map_outlined,
+                          'iconOff': Icons.map_outlined,
+                          'color': Colors.green,
+                          'tooltip': '局部代价地图',
+                        },
+                        'showLaser': {
+                          'icon': Icons.radar,
+                          'iconOff': Icons.radar_outlined,
+                          'color': Colors.green,
+                          'tooltip': '激光雷达数据',
+                        },
+                        'showPointCloud': {
+                          'icon': Icons.cloud,
+                          'iconOff': Icons.cloud_outlined,
+                          'color': Colors.green,
+                          'tooltip': '点云数据',
+                        },
+                        'showGlobalPath': {
+                          'icon': Icons.timeline,
+                          'iconOff': Icons.timeline_outlined,
+                          'color': Colors.blue,
+                          'tooltip': '全局路径',
+                        },
+                        'showLocalPath': {
+                          'icon': Icons.timeline,
+                          'iconOff': Icons.timeline_outlined,
+                          'color': Colors.green,
+                          'tooltip': '局部路径',
+                        },
+                        'showTopology': {
+                          'icon': Icons.account_tree,
+                          'iconOff': Icons.account_tree_outlined,
+                          'color': Colors.orange,
+                          'tooltip': '拓扑地图',
+                        },
+                        'showRobotFootprint': {
+                          'icon': Icons.person_outline,
+                          'iconOff': Icons.person_outline,
+                          'color': Colors.blue,
+                          'tooltip': '机器人轮廓',
+                        },
+                      };
+                      
+                      final config = layerConfig[layerName];
+                      if (config == null) return const SizedBox.shrink();
+                      
+                      return Tooltip(
+                        message: config['tooltip'] as String,
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: Provider.of<GlobalState>(context, listen: true).getLayerState(layerName),
+                          builder: (context, isVisible, child) {
+                            return IconButton(
+                              icon: Icon(
+                                isVisible ? config['icon'] as IconData : config['iconOff'] as IconData,
+                                size: 20,
+                              ),
+                              color: isVisible ? config['color'] as Color : Colors.grey,
+                              onPressed: () {
+                                Provider.of<GlobalState>(context, listen: false).toggleLayer(layerName);
+                              },
+                            );
+                          },
+                        ),
+                      );
+                    }).toList(),
                   ],
                 ],
               ),
@@ -255,32 +330,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
             ),
           ),
 
-          // 设置导航目标点
-          Card(
-            elevation: 10,
-            child: IconButton(
-              icon: Icon(
-                const IconData(0xeba1, fontFamily: "NavPoint"),
-                color: (Provider.of<GlobalState>(context, listen: false)
-                            .mode
-                            .value ==
-                        Mode.addNavPoint)
-                    ? Colors.green
-                    : theme.iconTheme.color,
-              ),
-              onPressed: () {
-                var globalState =
-                    Provider.of<GlobalState>(context, listen: false);
-                if (globalState.mode.value == Mode.addNavPoint) {
-                  globalState.mode.value = Mode.normal;
-                } else {
-                  globalState.mode.value = Mode.addNavPoint;
-                }
-                setState(() {});
-              },
-            ),
-          ),
-
           // 显示相机图像
           Card(
             elevation: 10,
@@ -327,12 +376,49 @@ class _MainFlamePageState extends State<MainFlamePage> {
       top: 30,
       child: Column(
         children: [
+          // 地图编辑按钮
+          Card(
+            elevation: 10,
+            child: IconButton(
+              icon: Icon(
+                Icons.edit_document,
+                color: (Provider.of<GlobalState>(context, listen: false)
+                            .mode
+                            .value ==
+                        Mode.mapEdit)
+                    ? Colors.orange
+                    : theme.iconTheme.color,
+              ),
+              onPressed: () {
+                var globalState =
+                    Provider.of<GlobalState>(context, listen: false);
+                if (globalState.mode.value == Mode.mapEdit) {
+                  globalState.exitMapEditMode();
+                } else {
+                  globalState.enterMapEditMode();
+                  // 跳转到地图编辑页面
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MapEditPage(),
+                    ),
+                  );
+                }
+                setState(() {});
+              },
+              tooltip: '地图编辑',
+            ),
+          ),
+          
+          const SizedBox(height: 8),
+          
           // 放大按钮
           IconButton(
             onPressed: () {
               game.zoomIn();
             },
             icon: const Icon(Icons.zoom_in),
+            tooltip: '放大',
           ),
           // 缩小按钮
           IconButton(
@@ -340,6 +426,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
               game.zoomOut();
             },
             icon: const Icon(Icons.zoom_out),
+            tooltip: '缩小',
           ),
           // 定位到机器人按钮
           IconButton(
@@ -366,7 +453,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
           // 退出按钮
           IconButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
             },
             icon: const Icon(Icons.exit_to_app),
             tooltip: '退出',

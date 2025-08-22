@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import 'dart:io';
 import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
@@ -21,7 +22,6 @@ import "package:ros_flutter_gui_app/basic/occupancy_map.dart";
 import 'package:ros_flutter_gui_app/basic/tf.dart';
 import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 import "package:ros_flutter_gui_app/basic/math.dart";
-import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:image/image.dart' as img;
 import 'package:fluttertoast/fluttertoast.dart';
@@ -31,7 +31,7 @@ import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 
 class LaserData {
   RobotPose robotPose;
-  List<Offset> laserPoseBaseLink;
+  List<vm.Vector2> laserPoseBaseLink;
   LaserData({required this.robotPose, required this.laserPoseBaseLink});
 }
 
@@ -86,13 +86,13 @@ class RosChannel {
   Status rosConnectState_ = Status.none;
   ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
-  ValueNotifier<List<Offset>> laserPoint_ = ValueNotifier([]);
-  ValueNotifier<List<Offset>> localPath = ValueNotifier([]);
-  ValueNotifier<List<Offset>> globalPath = ValueNotifier([]);
+  ValueNotifier<List<vm.Vector2>> laserBasePoint_ = ValueNotifier([]);
+  ValueNotifier<List<vm.Vector2>> localPath = ValueNotifier([]);
+  ValueNotifier<List<vm.Vector2>> globalPath = ValueNotifier([]);
   ValueNotifier<LaserData> laserPointData = ValueNotifier(
       LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
   ValueNotifier<ActionStatus> navStatus_ = ValueNotifier(ActionStatus.unknown);
-  ValueNotifier<List<Offset>> robotFootprint = ValueNotifier([]);
+  ValueNotifier<List<vm.Vector2>> robotFootprint = ValueNotifier([]);
   ValueNotifier<OccupancyMap> localCostmap = ValueNotifier(OccupancyMap());
   ValueNotifier<OccupancyMap> globalCostmap = ValueNotifier(OccupancyMap());
   ValueNotifier<List<Point3D>> pointCloud2Data = ValueNotifier([]);
@@ -108,10 +108,10 @@ class RosChannel {
           try {
             currRobotPose_.value = tf_.lookUpForTransform(
                 globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
-            Offset poseScene = map_.value
-                .xy2idx(Offset(currRobotPose_.value.x, currRobotPose_.value.y));
-            robotPoseScene.value = RobotPose(
-                poseScene.dx, poseScene.dy, currRobotPose_.value.theta);
+                            vm.Vector2 poseScene = map_.value
+            .xy2idx(vm.Vector2(currRobotPose_.value.x, currRobotPose_.value.y));
+        robotPoseScene.value = RobotPose(
+            poseScene.x, poseScene.y, currRobotPose_.value.theta);
           } catch (e) {
             print("get robot pose error:${e}");
           }
@@ -191,7 +191,7 @@ class RosChannel {
     robotFootprint.value.clear();
     map_.value.data.clear();
     topologyMap_.value.points.clear();
-    laserPoint_.value.clear();
+    laserBasePoint_.value.clear();
     localPath.value.clear();
     globalPath.value.clear();
     laserPointData.value.laserPoseBaseLink.clear();
@@ -419,9 +419,9 @@ class RosChannel {
   }
 
   Future<void> sendNavigationGoal(RobotPose pose) async {
-    Offset p = map_.value.idx2xy(Offset(pose.x, pose.y));
-    pose.x = p.dx;
-    pose.y = p.dy;
+    vm.Vector2 p = map_.value.idx2xy(vm.Vector2(pose.x, pose.y));
+    pose.x = p.x;
+    pose.y = p.y;
     vm.Quaternion quaternion = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
@@ -514,9 +514,9 @@ class RosChannel {
   }
 
   Future<void> sendRelocPoseScene(RobotPose pose) async {
-    Offset p = map_.value.idx2xy(Offset(pose.x, pose.y));
-    pose.x = p.dx;
-    pose.y = p.dy;
+    vm.Vector2 p = map_.value.xy2idx(vm.Vector2(pose.x, pose.y));
+    pose.x = p.x;
+    pose.y = p.y;
     vm.Quaternion quation = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
@@ -615,18 +615,18 @@ class RosChannel {
         return;
       }
       
-      // 清空之前的点列表
-      robotFootprint.value.clear();
+      List<vm.Vector2> newPoints = [];
       
       if (polygonStamped.polygon != null) {
         for (int i = 0; i < polygonStamped.polygon!.points.length; i++) {
           Point32 point = polygonStamped.polygon!.points[i];
           RobotPose pose = RobotPose(point.x, point.y, 0);
           RobotPose poseMap = absoluteSum(transPose, pose);
-          Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-          robotFootprint.value.add(Offset(poseScene.dx, poseScene.dy));
+          vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
+          newPoints.add(poseScene);
         }
       }
+      robotFootprint.value = newPoints;
     } catch (e) {
       print("Error parsing robot footprint: $e");
     }
@@ -712,9 +712,9 @@ class RosChannel {
       sizedCostMap.setZero();
       
       // 使用 xy2idx 方法将代价地图左上角的世界坐标转换为栅格坐标
-      Offset occPoint = map_.value.xy2idx(Offset(originPose.x, originPose.y));
-      double mapOX = occPoint.dx;
-      double mapOY = occPoint.dy;
+      vm.Vector2 occPoint = map_.value.xy2idx(vm.Vector2(originPose.x, originPose.y));
+      double mapOX = occPoint.x;
+      double mapOY = occPoint.y;
       
       // 清空目标区域
       for (int x = 0; x < sizedCostMap.mapConfig.height; x++) {
@@ -752,7 +752,7 @@ class RosChannel {
   }
 
   Future<void> localPathCallback(Map<String, dynamic> msg) async {
-    localPath.value.clear();
+    List<vm.Vector2> newPath = [];
     // print("${json.encode(msg)}");
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
@@ -769,13 +769,16 @@ class RosChannel {
           translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
-      Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-      localPath.value.add(Offset(poseScene.dx, poseScene.dy));
+      vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
+      newPath.add(vm.Vector2(poseScene.x, poseScene.y));
     }
+    
+    // 使用新的列表赋值来触发监听器
+    localPath.value = newPath;
   }
 
   Future<void> globalPathCallback(Map<String, dynamic> msg) async {
-    globalPath.value.clear();
+    List<vm.Vector2> newPath = [];
     RobotPath path = RobotPath.fromJson(msg);
     String framId = path.header!.frameId!;
     RobotPose transPose = RobotPose(0, 0, 0);
@@ -791,9 +794,12 @@ class RosChannel {
           translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
-      Offset poseScene = map_.value.xy2idx(Offset(poseMap.x, poseMap.y));
-      globalPath.value.add(Offset(poseScene.dx, poseScene.dy));
+      vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
+      newPath.add(vm.Vector2(poseScene.x, poseScene.y));
     }
+    
+    // 使用新的列表赋值来触发监听器
+    globalPath.value = newPath;
   }
 
   Uint8List _hexToBytes(String hex) {
@@ -820,7 +826,7 @@ class RosChannel {
     double angleMin = laser.angleMin!.toDouble();
     double angleMax = laser.angleMax!.toDouble();
     double angleIncrement = laser.angleIncrement!;
-    laserPoint_.value.clear();
+    List<vm.Vector2> newLaserPoints = [];
     for (int i = 0; i < laser.ranges!.length; i++) {
       double angle = angleMin + i * angleIncrement;
       // print("${laser.ranges![i]}");
@@ -833,10 +839,13 @@ class RosChannel {
       //转换到map坐标系
       RobotPose poseBaseLink = absoluteSum(laserPoseBase, poseLaser);
 
-      laserPoint_.value.add(Offset(poseBaseLink.x, poseBaseLink.y));
+      newLaserPoints.add(vm.Vector2(poseBaseLink.x, poseBaseLink.y));
     }
+    
+    // 使用新的列表赋值来触发监听器
+    laserBasePoint_.value = newLaserPoints;
     laserPointData.value = LaserData(
-        robotPose: currRobotPose_.value, laserPoseBaseLink: laserPoint_.value);
+        robotPose: currRobotPose_.value, laserPoseBaseLink: newLaserPoints);
   }
 
   DateTime? _lastMapCallbackTime;
@@ -893,11 +902,11 @@ class RosChannel {
 
     // 创建新的 points 列表
     final updatedPoints = map.points.map((point) {
-      Offset pointScene = map_.value.xy2idx(Offset(point.x, point.y));
+      vm.Vector2 pointScene = map_.value.xy2idx(vm.Vector2(point.x, point.y));
       // 创建新的 NavPoint 对象
       return NavPoint(
-        x: pointScene.dx,
-        y: pointScene.dy,
+        x: pointScene.x,
+        y: pointScene.y,
         theta: point.theta,
         name: point.name,
         type: point.type,

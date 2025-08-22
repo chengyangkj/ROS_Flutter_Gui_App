@@ -219,4 +219,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stop => 'Stop';
+
+  @override
+  String get layer_grid => 'Grid Layer';
+
+  @override
+  String get layer_global_costmap => 'Global Cost Map';
+
+  @override
+  String get layer_local_costmap => 'Local Cost Map';
+
+  @override
+  String get layer_laser => 'Laser Data';
+
+  @override
+  String get layer_pointcloud => 'Point Cloud Data';
+
+  @override
+  String get layer_global_path => 'Global Path';
+
+  @override
+  String get layer_local_path => 'Local Path';
+
+  @override
+  String get layer_topology => 'Topology Map';
+
+  @override
+  String get map_edit => 'Map Edit';
+
+  @override
+  String get zoom_in => 'Zoom In';
+
+  @override
+  String get zoom_out => 'Zoom Out';
+
+  @override
+  String get center_on_robot => 'Center on Robot';
+
+  @override
+  String get exit => 'Exit';
+
+  @override
+  String get layers => 'Layers';
+
+  @override
+  String get reloc => 'Relocalization';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get manual_control => 'Manual Control';
+
+  @override
+  String get emergency_stop => 'Emergency Stop';
+
+  @override
+  String get stop_navigation => 'Stop Navigation';
+
+  @override
+  String get open_file => 'Open File';
+
+  @override
+  String get save_file => 'Save File';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get redo => 'Redo';
+
+  @override
+  String get exit_edit_mode => 'Exit Edit Mode';
+
+  @override
+  String get add_nav_point => 'Add Navigation Point';
+
+  @override
+  String get draw_obstacle => 'Draw Obstacle';
+
+  @override
+  String get erase_obstacle => 'Erase Obstacle';
 }
