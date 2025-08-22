@@ -103,7 +103,7 @@ class PathRenderer extends Component with HasGameRef {
   void _drawMainPath(Canvas canvas) {
     final path = Path();
     final paint = Paint()
-      ..color = color
+      ..color = color.withOpacity(0.6)
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;

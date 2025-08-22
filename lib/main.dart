@@ -114,7 +114,7 @@ class _MyAppState extends State<MyApp> {
         "/setting": ((context) => SettingsPage()),
         // "/gamepad":((context) => GamepadPage()),
       },
-      themeMode: Provider.of<ThemeProvider>(context, listen: true).themeMode,
+      themeMode: Provider.of<ThemeProvider>(context, listen: true).themeMode ?? ThemeMode.dark,
       theme: ThemeData(
         brightness: Brightness.light,
         colorScheme: ColorScheme.fromSwatch().copyWith(

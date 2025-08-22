@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "ROS_Flutter_Gui_App-old",
+            "name": "ROS_Flutter_Gui_App",
             "request": "launch",
             "type": "dart",
             "args": [
@@ -14,13 +14,13 @@
             ]
         },
         {
-            "name": "ROS_Flutter_Gui_App-old (profile mode)",
+            "name": "ROS_Flutter_Gui_App (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "ROS_Flutter_Gui_App-old (release mode)",
+            "name": "ROS_Flutter_Gui_App (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

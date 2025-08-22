@@ -413,50 +413,71 @@ class _MainFlamePageState extends State<MainFlamePage> {
           const SizedBox(height: 8),
           
           // 放大按钮
-          IconButton(
-            onPressed: () {
-              game.zoomIn();
-            },
-            icon: const Icon(Icons.zoom_in),
-            tooltip: '放大',
+          Card(
+            elevation: 10,
+            child: IconButton(
+              onPressed: () {
+                game.zoomIn();
+              },
+              icon: Icon(
+                Icons.zoom_in,
+                color: theme.iconTheme.color,
+              ),
+              tooltip: '放大',
+            ),
           ),
           // 缩小按钮
-          IconButton(
-            onPressed: () {
-              game.zoomOut();
-            },
-            icon: const Icon(Icons.zoom_out),
-            tooltip: '缩小',
+          Card(
+            elevation: 10,
+            child: IconButton(
+              onPressed: () {
+                game.zoomOut();
+              },
+              icon: Icon(
+                Icons.zoom_out,
+                color: theme.iconTheme.color,
+              ),
+              tooltip: '缩小',
+            ),
           ),
           // 定位到机器人按钮
-          IconButton(
-            onPressed: () {
-              var globalState =
-                  Provider.of<GlobalState>(context, listen: false);
-              if (globalState.mode.value == Mode.robotFixedCenter) {
-                globalState.mode.value = Mode.normal;
-              } else {
-                globalState.mode.value = Mode.robotFixedCenter;
-                game.centerOnRobot();
-              }
-              setState(() {});
-            },
-            icon: Icon(
-              Icons.location_searching,
-              color:
-                  Provider.of<GlobalState>(context, listen: false).mode.value ==
-                          Mode.robotFixedCenter
-                      ? Colors.green
-                      : theme.iconTheme.color,
+          Card(
+            elevation: 10,
+            child: IconButton(
+              onPressed: () {
+                var globalState =
+                    Provider.of<GlobalState>(context, listen: false);
+                if (globalState.mode.value == Mode.robotFixedCenter) {
+                  globalState.mode.value = Mode.normal;
+                } else {
+                  globalState.mode.value = Mode.robotFixedCenter;
+                  game.centerOnRobot();
+                }
+                setState(() {});
+              },
+              icon: Icon(
+                Icons.location_searching,
+                color:
+                    Provider.of<GlobalState>(context, listen: false).mode.value ==
+                            Mode.robotFixedCenter
+                        ? Colors.green
+                        : theme.iconTheme.color,
+              ),
             ),
           ),
           // 退出按钮
-          IconButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
-            },
-            icon: const Icon(Icons.exit_to_app),
-            tooltip: '退出',
+          Card(
+            elevation: 10,
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
+              },
+              icon: Icon(
+                Icons.exit_to_app,
+                color: theme.iconTheme.color,
+              ),
+              tooltip: '退出',
+            ),
           ),
         ],
       ),

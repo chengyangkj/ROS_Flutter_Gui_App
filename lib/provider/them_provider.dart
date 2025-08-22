@@ -12,7 +12,7 @@ class ThemeProvider extends ChangeNotifier {
 
   void _loadThemeMode() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    int themeIndex = prefs.getInt('themeMode') ?? 0;
+    int themeIndex = prefs.getInt('themeMode') ?? 2; // 默认使用暗黑模式 (ThemeMode.dark = 2)
     _themeMode = ThemeMode.values[themeIndex];
     notifyListeners();
   }
