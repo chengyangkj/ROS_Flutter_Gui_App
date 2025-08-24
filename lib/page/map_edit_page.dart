@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/page/main_page.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
-import 'package:ros_flutter_gui_app/page/main_flame.dart';
+import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
@@ -17,7 +17,7 @@ class MapEditPage extends StatefulWidget {
 }
 
 class _MapEditPageState extends State<MapEditPage> {
-  late MainFlame game;
+  late MapEditFlame game;
   late GlobalState globalState;
   late RosChannel rosChannel;
   late NavPointManager navPointManager;
@@ -35,8 +35,11 @@ class _MapEditPageState extends State<MapEditPage> {
     rosChannel = Provider.of<RosChannel>(context, listen: false);
     navPointManager = NavPointManager();
     
-    // 创建Flame游戏实例，只显示地图和网格
-    game = MainFlame(rosChannel: rosChannel, globalState: globalState);
+    // 创建专门的地图编辑Flame组件，传入回调函数
+    game = MapEditFlame(
+      rosChannel: rosChannel,
+      onAddNavPoint: _addNavPoint,
+    );
     
     // 加载导航点
     _loadNavPoints();
@@ -107,18 +110,7 @@ class _MapEditPageState extends State<MapEditPage> {
       body: Stack(
         children: [
           // 游戏画布
-          GestureDetector(
-            onTapDown: (details) {
-              if (selectedTool == 'addNavPoint') {
-                // 将屏幕坐标转换为地图坐标
-                final screenPoint = details.localPosition;
-                // TODO: 这里需要将屏幕坐标转换为地图坐标
-                // 暂时使用屏幕坐标作为示例
-                _addNavPoint(screenPoint.dx, screenPoint.dy);
-              }
-            },
-            child: GameWidget(game: game),
-          ),
+          GameWidget(game: game),
           
           // 顶部工具栏
           Positioned(
@@ -237,7 +229,6 @@ class _MapEditPageState extends State<MapEditPage> {
                 child: IconButton(
                   icon: const Icon(Icons.close, color: Colors.white, size: 28),
                   onPressed: () {
-                    globalState.exitMapEditMode();
                     Navigator.pop(context);
                   },
                   tooltip: '退出地图编辑模式',
@@ -288,92 +279,14 @@ class _MapEditPageState extends State<MapEditPage> {
             
             const SizedBox(height: 8),
             
-            // 导航点列表
-            if (navPoints.isNotEmpty) ...[
-              Container(
-                width: 120,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '导航点列表 (${navPoints.length})',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...navPoints.take(3).map((point) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              point.name,
-                              style: const TextStyle(fontSize: 10),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, size: 12),
-                            onPressed: () => _deleteNavPoint(point.id),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 20,
-                              minHeight: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-                    if (navPoints.length > 3)
-                      Text(
-                        '...还有${navPoints.length - 3}个',
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
-                      ),
-                  ],
-                ),
-              ),
-            ],
+
           ],
         ),
       ),
     );
   }
   
-  // 删除导航点
-  Future<void> _deleteNavPoint(String id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('确认删除'),
-          content: const Text('确定要删除这个导航点吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('删除'),
-            ),
-          ],
-        );
-      },
-    );
-    
-    if (confirmed == true) {
-      await navPointManager.removeNavPoint(id);
-      await _loadNavPoints();
-    }
-  }
+
 
   Widget _buildEditTool({
     required IconData icon,
@@ -393,8 +306,10 @@ class _MapEditPageState extends State<MapEditPage> {
             onPressed: () {
               if (isActive) {
                 selectedTool = null; // 取消选择
+                game.setSelectedTool(null);
               } else {
                 selectedTool = toolName; // 选择工具
+                game.setSelectedTool(toolName);
               }
               setState(() {});
             },
@@ -434,7 +349,7 @@ class _MapEditPageState extends State<MapEditPage> {
             _buildInstructionItem(
               icon: Icons.add_location,
               title: '添加导航点',
-              description: '点击地图添加导航点，可拖拽旋转方向',
+              description: '选择工具后点击地图添加导航点',
               color: Colors.blue,
             ),
             

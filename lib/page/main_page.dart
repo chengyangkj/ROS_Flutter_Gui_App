@@ -43,30 +43,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
         children: [
           // 游戏画布
           GameWidget(game: game),
-          
-          // 根据模式显示不同的工具栏
-          if (!isMapEditMode) ...[
-            // 正常模式下的工具栏
-            _buildTopMenuBar(context, theme),
-            _buildLeftToolbar(context, theme),
-            _buildRightToolbar(context, theme),
-            _buildBottomControls(context, theme),
-          ] else ...[
-            // 地图编辑模式下只显示退出按钮
-            Positioned(
-              right: 20,
-              top: 20,
-              child: FloatingActionButton(
-                onPressed: () {
-                  globalState.exitMapEditMode();
-                  Navigator.pop(context);
-                },
-                backgroundColor: Colors.red,
-                child: const Icon(Icons.close, color: Colors.white),
-                tooltip: '退出地图编辑模式',
-              ),
-            ),
-          ],
+          _buildTopMenuBar(context, theme),
+          _buildLeftToolbar(context, theme),
+          _buildRightToolbar(context, theme),
+          _buildBottomControls(context, theme),
         ],
       ),
     );
@@ -238,8 +218,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
                           'tooltip': '拓扑地图',
                         },
                         'showRobotFootprint': {
-                          'icon': Icons.person_outline,
-                          'iconOff': Icons.person_outline,
+                          'icon': Icons.smart_toy,
+                          'iconOff': Icons.smart_toy_outlined,
                           'color': Colors.blue,
                           'tooltip': '机器人轮廓',
                         },
@@ -390,20 +370,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     : theme.iconTheme.color,
               ),
               onPressed: () {
-                var globalState =
-                    Provider.of<GlobalState>(context, listen: false);
-                if (globalState.mode.value == Mode.mapEdit) {
-                  globalState.exitMapEditMode();
-                } else {
-                  globalState.enterMapEditMode();
-                  // 跳转到地图编辑页面
-                  Navigator.push(
+                 Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const MapEditPage(),
                     ),
                   );
-                }
                 setState(() {});
               },
               tooltip: '地图编辑',

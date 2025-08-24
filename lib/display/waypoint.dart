@@ -11,6 +11,7 @@ class WayPoint extends PositionComponent with HasGameRef {
   int count;
   late Timer animationTimer;
   double animationValue = 0.0;
+  int frameCount = 0;
 
   WayPoint({
     required this.waypointSize,
@@ -24,6 +25,7 @@ class WayPoint extends PositionComponent with HasGameRef {
     animationTimer = Timer(
       2.0,
       onTick: () {
+        // 重置动画值
         animationValue = 0.0;
       },
       repeat: true,
@@ -39,7 +41,21 @@ class WayPoint extends PositionComponent with HasGameRef {
   @override
   void update(double dt) {
     animationTimer.update(dt);
-    animationValue = (animationTimer.progress * 2.0) % 1.0;
+    // 直接使用progress，确保动画值在0到1之间
+    animationValue = animationTimer.progress;
+    
+    // 同步更新渲染器的动画值
+    final renderer = children.whereType<WayPointRenderer>().firstOrNull;
+    if (renderer != null) {
+      renderer.updateAnimationValue(animationValue);
+    }
+    
+    // 调试信息：每100帧打印一次动画值
+    frameCount++;
+    if (frameCount % 100 == 0) {
+      print('WayPoint animation value: $animationValue, timer progress: ${animationTimer.progress}');
+    }
+    
     super.update(dt);
   }
 
@@ -53,7 +69,7 @@ class WayPointRenderer extends Component with HasGameRef {
   final double size;
   final Color color;
   final int count;
-  final double animationValue;
+  double animationValue; // 移除final，允许更新
 
   WayPointRenderer({
     required this.size,
@@ -61,6 +77,11 @@ class WayPointRenderer extends Component with HasGameRef {
     required this.count,
     required this.animationValue,
   });
+  
+  // 添加更新动画值的方法
+  void updateAnimationValue(double value) {
+    animationValue = value;
+  }
 
   @override
   void render(Canvas canvas) {
@@ -83,38 +104,38 @@ class WayPointRenderer extends Component with HasGameRef {
 
         double _radius = radius * ((i + animationValue) / (count + 1));
 
-        // 计算菱形的四个顶点
+        // 计算菱形的四个顶点，中心点在(0, 0)
         final path = Path()
-          ..moveTo(size / 2 + _radius, size / 2) // 右顶点
-          ..lineTo(size / 2, size / 2 + _radius) // 下顶点
-          ..lineTo(size / 2 - _radius, size / 2) // 左顶点
-          ..lineTo(size / 2, size / 2 - _radius) // 上顶点
+          ..moveTo(_radius, 0) // 右顶点
+          ..lineTo(0, _radius) // 下顶点
+          ..lineTo(-_radius, 0) // 左顶点
+          ..lineTo(0, -_radius) // 上顶点
           ..close(); // 闭合路径
 
         // 绘制路径
         canvas.drawPath(path, paint);
       }
 
-      // 绘制中心菱形
+      // 绘制中心菱形，中心点在(0, 0)
       final centerPaint = Paint()
         ..color = color
         ..style = PaintingStyle.fill;
       
       final centerPath = Path()
-        ..moveTo(size / 2 + radius / 3, size / 2) // 右顶点
-        ..lineTo(size / 2, size / 2 + radius / 3) // 下顶点
-        ..lineTo(size / 2 - radius / 3, size / 2) // 左顶点
-        ..lineTo(size / 2, size / 2 - radius / 3) // 上顶点
+        ..moveTo(radius / 3, 0) // 右顶点
+        ..lineTo(0, radius / 3) // 下顶点
+        ..lineTo(-radius / 3, 0) // 左顶点
+        ..lineTo(0, -radius / 3) // 上顶点
         ..close(); // 闭合路径
 
       // 绘制路径
       canvas.drawPath(centerPath, centerPaint);
 
-      // 绘制方向指示器
+      // 绘制方向指示器，中心点在(0, 0)
       Paint dirPainter = Paint()..style = PaintingStyle.fill;
       dirPainter.color = color.withOpacity(0.3);
       Rect rect = Rect.fromCircle(
-          center: Offset(size / 2, size / 2), radius: radius);
+          center: Offset.zero, radius: radius);
       canvas.drawArc(rect, -deg2rad(15), deg2rad(30), true, dirPainter);
       
       canvas.restore();

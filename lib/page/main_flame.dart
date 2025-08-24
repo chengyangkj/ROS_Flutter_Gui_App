@@ -351,7 +351,7 @@ class MainFlame extends FlameGame
     // 创建新的路径点组件，但不直接添加到world
     for (final point in topologyMap.points) {
       final waypoint = WayPoint(
-        waypointSize: 20.0,
+        waypointSize: 5.0,
         color: Colors.blue,
         count: 2,
       );
@@ -372,6 +372,8 @@ class MainFlame extends FlameGame
           world.add(waypoint);
         }
       }
+    }else{
+      print('拓扑图层不可见');
     }
   }
   

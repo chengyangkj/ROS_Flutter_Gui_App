@@ -41,7 +41,6 @@ class GridComponent extends RectangleComponent with HasGameRef {
     final canvasSize = size;
     
     canvas.save();
-    canvas.translate(-canvasSize.x/2, -canvasSize.y/2);
     // 绘制垂直线（每1米一条）
     for (double x = 0; x <= canvasSize.x; x += gridStepPixels) {
       canvas.drawLine(
