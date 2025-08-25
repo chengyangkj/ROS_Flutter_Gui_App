@@ -17,6 +17,7 @@ import 'package:ros_flutter_gui_app/display/waypoint.dart';
 import 'package:ros_flutter_gui_app/display/topology_line.dart';
 import 'package:ros_flutter_gui_app/display/polygon.dart' as custom;
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'dart:math';
 
@@ -48,7 +49,6 @@ class MainFlame extends FlameGame
   
   final double minScale = 0.7;
   final double maxScale = 20.0;
-  final robotSize = 3.0;
 
   // 地图变换参数
   double mapScale = 1.0;
@@ -125,7 +125,7 @@ class MainFlame extends FlameGame
     var svg = await loadSvg('icons/robot/robot2.svg');
     _displayRobot= SvgComponent(
       svg: svg,
-      size: Vector2.all(robotSize),
+      size: Vector2.all(globalSetting.robotSize),
       anchor: Anchor.center
       
     );
@@ -351,9 +351,11 @@ class MainFlame extends FlameGame
     // 创建新的路径点组件，但不直接添加到world
     for (final point in topologyMap.points) {
       final waypoint = WayPoint(
-        waypointSize: 5.0,
+        waypointSize: globalSetting.robotSize,
         color: Colors.blue,
         count: 2,
+        isEditMode: false, // 主界面不显示小红点
+        directionAngle: 0.0, // 初始方向角度
       );
       // 设置路径点位置
       waypoint.position = Vector2(point.x, point.y);

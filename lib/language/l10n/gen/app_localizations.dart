@@ -404,6 +404,12 @@ abstract class AppLocalizations {
   /// **'全局代价地图话题'**
   String get global_costmap_topic;
 
+  /// No description provided for @robot_size.
+  ///
+  /// In zh, this message translates to:
+  /// **'机器人图标尺寸'**
+  String get robot_size;
+
   /// No description provided for @not_allow_send_nav_goal.
   ///
   /// In zh, this message translates to:

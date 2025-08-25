@@ -50,6 +50,7 @@
   "local_cost_map_topic": "局部代价地图话题",
   "pointcloud2_topic": "点云话题",
   "global_costmap_topic": "全局代价地图话题",
+  "robot_size": "机器人图标尺寸",
   "not_allow_send_nav_goal": "当前模式不允许下发导航模式，请切换至普通模式!",
   "gamepad_mapping": "手柄按键映射",
   "remap": "重新映射",

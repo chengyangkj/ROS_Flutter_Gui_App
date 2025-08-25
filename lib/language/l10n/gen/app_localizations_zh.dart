@@ -162,6 +162,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get global_costmap_topic => '全局代价地图话题';
 
   @override
+  String get robot_size => '机器人图标尺寸';
+
+  @override
   String get not_allow_send_nav_goal => '当前模式不允许下发导航模式，请切换至普通模式!';
 
   @override

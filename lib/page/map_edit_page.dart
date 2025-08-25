@@ -279,6 +279,17 @@ class _MapEditPageState extends State<MapEditPage> {
             
             const SizedBox(height: 8),
             
+            // 删除选中的导航点
+            if (selectedTool == 'addNavPoint') ...[
+              _buildEditTool(
+                icon: Icons.delete,
+                label: '删除选中',
+                toolName: 'deleteSelected',
+                color: Colors.red,
+              ),
+              
+              const SizedBox(height: 8),
+            ],
 
           ],
         ),
@@ -304,7 +315,11 @@ class _MapEditPageState extends State<MapEditPage> {
             icon: Icon(icon, size: 24),
             color: isActive ? color : Colors.grey,
             onPressed: () {
-              if (isActive) {
+              if (toolName == 'deleteSelected') {
+                // 删除选中的导航点
+                game.deleteSelectedWayPoint();
+                setState(() {});
+              } else if (isActive) {
                 selectedTool = null; // 取消选择
                 game.setSelectedTool(null);
               } else {
@@ -349,7 +364,7 @@ class _MapEditPageState extends State<MapEditPage> {
             _buildInstructionItem(
               icon: Icons.add_location,
               title: '添加导航点',
-              description: '选择工具后点击地图添加导航点',
+              description: '选择工具后双击地图添加导航点',
               color: Colors.blue,
             ),
             
@@ -371,7 +386,50 @@ class _MapEditPageState extends State<MapEditPage> {
               color: Colors.green,
             ),
             
+            const SizedBox(height: 12),
+            
+            _buildInstructionItem(
+              icon: Icons.touch_app,
+              title: '导航点操作',
+              description: '单击选中，拖拽移动，拖拽红点旋转，删除按钮删除选中',
+              color: Colors.orange,
+            ),
+            
             const SizedBox(height: 16),
+            
+            // 导航点计数显示
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.add_location, color: Colors.blue, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '导航点数量',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        Text(
+                          '${game.wayPointCount} 个',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             
             Container(
               padding: const EdgeInsets.all(8),

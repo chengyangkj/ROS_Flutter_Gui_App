@@ -249,6 +249,7 @@ class Setting {
     prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
+    prefs.setDouble('robotSize', 3.0);
   }
 
   void setDefaultCfgRos2TB4() {
@@ -275,6 +276,7 @@ class Setting {
     prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
+    prefs.setDouble('robotSize', 3.0);
   }
 
   void setDefaultCfgRos2TB3() {
@@ -301,6 +303,7 @@ class Setting {
     prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
+    prefs.setDouble('robotSize', 3.0);
   }
 
   void setDefaultCfgRos2() {
@@ -327,6 +330,7 @@ class Setting {
     prefs.setString('imageTopic', "/camera/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
+    prefs.setDouble('robotSize', 3.0);
   }
 
   void setDefaultCfgRos1() {
@@ -353,6 +357,7 @@ class Setting {
     prefs.setString('imageTopic', "/camera/rgb/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
+    prefs.setDouble('robotSize', 3.0);
   }
 
   SharedPreferences get config {
@@ -669,6 +674,15 @@ class Setting {
   
   bool get showTopologyPath {
     return prefs.getBool('showTopologyPath') ?? true;
+  }
+  
+  // 机器人尺寸相关方法
+  void setRobotSize(double size) {
+    prefs.setDouble('robotSize', size);
+  }
+  
+  double get robotSize {
+    return prefs.getDouble('robotSize') ?? 6.0;
   }
   
 }

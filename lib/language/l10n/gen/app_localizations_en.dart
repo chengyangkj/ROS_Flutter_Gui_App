@@ -163,6 +163,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get global_costmap_topic => 'Global Cost Map Topic';
 
   @override
+  String get robot_size => 'Robot Icon Size';
+
+  @override
   String get not_allow_send_nav_goal =>
       'Current mode is not allow to send navigation goal, please checkout to normal mode!';
 

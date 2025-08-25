@@ -50,6 +50,7 @@
   "local_cost_map_topic": "Local Cost Map Topic",
   "pointcloud2_topic": "Point Cloud Topic",
   "global_costmap_topic": "Global Cost Map Topic",
+  "robot_size": "Robot Icon Size",
   "not_allow_send_nav_goal": "Current mode is not allow to send navigation goal, please checkout to normal mode!",
   "gamepad_mapping": "Gamepad Mapping",
   "remap": "Remap",

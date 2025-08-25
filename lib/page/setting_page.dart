@@ -122,6 +122,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'localCostmapTopic': AppLocalizations.of(context)!.local_cost_map_topic,
       'pointCloud2Topic': AppLocalizations.of(context)!.pointcloud2_topic,
       'globalCostmapTopic': AppLocalizations.of(context)!.global_costmap_topic,
+      'robotSize': AppLocalizations.of(context)!.robot_size,
     };
     return displayNames[key] ?? key;
   }
@@ -202,6 +203,9 @@ class _SettingsPageState extends State<SettingsPage> {
         break;
       case 'pointCloud2Topic':
         globalSetting.setPointCloud2Topic(value);
+        break;
+      case 'robotSize':
+        globalSetting.setRobotSize(double.parse(value));
         break;
     }
 
@@ -463,6 +467,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _buildSettingItem('MaxVx', _settings['MaxVx'] ?? '0.1'),
         _buildSettingItem('MaxVy', _settings['MaxVy'] ?? '0.1'),
         _buildSettingItem('MaxVw', _settings['MaxVw'] ?? '0.3'),
+        _buildSettingItem('robotSize', _settings['robotSize']?.toString() ?? '3.0'),
         _buildSettingItem('mapFrameName', _settings['mapFrameName'] ?? 'map'),
         _buildSettingItem(
             'baseLinkFrameName', _settings['baseLinkFrameName'] ?? 'base_link'),
