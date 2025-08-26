@@ -6,7 +6,9 @@ import 'package:ros_flutter_gui_app/display/map.dart';
 import 'package:ros_flutter_gui_app/display/grid.dart';
 import 'package:ros_flutter_gui_app/display/waypoint.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 
+import 'package:vector_math/vector_math_64.dart' as vm;
 // 专门的地图编辑Flame组件
 class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDetector {
   late MapComponent _displayMap;
@@ -18,7 +20,6 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
   
   // 地图变换参数
   double mapScale = 1.0;
-  Vector2 mapOffset = Vector2.zero();
   
   // 当前选中的编辑工具
   String? selectedTool;
@@ -26,29 +27,91 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
   // 回调函数，用于通知外部添加导航点
   Function(double x, double y)? onAddNavPoint;
   
+  // 回调函数，用于通知外部导航点选择状态变化
+  VoidCallback? onWayPointSelectionChanged;
+  
+  // 回调函数，用于通知外部当前选中点位动态更新
+  VoidCallback? currentSelectPointUpdate;
+  
   // 导航点组件列表
   final List<WayPoint> wayPoints = [];
   
   // 双击检测
   DateTime? _lastTapTime;
   Vector2? _lastTapPosition;
+
+  OccupancyMap? _occupancyMap;
   
-  // 当前拖拽的组件
-  WayPoint? _draggedWayPoint;
-  Vector2? _dragStartPosition;
-  
-  // 当前旋转的组件
-  WayPoint? _rotatingWayPoint;
-  double? _rotationStartAngle;
-  
-  // 长按检测
-  Timer? _longPressTimer;
-  
-  MapEditFlame({this.rosChannel, this.onAddNavPoint});
+  MapEditFlame({
+    this.rosChannel, 
+    this.onAddNavPoint, 
+    this.onWayPointSelectionChanged,
+    this.currentSelectPointUpdate,
+  });
   
   // 设置当前选中的工具
   void setSelectedTool(String? tool) {
     selectedTool = tool;
+  }
+  
+  // 获取当前选中的导航点
+  WayPoint? get selectedWayPoint {
+    return wayPoints.where((wp) => wp.isSelected).firstOrNull;
+  }
+  
+  // 获取当前选中导航点的信息
+  Map<String, dynamic>? getSelectedWayPointInfo() {
+    final wayPoint = selectedWayPoint;
+    if (wayPoint == null) return null;
+    var x = wayPoint.position.x;
+    var y = wayPoint.position.y;
+    var direction = -wayPoint.directionAngle;
+    double mapx = 0;
+    double mapy = 0;
+    if(_occupancyMap != null){
+      vm.Vector2 mapPose = _occupancyMap!.idx2xy(vm.Vector2(x, y));
+      mapx = mapPose.x;
+      mapy = mapPose.y;
+    }
+
+
+    return {
+      'x': mapx.toStringAsFixed(2),
+      'y': mapy.toStringAsFixed(2),
+      'direction': direction.toStringAsFixed(1),
+      'name': '导航点 ${wayPoints.indexOf(wayPoint) + 1}',
+    };
+  }
+  
+  // 获取所有导航点的信息
+  List<Map<String, dynamic>> getAllWayPoint() {
+    List<Map<String, dynamic>> allWayPoints = [];
+    
+    for (int i = 0; i < wayPoints.length; i++) {
+      final wayPoint = wayPoints[i];
+      var x = wayPoint.position.x;
+      var y = wayPoint.position.y;
+      var direction = -wayPoint.directionAngle;
+      double mapx = 0;
+      double mapy = 0;
+      
+      if (_occupancyMap != null) {
+        vm.Vector2 mapPose = _occupancyMap!.idx2xy(vm.Vector2(x, y));
+        mapx = mapPose.x;
+        mapy = mapPose.y;
+      }
+      
+      allWayPoints.add({
+        'x': mapx.toStringAsFixed(2),
+        'y': mapy.toStringAsFixed(2),
+        'direction': direction.toStringAsFixed(1),
+        'name': '导航点 ${i + 1}',
+        'isSelected': wayPoint.isSelected,
+        'index': i,
+      });
+    }
+    
+    return allWayPoints;
   }
   
   @override
@@ -76,10 +139,12 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
       // 监听地图数据
       rosChannel!.map_.addListener(() {
         _displayMap.updateMapData(rosChannel!.map_.value);
+        _occupancyMap=rosChannel!.map_.value;
       });
       
       // 立即更新地图数据
       _displayMap.updateMapData(rosChannel!.map_.value);
+      _occupancyMap=rosChannel!.map_.value;
     }
   }
   
@@ -124,9 +189,6 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
     return false;
   }
   
-  // 简化的拖拽和旋转处理（通过onTapDown实现）
-  // 在实际使用中，可以通过手势检测器来实现更复杂的拖拽
-  
   // 创建导航点
   void _createWayPoint(double x, double y) {
     final wayPoint = WayPoint(
@@ -136,6 +198,15 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
       isEditMode: true, // 在编辑模式下显示小红点
       directionAngle: 0.0, // 初始方向角度
     );
+    
+    // 设置拖拽更新回调
+    wayPoint.onDragUpdate = () {
+      // 如果当前导航点被选中，通知外部更新
+      if (wayPoint.isSelected) {
+        currentSelectPointUpdate?.call();
+      }
+    };
+    
     wayPoint.position = Vector2(x, y);
     wayPoint.priority = 1000; // 确保在最上层
     
@@ -149,6 +220,9 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
     if (selectedWayPoint != null) {
       wayPoints.remove(selectedWayPoint);
       selectedWayPoint.removeFromParent();
+      
+      // 通知选择状态变化
+      onWayPointSelectionChanged?.call();
     }
   }
   
@@ -173,20 +247,12 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
       wp.isSelected = false;
     }
     wayPoint.isSelected = true;
-  }
-  
-  // 检查是否点击了旋转控制点
-  bool _isOnRotationControl(WayPoint wayPoint, Vector2 position) {
-    // 计算圆环上的控制点位置
-    final radius = wayPoint.waypointSize / 2 + 2;
-    final controlPoint = wayPoint.position + Vector2(radius, 0);
-    final distance = (controlPoint - position).length;
-    return distance <= 5; // 控制点半径
-  }
-  
-  // 计算角度
-  double _calculateAngle(Vector2 center, Vector2 point) {
-    return (point - center).angleToSigned(Vector2(1, 0));
+    
+    // 通知外部导航点选择状态变化
+    onWayPointSelectionChanged?.call();
+    
+    // 通知外部当前选中点位动态更新
+    currentSelectPointUpdate?.call();
   }
   
   // 手势和滚轮缩放支持
@@ -246,22 +312,5 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
   bool onScaleEnd(ScaleEndInfo info) {
     _lastFocalPoint = null;
     return true;
-  }
-  
-  // 缩放控制方法
-  void zoomIn() {
-    mapScale = (mapScale * 1.2).clamp(minScale, maxScale);
-    camera.viewfinder.zoom = mapScale;
-  }
-  
-  void zoomOut() {
-    mapScale = (mapScale / 1.2).clamp(minScale, maxScale);
-    camera.viewfinder.zoom = mapScale;
-  }
-  
-  void resetZoom() {
-    mapScale = 1.0;
-    camera.viewfinder.zoom = mapScale;
-    camera.viewfinder.position = Vector2.zero();
   }
 }

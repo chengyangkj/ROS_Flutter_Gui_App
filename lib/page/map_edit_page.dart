@@ -8,6 +8,63 @@ import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
+import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+
+// 点位信息类
+class WayPointInfo {
+  final String name;
+  final double x;
+  final double y;
+  final double direction;
+  final bool isSelected;
+  
+  WayPointInfo({
+    required this.name,
+    required this.x,
+    required this.y,
+    required this.direction,
+    this.isSelected = false,
+  });
+  
+  // 从Map创建
+  factory WayPointInfo.fromMap(Map<String, dynamic> map) {
+    return WayPointInfo(
+      name: map['name'] ?? '',
+      x: double.tryParse(map['x'].toString()) ?? 0.0,
+      y: double.tryParse(map['y'].toString()) ?? 0.0,
+      direction: double.tryParse(map['direction'].toString()) ?? 0.0,
+      isSelected: map['isSelected'] ?? false,
+    );
+  }
+  
+  // 转换为Map
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'x': x.toStringAsFixed(2),
+      'y': y.toStringAsFixed(2),
+      'direction': direction.toStringAsFixed(1),
+      'isSelected': isSelected,
+    };
+  }
+  
+  // 复制并更新
+  WayPointInfo copyWith({
+    String? name,
+    double? x,
+    double? y,
+    double? direction,
+    bool? isSelected,
+  }) {
+    return WayPointInfo(
+      name: name ?? this.name,
+      x: x ?? this.x,
+      y: y ?? this.y,
+      direction: direction ?? this.direction,
+      isSelected: isSelected ?? this.isSelected,
+    );
+  }
+}
 
 class MapEditPage extends StatefulWidget {
   const MapEditPage({super.key});
@@ -27,6 +84,12 @@ class _MapEditPageState extends State<MapEditPage> {
   
   // 导航点列表
   List<NavPoint> navPoints = [];
+  
+  // 当前选中的点位信息
+  WayPointInfo? selectedWayPointInfo;
+  
+  // 当前选中点位的动态更新回调
+  VoidCallback? currentSelectPointUpdate;
 
   @override
   void initState() {
@@ -39,10 +102,34 @@ class _MapEditPageState extends State<MapEditPage> {
     game = MapEditFlame(
       rosChannel: rosChannel,
       onAddNavPoint: _addNavPoint,
+      onWayPointSelectionChanged: _onWayPointSelectionChanged,
+      currentSelectPointUpdate: _onCurrentSelectPointUpdate,
     );
     
     // 加载导航点
     _loadNavPoints();
+  }
+  
+  // 导航点选择状态变化回调
+  void _onWayPointSelectionChanged() {
+    setState(() {
+      final info = game.getSelectedWayPointInfo();
+      selectedWayPointInfo = info != null ? WayPointInfo.fromMap(info) : null;
+    });
+  }
+  
+  // 当前选中点位动态更新回调
+  void _onCurrentSelectPointUpdate() {
+    setState(() {
+      final info = game.getSelectedWayPointInfo();
+      if (info != null && selectedWayPointInfo != null) {
+        selectedWayPointInfo = selectedWayPointInfo!.copyWith(
+          x: double.tryParse(info['x'].toString()) ?? selectedWayPointInfo!.x,
+          y: double.tryParse(info['y'].toString()) ?? selectedWayPointInfo!.y,
+          direction: double.tryParse(info['direction'].toString()) ?? selectedWayPointInfo!.direction,
+        );
+      }
+    });
   }
   
   // 加载导航点
@@ -59,6 +146,11 @@ class _MapEditPageState extends State<MapEditPage> {
     if (name != null && name.isNotEmpty) {
       await navPointManager.addNavPoint(x, y, 0.0, name);
       await _loadNavPoints();
+      
+      // 清除选中状态
+      setState(() {
+        selectedWayPointInfo = null;
+      });
     }
   }
   
@@ -353,49 +445,56 @@ class _MapEditPageState extends State<MapEditPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '编辑模式说明',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+            // 如果有选中的导航点，显示导航点信息
+            if (selectedWayPointInfo != null) ...[
+              _buildWayPointInfo(theme),
+              const SizedBox(height: 16),
+            ] else ...[
+              // 否则显示编辑模式说明
+              Text(
+                '编辑模式说明',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            
-            _buildInstructionItem(
-              icon: Icons.add_location,
-              title: '添加导航点',
-              description: '选择工具后双击地图添加导航点',
-              color: Colors.blue,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            _buildInstructionItem(
-              icon: Icons.brush,
-              title: '绘制障碍物',
-              description: '拖拽鼠标绘制障碍物区域',
-              color: Colors.red,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            _buildInstructionItem(
-              icon: Icons.auto_fix_high,
-              title: '擦除障碍物',
-              description: '拖拽鼠标擦除障碍物区域',
-              color: Colors.green,
-            ),
-            
-            const SizedBox(height: 12),
-            
-            _buildInstructionItem(
-              icon: Icons.touch_app,
-              title: '导航点操作',
-              description: '单击选中，拖拽移动，拖拽红点旋转，删除按钮删除选中',
-              color: Colors.orange,
-            ),
-            
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+              
+              _buildInstructionItem(
+                icon: Icons.add_location,
+                title: '添加导航点',
+                description: '选择工具后双击地图添加导航点',
+                color: Colors.blue,
+              ),
+              
+              const SizedBox(height: 12),
+              
+              _buildInstructionItem(
+                icon: Icons.brush,
+                title: '绘制障碍物',
+                description: '拖拽鼠标绘制障碍物区域',
+                color: Colors.red,
+              ),
+              
+              const SizedBox(height: 12),
+              
+              _buildInstructionItem(
+                icon: Icons.auto_fix_high,
+                title: '擦除障碍物',
+                description: '拖拽鼠标擦除障碍物区域',
+                color: Colors.green,
+              ),
+              
+              const SizedBox(height: 12),
+              
+              _buildInstructionItem(
+                icon: Icons.touch_app,
+                title: '导航点操作',
+                description: '单击选中，拖拽移动，拖拽红点旋转，删除按钮删除选中',
+                color: Colors.orange,
+              ),
+              
+              const SizedBox(height: 16),
+            ],
             
             // 导航点计数显示
             Container(
@@ -456,6 +555,89 @@ class _MapEditPageState extends State<MapEditPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+  
+  // 构建导航点信息显示
+  Widget _buildWayPointInfo(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '导航点信息',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          _buildInfoRow('名称', selectedWayPointInfo!.name),
+          _buildInfoRow('X坐标', '${selectedWayPointInfo!.x.toStringAsFixed(2)} m'),
+          _buildInfoRow('Y坐标', '${selectedWayPointInfo!.y.toStringAsFixed(2)} m'),
+          _buildInfoRow('方向', '${(selectedWayPointInfo!.direction * 180 / 3.14159).toStringAsFixed(1)}°'),
+          
+          const SizedBox(height: 12),
+          
+          // 关闭按钮
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  selectedWayPointInfo = null;
+                });
+              },
+              icon: const Icon(Icons.close, size: 16),
+              label: const Text('关闭'),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.grey.withOpacity(0.2),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // 构建信息行
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 50,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

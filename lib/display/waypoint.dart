@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 
 class WayPoint extends PositionComponent with HasGameRef {
   late double waypointSize;
@@ -21,6 +22,9 @@ class WayPoint extends PositionComponent with HasGameRef {
   
   // 添加方向角度（弧度）
   double directionAngle = 0.0;
+  
+  // 添加拖拽更新回调
+  VoidCallback? onDragUpdate;
 
   WayPoint({
     required this.waypointSize,
@@ -28,6 +32,7 @@ class WayPoint extends PositionComponent with HasGameRef {
     this.count = 2,
     this.isEditMode = false,
     this.directionAngle = 0.0,
+    this.onDragUpdate,
   });
 
   @override
@@ -137,22 +142,17 @@ class DirectionControl extends PositionComponent with DragCallbacks {
     final distance = (event.localPosition - center).length;
     final ringRadius = controlSize / 2;
     
-    print('DirectionControl: 拖拽开始，距离中心: $distance, 圆环半径: $ringRadius');
-    
     if (distance <= ringRadius/2) { // 中心区域，位置拖拽
       _isRotating = false;
       _isPositionDragging = true;
       _positionDragStart = event.localPosition;
-      print('DirectionControl: 识别为位置拖拽，开始处理');
       return true; // 返回true来处理位置拖拽
     } else if (distance <= ringRadius + 2) { // 圆环区域，旋转拖拽
       _isRotating = true;
       _isPositionDragging = false;
-      print('DirectionControl: 识别为旋转拖拽');
       return true;
     } else {
       // 超出控制区域，不处理
-      print('DirectionControl: 超出控制区域，不处理');
       return false;
     }
   }
@@ -181,6 +181,12 @@ class DirectionControl extends PositionComponent with DragCallbacks {
         // 通知父组件更新方向角度
         onDirectionChanged(_currentAngle);
         
+        // 如果父组件是WayPoint，调用拖拽更新回调
+        if (parent is WayPoint) {
+          final wayPoint = parent as WayPoint;
+          wayPoint.onDragUpdate?.call();
+        }
+        
         // 更新渲染器
         final renderer = children.whereType<DirectionControlRenderer>().firstOrNull;
         if (renderer != null) {
@@ -204,6 +210,8 @@ class DirectionControl extends PositionComponent with DragCallbacks {
           // 更新路径点位置
           wayPoint.position = wayPoint.position + worldDelta;
           
+          // 调用父组件的拖拽更新回调
+          wayPoint.onDragUpdate?.call();
         }
       }
       return true;
@@ -325,6 +333,9 @@ class WayPointRenderer extends Component with HasGameRef, DragCallbacks {
         // 更新路径点位置
         wayPoint.position = _dragStartWorldPosition! + worldDelta;
         print('WayPointRenderer: 更新位置 ${wayPoint.position}');
+        
+        // 调用父组件的拖拽更新回调
+        wayPoint.onDragUpdate?.call();
       }
     }
     return true;
