@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
+import 'package:flame/components.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:ros_flutter_gui_app/page/connect_page.dart';
@@ -28,6 +30,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
     final rosChannel = Provider.of<RosChannel>(context, listen: false);
     final globalState = Provider.of<GlobalState>(context, listen: false);
     game = MainFlame(rosChannel: rosChannel, globalState: globalState);
+    
+    // 设置信息面板更新回调
+    game.onInfoPanelUpdate = () {
+      setState(() {});
+    };
+    
     // 加载图层设置
     Provider.of<GlobalState>(context, listen: false).loadLayerSettings();
   }
@@ -42,7 +50,32 @@ class _MainFlamePageState extends State<MainFlamePage> {
       body: Stack(
         children: [
           // 游戏画布
-          GameWidget(game: game),
+          Listener(
+            onPointerSignal: (pointerSignal) {
+              if (pointerSignal is PointerScrollEvent) {
+                final position = Vector2(pointerSignal.position.dx, pointerSignal.position.dy);
+                game.onScroll(pointerSignal.scrollDelta.dy, position);
+              }
+            },
+            child: GestureDetector(
+              onScaleStart: (details) {
+                final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
+                game.onScaleStart(position);
+              },
+              onScaleUpdate: (details) {
+                final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
+                game.onScaleUpdate(details.scale, position);
+              },
+              onScaleEnd: (details) {
+                game.onScaleEnd();
+              },
+              onTapDown: (details) {
+                // 处理点击事件，检测waypoint
+                game.onTap(details.localPosition);
+              },
+              child: GameWidget(game: game),
+            ),
+          ),
           _buildTopMenuBar(context, theme),
           _buildLeftToolbar(context, theme),
           _buildRightToolbar(context, theme),
@@ -354,102 +387,178 @@ class _MainFlamePageState extends State<MainFlamePage> {
     return Positioned(
       right: 5,
       top: 30,
-      child: Column(
+      child: Row(
         children: [
-          // 地图编辑按钮
-          Card(
-            elevation: 10,
-            child: IconButton(
-              icon: Icon(
-                Icons.edit_document,
-                color: (Provider.of<GlobalState>(context, listen: false)
-                            .mode
-                            .value ==
-                        Mode.mapEdit)
-                    ? Colors.orange
-                    : theme.iconTheme.color,
+          // 右侧信息面板
+          if (game.showInfoPanel && game.selectedNavPoint != null)
+            Container(
+              width: 300,
+              margin: const EdgeInsets.only(right: 20),
+              child: Card(
+                elevation: 10,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 标题栏
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '导航点信息',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              game.hideInfoPanel();
+                            },
+                            tooltip: '关闭',
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      
+                      // 导航点详细信息
+                      _buildInfoRow('名称', game.selectedNavPoint!.name),
+                      _buildInfoRow('X坐标', '${game.selectedNavPoint!.x.toStringAsFixed(2)} m'),
+                      _buildInfoRow('Y坐标', '${game.selectedNavPoint!.y.toStringAsFixed(2)} m'),
+                      _buildInfoRow('方向', '${(game.selectedNavPoint!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
+                      _buildInfoRow('创建时间', _formatDateTime(game.selectedNavPoint!.createdAt)),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // 导航按钮
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            await game.sendNavigationGoal();
+                            Fluttertoast.showToast(
+                              msg: '已发送导航目标',
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                            );
+                          },
+                          icon: const Icon(Icons.navigation),
+                          label: const Text('发送导航目标'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              onPressed: () {
-                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MapEditPage(),
-                    ),
-                  );
-                setState(() {});
-              },
-              tooltip: '地图编辑',
             ),
-          ),
           
-          const SizedBox(height: 8),
-          
-          // 放大按钮
-          Card(
-            elevation: 10,
-            child: IconButton(
-              onPressed: () {
-                game.zoomIn();
-              },
-              icon: Icon(
-                Icons.zoom_in,
-                color: theme.iconTheme.color,
-              ),
-              tooltip: '放大',
-            ),
-          ),
-          // 缩小按钮
-          Card(
-            elevation: 10,
-            child: IconButton(
-              onPressed: () {
-                game.zoomOut();
-              },
-              icon: Icon(
-                Icons.zoom_out,
-                color: theme.iconTheme.color,
-              ),
-              tooltip: '缩小',
-            ),
-          ),
-          // 定位到机器人按钮
-          Card(
-            elevation: 10,
-            child: IconButton(
-              onPressed: () {
-                var globalState =
-                    Provider.of<GlobalState>(context, listen: false);
-                if (globalState.mode.value == Mode.robotFixedCenter) {
-                  globalState.mode.value = Mode.normal;
-                } else {
-                  globalState.mode.value = Mode.robotFixedCenter;
-                  game.centerOnRobot();
-                }
-                setState(() {});
-              },
-              icon: Icon(
-                Icons.location_searching,
-                color:
-                    Provider.of<GlobalState>(context, listen: false).mode.value ==
-                            Mode.robotFixedCenter
-                        ? Colors.green
+          // 原有的工具栏按钮
+          Column(
+            children: [
+              // 地图编辑按钮
+              Card(
+                elevation: 10,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.edit_document,
+                    color: (Provider.of<GlobalState>(context, listen: false)
+                                .mode
+                                .value ==
+                            Mode.mapEdit)
+                        ? Colors.orange
                         : theme.iconTheme.color,
+                  ),
+                  onPressed: () {
+                     Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MapEditPage(),
+                        ),
+                      );
+                    setState(() {});
+                  },
+                  tooltip: '地图编辑',
+                ),
               ),
-            ),
-          ),
-          // 退出按钮
-          Card(
-            elevation: 10,
-            child: IconButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
-              },
-              icon: Icon(
-                Icons.exit_to_app,
-                color: theme.iconTheme.color,
+              
+              const SizedBox(height: 8),
+              
+              // 放大按钮
+              Card(
+                elevation: 10,
+                child: IconButton(
+                  onPressed: () {
+                    game.zoomIn();
+                  },
+                  icon: Icon(
+                    Icons.zoom_in,
+                    color: theme.iconTheme.color,
+                  ),
+                  tooltip: '放大',
+                ),
               ),
-              tooltip: '退出',
-            ),
+              // 缩小按钮
+              Card(
+                elevation: 10,
+                child: IconButton(
+                  onPressed: () {
+                    game.zoomOut();
+                  },
+                  icon: Icon(
+                    Icons.zoom_out,
+                    color: theme.iconTheme.color,
+                  ),
+                  tooltip: '缩小',
+                ),
+              ),
+              // 定位到机器人按钮
+              Card(
+                elevation: 10,
+                child: IconButton(
+                  onPressed: () {
+                    var globalState =
+                        Provider.of<GlobalState>(context, listen: false);
+                    if (globalState.mode.value == Mode.robotFixedCenter) {
+                      globalState.mode.value = Mode.normal;
+                    } else {
+                      globalState.mode.value = Mode.robotFixedCenter;
+                      game.centerOnRobot();
+                    }
+                    setState(() {});
+                  },
+                  icon: Icon(
+                    Icons.location_searching,
+                    color:
+                        Provider.of<GlobalState>(context, listen: false).mode.value ==
+                                Mode.robotFixedCenter
+                            ? Colors.green
+                            : theme.iconTheme.color,
+                  ),
+                ),
+              ),
+              // 退出按钮
+              Card(
+                elevation: 10,
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
+                  },
+                  icon: Icon(
+                    Icons.exit_to_app,
+                    color: theme.iconTheme.color,
+                  ),
+                  tooltip: '退出',
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -533,6 +642,23 @@ class _MainFlamePageState extends State<MainFlamePage> {
         },
       ),
     );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
   }
 }
 

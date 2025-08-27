@@ -1,16 +1,16 @@
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/display/map.dart';
 import 'package:ros_flutter_gui_app/display/grid.dart';
 import 'package:ros_flutter_gui_app/display/waypoint.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
-
+import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
+
 // 专门的地图编辑Flame组件
-class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDetector {
+class MapEditFlame extends FlameGame {
   late MapComponent _displayMap;
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
@@ -39,6 +39,12 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
   // 双击检测
   DateTime? _lastTapTime;
   Vector2? _lastTapPosition;
+  
+  // 手势相关变量
+  double _baseScale = 1.0;
+  Vector2? _lastFocalPoint;
+  bool _isDragging = false;
+  Vector2? _dragStartPosition;
 
   OccupancyMap? _occupancyMap;
   
@@ -149,10 +155,9 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
   }
   
   // 处理单击事件，实现双击检测
-  @override
-  bool onTapDown(TapDownInfo info) {
+  bool onTapDown(Vector2 position) {
     if (selectedTool == 'addNavPoint') {
-      final worldPoint = camera.globalToLocal(info.eventPosition.global);
+      final worldPoint = camera.globalToLocal(position);
       final clickedWayPoint = _findWayPointAtPosition(worldPoint);
       
       if (clickedWayPoint != null) {
@@ -189,29 +194,118 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
     return false;
   }
   
-  // 创建导航点
-  void _createWayPoint(double x, double y) {
-    final wayPoint = WayPoint(
-      waypointSize: 5.0,
-      color: Colors.blue,
-      count: 2,
-      isEditMode: true, // 在编辑模式下显示小红点
-      directionAngle: 0.0, // 初始方向角度
-    );
+  // 处理拖拽开始
+  bool onDragStart(Vector2 position) {
+    _isDragging = true;
+    _dragStartPosition = position;
+    _lastFocalPoint = position;
+    return true;
+  }
+  
+  // 处理拖拽更新
+  bool onDragUpdate(Vector2 position) {
+    if (!_isDragging || _lastFocalPoint == null) return false;
     
-    // 设置拖拽更新回调
-    wayPoint.onDragUpdate = () {
-      // 如果当前导航点被选中，通知外部更新
-      if (wayPoint.isSelected) {
+    final delta = position - _lastFocalPoint!;
+    camera.viewfinder.position -= delta / camera.viewfinder.zoom;
+    _lastFocalPoint = position;
+    return true;
+  }
+  
+  // 处理拖拽结束
+  bool onDragEnd() {
+    _isDragging = false;
+    _dragStartPosition = null;
+    _lastFocalPoint = null;
+    return true;
+  }
+  
+  // 处理缩放开始
+  bool onScaleStart(Vector2 position) {
+    _baseScale = mapScale;
+    _lastFocalPoint = position;
+    return true;
+  }
+  
+  // 处理缩放更新
+  bool onScaleUpdate(double scale, Vector2 position) {
+    if (_lastFocalPoint == null) return false;
+    
+    // 计算新的缩放值
+    final newScale = (_baseScale * scale).clamp(minScale, maxScale);
+    
+    // 应用缩放
+    mapScale = newScale;
+    camera.viewfinder.zoom = mapScale;
+    
+    // 计算焦点偏移
+    final focalPointDelta = position - _lastFocalPoint!;
+    camera.viewfinder.position -= focalPointDelta / camera.viewfinder.zoom;
+    
+    _lastFocalPoint = position;
+    return true;
+  }
+  
+  // 处理缩放结束
+  bool onScaleEnd() {
+    _lastFocalPoint = null;
+    return true;
+  }
+  
+  // 处理滚轮缩放
+  bool onScroll(double delta, Vector2 position) {
+    const zoomSensitivity = 0.5;
+    double zoomChange = -delta.sign * zoomSensitivity;
+    final newZoom = (camera.viewfinder.zoom + zoomChange).clamp(minScale, maxScale);
+    
+    // 获取鼠标位置在世界坐标中的位置
+    final worldPoint = camera.globalToLocal(position);
+    
+    // 应用缩放
+    camera.viewfinder.zoom = newZoom;
+    mapScale = newZoom;
+    
+    // 调整相机位置以保持鼠标位置不变
+    final newScreenPoint = camera.localToGlobal(worldPoint);
+    final offset = position - newScreenPoint;
+    camera.viewfinder.position -= offset / camera.viewfinder.zoom;
+    
+    return true;
+  }
+  
+  // 创建导航点
+  WayPoint _createWayPoint(double x, double y) {
+    final wayPoint = WayPoint(
+      waypointSize:globalSetting.robotSize,
+      color: const Color(0xFF0080ff),
+      count: 2,
+      isEditMode: true,
+      directionAngle: 0.0,
+      onDragUpdate: () {
+        // 调用拖拽更新回调
         currentSelectPointUpdate?.call();
-      }
-    };
+      },
+    );
     
     wayPoint.position = Vector2(x, y);
     wayPoint.priority = 1000; // 确保在最上层
     
+    // 添加到WayPoint列表和世界中
     wayPoints.add(wayPoint);
     world.add(wayPoint);
+    
+    return wayPoint;
+  }
+  
+  // 添加导航点
+  void _addNavPoint(double x, double y) {
+    final wayPoint = _createWayPoint(x, y);
+    
+    // 选中新创建的WayPoint
+    _selectWayPoint(wayPoint);
+    
+    // 通知外部添加了新的导航点
+    onAddNavPoint?.call(x, y);
   }
   
   // 删除选中的导航点
@@ -253,64 +347,5 @@ class MapEditFlame extends FlameGame with ScrollDetector, ScaleDetector, TapDete
     
     // 通知外部当前选中点位动态更新
     currentSelectPointUpdate?.call();
-  }
-  
-  // 手势和滚轮缩放支持
-  double _baseScale = 1.0;
-  Vector2? _lastFocalPoint;
-  
-  @override
-  bool onScroll(PointerScrollInfo info) {
-    // 滚轮缩放
-    const zoomSensitivity = 0.5;
-    double zoomChange = -info.scrollDelta.global.y.sign * zoomSensitivity;
-    final newZoom = (camera.viewfinder.zoom + zoomChange).clamp(minScale, maxScale);
-    
-    // 获取鼠标位置在世界坐标中的位置
-    final mousePosition = info.eventPosition.global;
-    final worldPoint = camera.globalToLocal(mousePosition);
-    
-    // 应用缩放
-    camera.viewfinder.zoom = newZoom;
-    mapScale = newZoom;
-    
-    // 调整相机位置以保持鼠标位置不变
-    final newScreenPoint = camera.localToGlobal(worldPoint);
-    final offset = mousePosition - newScreenPoint;
-    camera.viewfinder.position -= offset / camera.viewfinder.zoom;
-    
-    return true;
-  }
-  
-  @override
-  bool onScaleStart(ScaleStartInfo info) {
-    _baseScale = mapScale;
-    _lastFocalPoint = info.eventPosition.global;
-    return true;
-  }
-  
-  @override
-  bool onScaleUpdate(ScaleUpdateInfo info) {
-    if (_lastFocalPoint == null) return false;
-    
-    // 计算新的缩放值
-    final newScale = (_baseScale * info.scale.global.x).clamp(minScale, maxScale);
-    
-    // 应用缩放
-    mapScale = newScale;
-    camera.viewfinder.zoom = mapScale;
-    
-    // 计算焦点偏移
-    final focalPointDelta = info.eventPosition.global - _lastFocalPoint!;
-    camera.viewfinder.position -= focalPointDelta / camera.viewfinder.zoom;
-    
-    _lastFocalPoint = info.eventPosition.global;
-    return true;
-  }
-  
-  @override
-  bool onScaleEnd(ScaleEndInfo info) {
-    _lastFocalPoint = null;
-    return true;
   }
 }

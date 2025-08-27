@@ -5,7 +5,8 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
-import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
+// import 'package:vector_math/vector_math_64.dart' as vm;
 
 class WayPoint extends PositionComponent with HasGameRef {
   late double waypointSize;
@@ -25,6 +26,14 @@ class WayPoint extends PositionComponent with HasGameRef {
   
   // 添加拖拽更新回调
   VoidCallback? onDragUpdate;
+  
+  // 添加点击回调
+  Function(NavPoint)? onTap;
+  
+  // 存储导航点信息
+  NavPoint? navPoint;
+  
+  // 组件内处理手势，无需对外状态
 
   WayPoint({
     required this.waypointSize,
@@ -33,11 +42,14 @@ class WayPoint extends PositionComponent with HasGameRef {
     this.isEditMode = false,
     this.directionAngle = 0.0,
     this.onDragUpdate,
+    this.onTap,
+    this.navPoint,
   });
-
+  
   @override
   Future<void> onLoad() async {
     size = Vector2.all(waypointSize);
+    anchor = Anchor.center;
     animationTimer = Timer(
       2.0,
       onTick: () {
@@ -81,6 +93,12 @@ class WayPoint extends PositionComponent with HasGameRef {
       renderer.updateAnimationValue(animationValue);
     }
     
+    // 添加调试信息：每100帧打印一次位置信息
+    frameCount++;
+    if (frameCount % 100 == 0) {
+      print('WayPoint调试: 位置=${position}, 大小=${size}, 方向角度=${directionAngle}');
+      print('WayPoint调试: 动画值=${animationValue}, 帧数=${frameCount}');
+    }
     
     super.update(dt);
   }
@@ -94,7 +112,47 @@ class WayPoint extends PositionComponent with HasGameRef {
 
   // 更新方向角度
   void updateDirectionAngle(double newAngle) {
+    print('WayPoint.updateDirectionAngle: 旧角度=$directionAngle, 新角度=$newAngle');
     directionAngle = newAngle;
+    
+    // 同步更新DirectionControl的角度
+    final directionControl = children.whereType<DirectionControl>().firstOrNull;
+    if (directionControl != null) {
+      print('WayPoint: 找到DirectionControl，调用updateAngle');
+      directionControl.updateAngle(directionAngle);
+    } else {
+      print('WayPoint: 未找到DirectionControl');
+    }
+  }
+  
+  // 静默设置角度，避免回调递归
+  void _setAngleSilent(double newAngle) {
+    directionAngle = newAngle;
+    final renderer = children.whereType<DirectionControlRenderer>().firstOrNull;
+    if (renderer != null) {
+      renderer.updateAngle(directionAngle);
+    }
+  }
+  
+  // 对外暴露：直接设置角度（静默）
+  void setAngleDirect(double newAngle) {
+    _setAngleSilent(newAngle);
+  }
+  
+  // 设置导航点信息
+  void setNavPoint(NavPoint point) {
+    print('WayPoint.setNavPoint: 设置导航点 ${point.name}');
+    navPoint = point;
+  }
+  
+  // 处理点击事件（由外部调用）
+  void handleTap() {
+    if (onTap != null && navPoint != null) {
+      print('WayPoint.handleTap: 调用onTap回调，导航点: ${navPoint!.name}');
+      onTap!(navPoint!);
+    } else {
+      print('WayPoint.handleTap: onTap或navPoint为空: onTap=${onTap}, navPoint=${navPoint}');
+    }
   }
 }
 
@@ -105,10 +163,13 @@ class DirectionControl extends PositionComponent with DragCallbacks {
   final double initAngle;
   
   double _currentAngle = 0.0;
-  Vector2? _lastMousePosition; // 添加鼠标位置跟踪
-  bool _isRotating = false; // 添加旋转状态标志
-  bool _isPositionDragging = false; // 添加位置拖拽状态标志
-  Vector2? _positionDragStart; // 位置拖拽起始位置
+  bool _isUpdating = false; // 防止重复调用
+  Vector2? _lastMousePosition;
+  bool _isRotating = false;
+  bool _isPositionDragging = false;
+  Vector2? _positionDragStart;
+  
+  // 手势区域检测在方法中动态计算
 
   DirectionControl({
     required this.controlSize,
@@ -133,61 +194,52 @@ class DirectionControl extends PositionComponent with DragCallbacks {
     ));
   }
   
-  @override
-  bool onDragStart(DragStartEvent event) {
-    _lastMousePosition = event.localPosition;
+  // 检查触摸点是否在旋转控制区域内
+  bool isInRotationArea(Vector2 touchPoint) {
+    // 以组件中心(0,0)为原点计算半径
+    final double radius = touchPoint.length;
+    final double outerRadius = controlSize / 2;       // 外圈半径（方向环外缘）
+    final double innerRadius = outerRadius - 3.0;     // 内圈半径（方向环内缘，3像素厚度）
     
-    // 判断拖拽类型：如果点击在圆环附近，认为是旋转拖拽
-    final center = size / 2;
-    final distance = (event.localPosition - center).length;
-    final ringRadius = controlSize / 2;
-    
-    if (distance <= ringRadius/2) { // 中心区域，位置拖拽
-      _isRotating = false;
-      _isPositionDragging = true;
-      _positionDragStart = event.localPosition;
-      return true; // 返回true来处理位置拖拽
-    } else if (distance <= ringRadius + 2) { // 圆环区域，旋转拖拽
-      _isRotating = true;
-      _isPositionDragging = false;
-      return true;
-    } else {
-      // 超出控制区域，不处理
-      return false;
-    }
+    // 旋转：在外层细环内；移动：在内圈（不包含细环）
+    final bool inRotationRing = radius >= innerRadius && radius <= outerRadius;
+    return inRotationRing;
   }
   
   @override
+  bool onDragStart(DragStartEvent event) {
+    super.onDragStart(event);
+    _lastMousePosition = event.localPosition;
+    final center = size / 2;
+    final distance = (event.localPosition - center).length;
+    final ringRadius = controlSize / 2;
+    if (distance <= ringRadius / 2) {
+      // 中心区域：位置拖拽
+      _isRotating = false;
+      _isPositionDragging = true;
+      _positionDragStart = event.localPosition;
+      return true;
+    } else if (distance <= ringRadius + 2) {
+      // 外圈：旋转
+      _isRotating = true;
+      _isPositionDragging = false;
+      return true;
+    }
+    return false;
+  }
+
+  @override
   bool onDragUpdate(DragUpdateEvent event) {
+    super.onDragUpdate(event);
     if (_isRotating) {
-      // 处理旋转拖拽
       if (_lastMousePosition != null) {
-        // 累积鼠标位置
         _lastMousePosition = _lastMousePosition! + event.localDelta;
-        
-        // 计算鼠标相对于组件中心的位置
         final center = size / 2;
-        
-        // 计算相对于中心的角度
-        final deltaX = _lastMousePosition!.x - center.x;
-        final deltaY = _lastMousePosition!.y - center.y;
-        final newAngle = atan2(deltaY, deltaX);
-        
-        // 更新角度
+        final dx = _lastMousePosition!.x - center.x;
+        final dy = _lastMousePosition!.y - center.y;
+        final newAngle = atan2(dy, dx);
         _currentAngle = newAngle;
-        
-        print("DirectionControl: 旋转角度更新: $_currentAngle");
-        
-        // 通知父组件更新方向角度
         onDirectionChanged(_currentAngle);
-        
-        // 如果父组件是WayPoint，调用拖拽更新回调
-        if (parent is WayPoint) {
-          final wayPoint = parent as WayPoint;
-          wayPoint.onDragUpdate?.call();
-        }
-        
-        // 更新渲染器
         final renderer = children.whereType<DirectionControlRenderer>().firstOrNull;
         if (renderer != null) {
           renderer.updateAngle(_currentAngle);
@@ -195,44 +247,51 @@ class DirectionControl extends PositionComponent with DragCallbacks {
       }
       return true;
     } else if (_isPositionDragging) {
-      // 处理位置拖拽，直接传递给父组件
       if (parent is WayPoint && _positionDragStart != null) {
         final wayPoint = parent as WayPoint;
-        final game = wayPoint.gameRef;
-        
-        if (game != null) {
-          // 直接使用事件提供的增量
-          final delta = event.localDelta;
-          
-          // 将屏幕增量转换为世界坐标增量
-          final worldDelta = delta;
-          
-          // 更新路径点位置
-          wayPoint.position = wayPoint.position + worldDelta;
-          
-          // 调用父组件的拖拽更新回调
-          wayPoint.onDragUpdate?.call();
-        }
+        final delta = event.localDelta;
+        wayPoint.position = wayPoint.position + delta;
+        wayPoint.onDragUpdate?.call();
       }
       return true;
     }
-    
     return false;
   }
-  
+
   @override
   bool onDragEnd(DragEndEvent event) {
-    if (_isRotating) {
-      print('DirectionControl: 旋转拖拽结束');
-    } else if (_isPositionDragging) {
-      print('DirectionControl: 位置拖拽结束');
-    }
-    
+    super.onDragEnd(event);
     _lastMousePosition = null;
     _isRotating = false;
     _isPositionDragging = false;
     _positionDragStart = null;
     return true;
+  }
+
+  // 更新角度（由外部手势处理调用）
+  void updateAngle(double newAngle) {
+    print('DirectionControl.updateAngle: 旧角度=$_currentAngle, 新角度=$newAngle, _isUpdating=$_isUpdating');
+    
+    if (_isUpdating) {
+      print('DirectionControl.updateAngle: 正在更新中，跳过重复调用');
+      return; // 防止重复调用
+    }
+    
+    _isUpdating = true;
+    _currentAngle = newAngle;
+    
+    print('DirectionControl.updateAngle: 调用onDirectionChanged回调');
+    // 通知父组件更新方向角度
+    onDirectionChanged(_currentAngle);
+    
+    // 更新渲染器
+    final renderer = children.whereType<DirectionControlRenderer>().firstOrNull;
+    if (renderer != null) {
+      renderer.updateAngle(_currentAngle);
+    }
+    
+    _isUpdating = false;
+    print('DirectionControl.updateAngle: 更新完成');
   }
 }
 
@@ -253,8 +312,6 @@ class DirectionControlRenderer extends Component {
   @override
   void render(Canvas canvas) {
     // 计算绘制起始点，使圆环以点位为中心
-    final startX = -size / 2;
-    final startY = -size / 2;
     final center = Offset(size / 2, size / 2);
     final radius = size / 2; // 调整半径，确保圆环能包裹点位
     
@@ -280,16 +337,12 @@ class DirectionControlRenderer extends Component {
   }
 }
 
-class WayPointRenderer extends Component with HasGameRef, DragCallbacks {
+// 路径点渲染器
+class WayPointRenderer extends Component with HasGameRef {
   final double size;
   final Color color;
   final int count;
   double animationValue; // 移除final，允许更新
-  
-  // 拖拽相关变量
-  Vector2? _dragStartPosition;
-  Vector2? _dragStartWorldPosition;
-  bool _isDragging = false; // 添加拖拽状态标志
 
   WayPointRenderer({
     required this.size,
@@ -301,54 +354,6 @@ class WayPointRenderer extends Component with HasGameRef, DragCallbacks {
   // 添加更新动画值的方法
   void updateAnimationValue(double value) {
     animationValue = value;
-  }
-  
-  // 拖拽开始
-  @override
-  bool onDragStart(DragStartEvent event) {
-    print('WayPointRenderer: 拖拽开始');
-    _dragStartPosition = event.localPosition;
-    _isDragging = true; // 设置拖拽状态
-    if (parent is WayPoint) {
-      _dragStartWorldPosition = (parent as WayPoint).position.clone();
-      print('WayPointRenderer: 记录起始位置 ${_dragStartWorldPosition}');
-    }
-    return true;
-  }
-  
-  // 拖拽更新
-  @override
-  bool onDragUpdate(DragUpdateEvent event) {
-    if (_dragStartPosition != null && _dragStartWorldPosition != null && parent is WayPoint) {
-      final wayPoint = parent as WayPoint;
-      final game = gameRef;
-      
-      if (game != null) {
-        // 计算拖拽增量
-        final delta = event.localDelta;
-        
-        // 将屏幕增量转换为世界坐标增量
-        final worldDelta = delta / game.camera.viewfinder.zoom;
-        
-        // 更新路径点位置
-        wayPoint.position = _dragStartWorldPosition! + worldDelta;
-        print('WayPointRenderer: 更新位置 ${wayPoint.position}');
-        
-        // 调用父组件的拖拽更新回调
-        wayPoint.onDragUpdate?.call();
-      }
-    }
-    return true;
-  }
-  
-  // 拖拽结束
-  @override
-  bool onDragEnd(DragEndEvent event) {
-    print('WayPointRenderer: 拖拽结束');
-    _dragStartPosition = null;
-    _dragStartWorldPosition = null;
-    _isDragging = false; // 清除拖拽状态
-    return true;
   }
 
   @override
@@ -370,16 +375,13 @@ class WayPointRenderer extends Component with HasGameRef, DragCallbacks {
         canvas.save();
         canvas.rotate(rotationAngle);
         
-        // 根据拖拽状态调整颜色
-        final currentColor = _isDragging ? color.withOpacity(0.7) : color;
-        
         // 绘制机器人坐标
         double radius = min(size / 2, size / 2);
 
         for (int i = count; i >= 0; i--) {
           final double opacity = (1.0 - ((i + animationValue) / (count + 1)));
           final paint = Paint()
-            ..color = currentColor.withOpacity(opacity)
+            ..color = color.withOpacity(opacity)
             ..style = PaintingStyle.fill;
 
           double _radius = radius * ((i + animationValue) / (count + 1));
@@ -399,7 +401,7 @@ class WayPointRenderer extends Component with HasGameRef, DragCallbacks {
         // 绘制中心菱形，中心点在(0, 0)，添加轻微的脉动动画
         final double centerPulse = 1.0 + 0.1 * sin(animationValue * 4 * pi);
         final centerPaint = Paint()
-          ..color = currentColor.withOpacity(0.8 + 0.2 * sin(animationValue * 2 * pi))
+          ..color = color.withOpacity(0.8 + 0.2 * sin(animationValue * 2 * pi))
           ..style = PaintingStyle.fill;
         
         final centerPath = Path()
@@ -415,21 +417,11 @@ class WayPointRenderer extends Component with HasGameRef, DragCallbacks {
         // 绘制方向指示器，中心点在(0, 0)
         Paint dirPainter = Paint()
           ..style = PaintingStyle.fill
-          ..color = currentColor.withOpacity(0.6);
+          ..color = color.withOpacity(0.6);
         
         Rect rect = Rect.fromCircle(
             center: Offset.zero, radius: radius);
         canvas.drawArc(rect, -deg2rad(15), deg2rad(30), true, dirPainter);
-        
-        // 如果正在拖拽，绘制拖拽指示器
-        if (_isDragging) {
-          final dragPaint = Paint()
-            ..color = Colors.yellow.withOpacity(0.8)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2;
-          
-          canvas.drawCircle(Offset.zero, radius + 3, dragPaint);
-        }
         
         canvas.restore(); // 恢复旋转变换
       }

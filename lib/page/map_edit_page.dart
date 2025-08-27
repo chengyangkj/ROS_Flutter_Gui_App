@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flame/game.dart';
+import 'package:flame/components.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/page/main_page.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
@@ -9,6 +11,10 @@ import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/display/waypoint.dart';
+import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:ros_flutter_gui_app/basic/math.dart';
+import 'dart:math';
 
 // 点位信息类
 class WayPointInfo {
@@ -89,7 +95,13 @@ class _MapEditPageState extends State<MapEditPage> {
   WayPointInfo? selectedWayPointInfo;
   
   // 当前选中点位的动态更新回调
-  VoidCallback? currentSelectPointUpdate;
+  VoidCallback? _onCurrentSelectPointUpdate;
+
+  // WayPoint手势处理相关变量
+  bool _isDraggingWayPoint = false;
+  WayPoint? _draggedWayPoint;
+  Vector2? _dragStartPosition;
+  Vector2? _dragStartWorldPosition;
 
   @override
   void initState() {
@@ -110,25 +122,165 @@ class _MapEditPageState extends State<MapEditPage> {
     _loadNavPoints();
   }
   
+  // WayPoint拖拽开始处理
+  void _handleWayPointDragStart(Vector2 position) {
+    // 检查是否点击在WayPoint上
+    final worldPosition = game.camera.globalToLocal(position);
+    final wayPoint = _findWayPointAtPosition(worldPosition);
+    
+    if (wayPoint != null) {
+      _isDraggingWayPoint = true;
+      _draggedWayPoint = wayPoint;
+      _dragStartPosition = position;
+      _dragStartWorldPosition = wayPoint.position.clone();
+      
+      // 选中该WayPoint
+      _selectWayPoint(wayPoint);
+    }
+  }
+  
+  // WayPoint拖拽更新处理
+  void _handleWayPointDragUpdate(Vector2 position) {
+    if (_isDraggingWayPoint && _draggedWayPoint != null && _dragStartPosition != null && _dragStartWorldPosition != null) {
+      // 计算拖拽增量
+      final delta = position - _dragStartPosition!;
+      
+      // 将屏幕增量转换为世界坐标增量
+      final worldDelta = delta / game.camera.viewfinder.zoom;
+      
+      // 更新WayPoint位置
+      _draggedWayPoint!.position = _dragStartWorldPosition! + worldDelta;
+      
+      // 调用拖拽更新回调
+      _draggedWayPoint!.onDragUpdate?.call();
+      
+      // 通知外部更新
+      _onCurrentSelectPointUpdate?.call();
+    }
+  }
+  
+  // WayPoint拖拽结束处理
+  void _handleWayPointDragEnd() {
+    _isDraggingWayPoint = false;
+    _draggedWayPoint = null;
+    _dragStartPosition = null;
+    _dragStartWorldPosition = null;
+  }
+
+  // WayPoint缩放开始处理
+  void _handleWayPointScaleStart(Vector2 position) {
+    final worldPosition = game.camera.globalToLocal(position);
+    final wayPoint = _findWayPointAtPosition(worldPosition);
+
+    if (wayPoint != null) {
+      // 如果触摸在WayPoint上，开始WayPoint手势
+      _isDraggingWayPoint = true;
+      _draggedWayPoint = wayPoint;
+      _dragStartPosition = position;
+      _dragStartWorldPosition = wayPoint.position.clone();
+      
+      // 选中该WayPoint
+      _selectWayPoint(wayPoint);
+    } else {
+      // 如果触摸不在WayPoint上，开始地图手势
+      game.onScaleStart(position);
+    }
+  }
+
+  // WayPoint缩放更新处理（同时处理地图缩放、WayPoint拖拽和旋转）
+  void _handleWayPointScaleUpdate(double scale, Vector2 position) {
+    if (_isDraggingWayPoint && _draggedWayPoint != null && _dragStartPosition != null && _dragStartWorldPosition != null) {
+      // 检查是否是旋转手势（scale接近1.0，但位置有变化）
+      final delta = position - _dragStartPosition!;
+      final isRotation = (scale - 1.0).abs() < 0.1 && delta.length > 5.0;
+      
+      if (isRotation) {
+        // 处理WayPoint旋转
+        final center = _draggedWayPoint!.position;
+        final startVector = _dragStartPosition! - center;
+        final currentVector = position - center;
+        
+        // 计算角度变化
+        final startAngle = atan2(startVector.y, startVector.x);
+        final currentAngle = atan2(currentVector.y, currentVector.x);
+        final angleDelta = currentAngle - startAngle;
+        
+        // 更新WayPoint方向角度
+        _draggedWayPoint!.directionAngle += angleDelta;
+        
+        // 同时更新DirectionControl的角度
+        final directionControl = _draggedWayPoint!.children.whereType<DirectionControl>().firstOrNull;
+        if (directionControl != null) {
+          directionControl.updateAngle(_draggedWayPoint!.directionAngle);
+        }
+        
+        // 调用拖拽更新回调
+        _draggedWayPoint!.onDragUpdate?.call();
+        
+        // 通知外部更新
+        _onCurrentSelectPointUpdate?.call();
+        
+        // 更新起始位置，用于连续旋转
+        _dragStartPosition = position;
+      } else {
+        // 处理WayPoint拖拽 - 使用累积增量
+        final worldDelta = delta / game.camera.viewfinder.zoom;
+        _draggedWayPoint!.position = _dragStartWorldPosition! + worldDelta;
+        
+        // 调用拖拽更新回调
+        _draggedWayPoint!.onDragUpdate?.call();
+        
+        // 通知外部更新
+        _onCurrentSelectPointUpdate?.call();
+      }
+    } else {
+      // 处理地图手势（拖拽和缩放）
+      game.onScaleUpdate(scale, position);
+    }
+  }
+
+  // WayPoint缩放结束处理
+  void _handleWayPointScaleEnd() {
+    if (_isDraggingWayPoint) {
+      // 结束WayPoint手势
+      _isDraggingWayPoint = false;
+      _draggedWayPoint = null;
+      _dragStartPosition = null;
+      _dragStartWorldPosition = null;
+    } else {
+      // 结束地图手势
+      game.onScaleEnd();
+    }
+  }
+  
+  // 查找指定位置的WayPoint
+  WayPoint? _findWayPointAtPosition(Vector2 worldPosition) {
+    for (final wayPoint in game.wayPoints) {
+      final distance = (wayPoint.position - worldPosition).length;
+      if (distance <= wayPoint.waypointSize / 2) {
+        return wayPoint;
+      }
+    }
+    return null;
+  }
+  
+  // 选中WayPoint
+  void _selectWayPoint(WayPoint wayPoint) {
+    // 取消其他WayPoint的选中状态
+    for (final wp in game.wayPoints) {
+      wp.isSelected = false;
+    }
+    wayPoint.isSelected = true;
+    
+    // 通知外部WayPoint选择状态变化
+    _onWayPointSelectionChanged();
+  }
+  
   // 导航点选择状态变化回调
   void _onWayPointSelectionChanged() {
     setState(() {
       final info = game.getSelectedWayPointInfo();
       selectedWayPointInfo = info != null ? WayPointInfo.fromMap(info) : null;
-    });
-  }
-  
-  // 当前选中点位动态更新回调
-  void _onCurrentSelectPointUpdate() {
-    setState(() {
-      final info = game.getSelectedWayPointInfo();
-      if (info != null && selectedWayPointInfo != null) {
-        selectedWayPointInfo = selectedWayPointInfo!.copyWith(
-          x: double.tryParse(info['x'].toString()) ?? selectedWayPointInfo!.x,
-          y: double.tryParse(info['y'].toString()) ?? selectedWayPointInfo!.y,
-          direction: double.tryParse(info['direction'].toString()) ?? selectedWayPointInfo!.direction,
-        );
-      }
     });
   }
   
@@ -202,7 +354,32 @@ class _MapEditPageState extends State<MapEditPage> {
       body: Stack(
         children: [
           // 游戏画布
-          GameWidget(game: game),
+          Listener(
+            onPointerSignal: (pointerSignal) {
+              if (pointerSignal is PointerScrollEvent) {
+                final position = Vector2(pointerSignal.position.dx, pointerSignal.position.dy);
+                game.onScroll(pointerSignal.scrollDelta.dy, position);
+              }
+            },
+            child: GestureDetector(
+              onTapDown: (details) {
+                final position = Vector2(details.globalPosition.dx, details.globalPosition.dy);
+                game.onTapDown(position);
+              },
+              onScaleStart: (details) {
+                final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
+                _handleWayPointScaleStart(position);
+              },
+              onScaleUpdate: (details) {
+                final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
+                _handleWayPointScaleUpdate(details.scale, position);
+              },
+              onScaleEnd: (details) {
+                _handleWayPointScaleEnd();
+              },
+              child: GameWidget(game: game),
+            ),
+          ),
           
           // 顶部工具栏
           Positioned(

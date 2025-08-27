@@ -1,6 +1,5 @@
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flame_svg/flame_svg.dart';
 import 'package:flame_svg/svg_component.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +12,7 @@ import 'package:ros_flutter_gui_app/display/laser.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/display/costmap.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/display/waypoint.dart';
 import 'package:ros_flutter_gui_app/display/topology_line.dart';
 import 'package:ros_flutter_gui_app/display/polygon.dart' as custom;
@@ -21,8 +21,7 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'dart:math';
 
-class MainFlame extends FlameGame
-    with ScrollDetector, ScaleDetector {
+class MainFlame extends FlameGame {
   late MapComponent _displayMap;
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
@@ -47,12 +46,28 @@ class MainFlame extends FlameGame
   // 全局状态引用
   late GlobalState globalState;
   
+  // 添加右侧信息面板相关变量
+  NavPoint? _selectedNavPoint;
+  bool _showInfoPanel = false;
+  
+  // 添加信息面板更新回调
+  VoidCallback? onInfoPanelUpdate;
+  
   final double minScale = 0.7;
   final double maxScale = 20.0;
 
-  // 地图变换参数
+  // 地图变换参数（使用camera.viewfinder）
   double mapScale = 1.0;
   Vector2 mapOffset = Vector2.zero();
+  
+  // 手势相关变量
+  double _baseScale = 1.0;
+  Vector2? _lastFocalPoint;
+  
+  // WayPoint拖拽/旋转状态
+  WayPoint? _activeWaypoint;
+  bool _dragIsRotation = false;
+  Vector2? _dragOffset; // waypoint.position - worldPointer
   
   MainFlame({this.rosChannel, required GlobalState globalState}) {
     this.globalState = globalState;
@@ -222,20 +237,92 @@ class MainFlame extends FlameGame
   }
 
   
-  // 手势和滚轮缩放支持 - 使用Flame内置事件
-  double _baseScale = 1.0;
-  Vector2? _lastFocalPoint;
+  // 处理缩放开始
+  bool onScaleStart(Vector2 position) {
+    _baseScale = mapScale;
+    _lastFocalPoint = position;
+    
+    // 命中检测：优先检查waypoint交互
+    final worldPos = camera.globalToLocal(position);
+    _activeWaypoint = null;
+    _dragIsRotation = false;
+    _dragOffset = null;
+    
+    for (final waypoint in _wayPointComponents) {
+      // 非编辑模式下，WayPoint不拦截地图手势
+      if (!waypoint.isEditMode) {
+        continue;
+      }
+      // 以中心为锚点
+      final local = worldPos - waypoint.position;
+      final dist = local.length;
+      final radius = waypoint.waypointSize / 2;
+      if (dist <= radius + 6) {
+        final directionControl = waypoint.children.whereType<DirectionControl>().firstOrNull;
+        if (directionControl != null && directionControl.isInRotationArea(local)) {
+          _activeWaypoint = waypoint;
+          _dragIsRotation = true;
+          return true;
+        }
+        // 移动
+        _activeWaypoint = waypoint;
+        _dragIsRotation = false;
+        _dragOffset = waypoint.position - worldPos;
+        return true;
+      }
+    }
+    return true;
+  }
   
-  @override
-  bool onScroll(PointerScrollInfo info) {
-    // 滚轮缩放
+  // 处理缩放更新（同时处理拖拽和缩放）
+  bool onScaleUpdate(double scale, Vector2 position) {
+    if (_lastFocalPoint == null) return false;
+    
+    // 如果正在操作waypoint，优先处理
+    if (_activeWaypoint != null) {
+      final worldPos = camera.globalToLocal(position);
+      if (_dragIsRotation) {
+        final local = worldPos - _activeWaypoint!.position;
+        final newAngle = atan2(local.y, local.x);
+        _activeWaypoint!.setAngleDirect(newAngle);
+      } else {
+        if (_dragOffset != null) {
+          _activeWaypoint!.position = worldPos + _dragOffset!;
+        }
+      }
+      _lastFocalPoint = position;
+      return true;
+    }
+    
+    // 地图缩放/移动
+    final newScale = (_baseScale * scale).clamp(minScale, maxScale);
+    mapScale = newScale;
+    camera.viewfinder.zoom = mapScale;
+    
+    final focalPointDelta = position - _lastFocalPoint!;
+    camera.viewfinder.position -= focalPointDelta / camera.viewfinder.zoom;
+    
+    _lastFocalPoint = position;
+    return true;
+  }
+  
+  // 处理缩放结束
+  bool onScaleEnd() {
+    _lastFocalPoint = null;
+    _activeWaypoint = null;
+    _dragIsRotation = false;
+    _dragOffset = null;
+    return true;
+  }
+  
+  // 处理滚轮缩放
+  bool onScroll(double delta, Vector2 position) {
     const zoomSensitivity = 0.5;
-    double zoomChange = -info.scrollDelta.global.y.sign * zoomSensitivity;
+    double zoomChange = -delta.sign * zoomSensitivity;
     final newZoom = (camera.viewfinder.zoom + zoomChange).clamp(minScale, maxScale);
     
     // 获取鼠标位置在世界坐标中的位置
-    final mousePosition = info.eventPosition.global;
-    final worldPoint = camera.globalToLocal(mousePosition);
+    final worldPoint = camera.globalToLocal(position);
     
     // 应用缩放
     camera.viewfinder.zoom = newZoom;
@@ -243,61 +330,9 @@ class MainFlame extends FlameGame
     
     // 调整相机位置以保持鼠标位置不变
     final newScreenPoint = camera.localToGlobal(worldPoint);
-    final offset = mousePosition - newScreenPoint;
+    final offset = position - newScreenPoint;
     camera.viewfinder.position -= offset / camera.viewfinder.zoom;
     
-    return true;
-  }
-  
-  @override
-  bool onScaleStart(ScaleStartInfo info) {
-    _baseScale = mapScale;
-    _lastFocalPoint = info.eventPosition.global;
-    return true;
-  }
-  
-  @override
-  bool onScaleUpdate(ScaleUpdateInfo info) {
-    final scale = info.scale.global.x; // 使用x分量作为统一缩放值
-    
-    if (scale != 1.0) {
-      // 处理缩放
-      final newScale = (_baseScale * scale).clamp(minScale, maxScale);
-      
-      if (_lastFocalPoint != null) {
-        // 获取焦点在世界坐标中的位置（缩放前）
-        final focalPoint = info.eventPosition.global;
-        final worldPoint = camera.globalToLocal(focalPoint);
-        
-        // 应用新的缩放
-        camera.viewfinder.zoom = newScale;
-        mapScale = newScale;
-        
-        // 重新计算焦点在屏幕上的位置（缩放后）
-        final newScreenPoint = camera.localToGlobal(worldPoint);
-        
-        // 调整相机位置以保持焦点位置不变
-        final offset = focalPoint - newScreenPoint;
-        camera.viewfinder.position -= offset / camera.viewfinder.zoom;
-      } else {
-        camera.viewfinder.zoom = newScale;
-        mapScale = newScale;
-      }
-    } else {
-      // 处理平移
-      if (_lastFocalPoint != null) {
-        final currentFocalPoint = info.eventPosition.global;
-        final delta = currentFocalPoint - _lastFocalPoint!;
-        camera.viewfinder.position -= delta / camera.viewfinder.zoom;
-        _lastFocalPoint = currentFocalPoint;
-      }
-    }
-    return true;
-  }
-  
-  @override
-  bool onScaleEnd(ScaleEndInfo info) {
-    _lastFocalPoint = null;
     return true;
   }
 
@@ -350,12 +385,24 @@ class MainFlame extends FlameGame
     
     // 创建新的路径点组件，但不直接添加到world
     for (final point in topologyMap.points) {
+      // 创建导航点对象，使用正确的字段
+      final navPoint = NavPoint(
+        id: point.name, // 使用name作为id
+        x: point.x,
+        y: point.y,
+        theta: point.theta,
+        name: point.name,
+        createdAt: DateTime.now(), // 使用当前时间
+      );
+      
       final waypoint = WayPoint(
-        waypointSize: globalSetting.robotSize,
+        waypointSize: 20.0,
         color: Colors.blue,
         count: 2,
-        isEditMode: false, // 主界面不显示小红点
-        directionAngle: 0.0, // 初始方向角度
+        isEditMode: false,
+        directionAngle: point.theta,
+        onTap: _onWayPointTap,
+        navPoint: navPoint,
       );
       // 设置路径点位置
       waypoint.position = Vector2(point.x, point.y);
@@ -554,5 +601,82 @@ class MainFlame extends FlameGame
         }
       }
     }
+  }
+  
+  // 点击WayPoint回调
+  void _onWayPointTap(NavPoint navPoint) {
+    print('=== _onWayPointTap 被调用 ===');
+    print('选中的导航点: ${navPoint.name}');
+    _selectedNavPoint = navPoint;
+    _showInfoPanel = true;
+    onInfoPanelUpdate?.call();
+  }
+  
+  // 获取选中的导航点
+  NavPoint? get selectedNavPoint => _selectedNavPoint;
+  
+  // 获取信息面板显示状态
+  bool get showInfoPanel => _showInfoPanel;
+  
+  // 隐藏信息面板
+  void hideInfoPanel() {
+    _showInfoPanel = false;
+    _selectedNavPoint = null;
+    onInfoPanelUpdate?.call();
+  }
+  
+  // 发送导航目标
+  Future<void> sendNavigationGoal() async {
+    if (_selectedNavPoint != null && rosChannel != null) {
+      final robotPose = RobotPose(
+        _selectedNavPoint!.x,
+        _selectedNavPoint!.y,
+        _selectedNavPoint!.theta,
+      );
+      await rosChannel!.sendNavigationGoal(robotPose);
+    }
+  }
+  
+  // 检测点击的waypoint
+  void onTap(Offset position) {
+    print('=== onTap 调试信息 ===');
+    print('屏幕点击位置: $position');
+    
+    final worldPosition = screenToWorld(position);
+    print('转换后的世界坐标: $worldPosition');
+    print('当前地图缩放: $mapScale');
+    print('当前地图偏移: $mapOffset');
+    
+    // 检查是否点击到了waypoint
+    print('检查 ${_wayPointComponents.length} 个waypoint...');
+    for (int i = 0; i < _wayPointComponents.length; i++) {
+      final waypoint = _wayPointComponents[i];
+      print('Waypoint $i: 位置=${waypoint.position}, 大小=${waypoint.size}');
+      
+      if (waypoint.containsPoint(worldPosition)) {
+        print('✅ 点击到了waypoint $i!');
+        if (waypoint.onTap != null && waypoint.navPoint != null) {
+          print('调用onTap回调，导航点: ${waypoint.navPoint!.name}');
+          waypoint.onTap!(waypoint.navPoint!);
+        } else {
+          print('❌ onTap或navPoint为空: onTap=${waypoint.onTap}, navPoint=${waypoint.navPoint}');
+        }
+        break;
+      } else {
+        print('❌ 未点击到waypoint $i');
+      }
+    }
+    print('=== onTap 调试结束 ===');
+  }
+  
+  // 屏幕坐标转换为世界坐标
+  Vector2 screenToWorld(Offset screenPosition) {
+    final worldX = (screenPosition.dx - mapOffset.x) / mapScale;
+    final worldY = (screenPosition.dy - mapOffset.y) / mapScale;
+    
+    print('坐标转换: 屏幕(${screenPosition.dx}, ${screenPosition.dy}) -> 世界($worldX, $worldY)');
+    print('转换参数: mapOffset=(${mapOffset.x}, ${mapOffset.y}), mapScale=$mapScale');
+    
+    return Vector2(worldX, worldY);
   }
 }
