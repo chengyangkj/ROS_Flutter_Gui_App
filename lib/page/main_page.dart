@@ -47,50 +47,55 @@ class _MainFlamePageState extends State<MainFlamePage> {
     // 加载图层设置
     Provider.of<GlobalState>(context, listen: false).loadLayerSettings();
   }
+  
+  // 重新加载导航点和地图数据
+  Future<void> _reloadData() async {
+    if (game != null) {
+      await game.reloadNavPointsAndMap();
+    }
+  }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final globalState = Provider.of<GlobalState>(context, listen: false);
-    final isMapEditMode = globalState.mode.value == Mode.mapEdit;
-
+    
     return Scaffold(
-      body: Stack(
-        children: [
-          // 游戏画布
-          Listener(
-            onPointerSignal: (pointerSignal) {
-              if (pointerSignal is PointerScrollEvent) {
-                final position = Vector2(pointerSignal.position.dx, pointerSignal.position.dy);
-                game.onScroll(pointerSignal.scrollDelta.dy, position);
-              }
-            },
-            child: GestureDetector(
-              onScaleStart: (details) {
-                final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-                game.onScaleStart(position);
-              },
-              onScaleUpdate: (details) {
-                final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-                game.onScaleUpdate(details.scale, position);
-              },
-              onScaleEnd: (details) {
-                game.onScaleEnd();
-              },
-              onTapDown: (details) {
-                // 处理点击事件，检测waypoint
-                game.onTap(details.localPosition);
-              },
-              child: GameWidget(game: game),
-            ),
+          body: Stack(
+            children: [
+              // 游戏画布
+              Listener(
+                onPointerSignal: (pointerSignal) {
+                  if (pointerSignal is PointerScrollEvent) {
+                    final position = Vector2(pointerSignal.position.dx, pointerSignal.position.dy);
+                    game.onScroll(pointerSignal.scrollDelta.dy, position);
+                  }
+                },
+                child: GestureDetector(
+                  onScaleStart: (details) {
+                    final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
+                    game.onScaleStart(position);
+                  },
+                  onScaleUpdate: (details) {
+                    final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
+                    game.onScaleUpdate(details.scale, position);
+                  },
+                  onScaleEnd: (details) {
+                    game.onScaleEnd();
+                  },
+                  onTapDown: (details) {
+                    // 处理点击事件，检测waypoint
+                    game.onTap(details.localPosition);
+                  },
+                  child: GameWidget(game: game),
+                ),
+              ),
+              _buildTopMenuBar(context, theme),
+              _buildLeftToolbar(context, theme),
+              _buildRightToolbar(context, theme),
+              _buildBottomControls(context, theme),
+            ],
           ),
-          _buildTopMenuBar(context, theme),
-          _buildLeftToolbar(context, theme),
-          _buildRightToolbar(context, theme),
-          _buildBottomControls(context, theme),
-        ],
-      ),
-    );
+        );
   }
 
   Widget _buildTopMenuBar(BuildContext context, ThemeData theme) {
@@ -487,7 +492,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
                      Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const MapEditPage(),
+                          builder: (context) => MapEditPage(
+                            onExit: () {
+                              // 地图编辑界面退出时，重新加载数据
+                              _reloadData();
+                            },
+                          ),
                         ),
                       );
                     setState(() {});

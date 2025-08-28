@@ -176,6 +176,21 @@ class MainFlame extends FlameGame {
       _updateTopologyLayers();
     }
   }
+  
+  // 重新加载导航点和地图数据
+  Future<void> reloadNavPointsAndMap() async {
+    print('重新加载导航点和地图数据...');
+    
+    // 重新加载离线导航点
+    await _loadOfflineNavPoints();
+    
+    // 如果地图已经加载，重新更新拓扑图层
+    if (_occMap != null) {
+      _updateTopologyLayers();
+    }
+    
+    print('导航点和地图数据重新加载完成');
+  }
 
   void _setupRosListeners() {
     rosChannel!.robotPoseScene.addListener(() {

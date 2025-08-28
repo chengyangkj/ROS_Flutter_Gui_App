@@ -15,7 +15,9 @@ import 'dart:math';
 import 'package:vector_math/vector_math_64.dart' as vm;
 
 class MapEditPage extends StatefulWidget {
-  const MapEditPage({super.key});
+  final VoidCallback? onExit;
+  
+  const MapEditPage({super.key, this.onExit});
 
   @override
   State<MapEditPage> createState() => _MapEditPageState();
@@ -43,6 +45,9 @@ class _MapEditPageState extends State<MapEditPage> {
     super.initState();
     globalState = Provider.of<GlobalState>(context, listen: false);
     rosChannel = Provider.of<RosChannel>(context, listen: false);
+    
+    // 设置地图编辑模式
+    globalState.mode.value = Mode.mapEdit;
  
     // 监听地图数据
     rosChannel.map_.addListener(() {
@@ -73,6 +78,13 @@ class _MapEditPageState extends State<MapEditPage> {
     
     // 加载导航点
     _loadNavPoints();
+  }
+  
+  @override
+  void dispose() {
+    // 退出地图编辑模式时，重置为正常模式
+    globalState.mode.value = Mode.normal;
+    super.dispose();
   }
 
   // 导航点选择状态变化回调
@@ -120,7 +132,7 @@ class _MapEditPageState extends State<MapEditPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('添加导航点'),
+          title: const Text('导航点编辑'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -320,7 +332,16 @@ class _MapEditPageState extends State<MapEditPage> {
                 padding: const EdgeInsets.only(right: 20),
                 child: IconButton(
                   icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                  onPressed: () {
+                  onPressed: () async {
+                    // 退出前保存当前状态
+                    List<NavPoint> navPoints = game.getAllWayPoint();
+                    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+                    await navPointManager.saveNavPoints(navPoints);
+                    
+                    // 调用退出回调
+                    widget.onExit?.call();
+                    
+                    // 退出地图编辑模式
                     Navigator.pop(context);
                   },
                   tooltip: '退出地图编辑模式',
@@ -604,7 +625,7 @@ class _MapEditPageState extends State<MapEditPage> {
                     });
                   },
                   icon: const Icon(Icons.delete, size: 16),
-                  label: const Text('删除选中'),
+                  label: const Text('删除'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
