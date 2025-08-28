@@ -13,6 +13,7 @@ import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 
 
@@ -593,24 +594,14 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                 )
                               );
                               
-                              // 使用ScaffoldMessenger显示成功消息，替代Fluttertoast
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: [
-                                      Icon(Icons.check_circle, color: Colors.white, size: 18),
-                                      const SizedBox(width: 8),
-                                      Text('已发送导航目标到 ${selectedNavPoint!.name}'),
-                                    ],
-                                  ),
-                                  backgroundColor: Colors.green[600], // 恢复背景色
-                                  duration: const Duration(seconds: 3),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  margin: const EdgeInsets.all(16),
-                                ),
+                              // 使用fluttertoast显示成功消息
+                              Fluttertoast.showToast(
+                                msg: '已发送导航目标到 ${selectedNavPoint!.name}',
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.TOP,
+                                backgroundColor: Colors.blue[600],
+                                textColor: Colors.white,
+                                fontSize: 16.0,
                               );
                               
                               // 发送导航目标后自动关闭信息面板
@@ -776,23 +767,13 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       onPressed: () {
                         Provider.of<RosChannel>(context, listen: false)
                             .sendEmergencyStop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                Icon(Icons.warning, color: Colors.white, size: 20),
-                                const SizedBox(width: 8),
-                                Text('急停已触发'),
-                              ],
-                            ),
-                            backgroundColor: Colors.red[600],
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            margin: const EdgeInsets.all(16),
-                          ),
+                        Fluttertoast.showToast(
+                          msg: '急停已触发',
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.CENTER,
+                          backgroundColor: Colors.red[600],
+                          textColor: Colors.white,
+                          fontSize: 16.0,
                         );
                       },
                     ),
@@ -822,23 +803,13 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                   Provider.of<RosChannel>(context,
                                           listen: false)
                                       .sendCancelNav();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          Icon(Icons.stop_circle, color: Colors.white, size: 20),
-                                          const SizedBox(width: 8),
-                                          Text('导航已停止'),
-                                        ],
-                                      ),
-                                      backgroundColor: Colors.blue[600],
-                                      duration: const Duration(seconds: 2),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      margin: const EdgeInsets.all(16),
-                                    ),
+                                  Fluttertoast.showToast(
+                                    msg: '导航已停止',
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.CENTER,
+                                    backgroundColor: Colors.blue[600],
+                                    textColor: Colors.white,
+                                    fontSize: 16.0,
                                   );
                                 },
                               ),

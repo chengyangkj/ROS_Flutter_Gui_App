@@ -13,6 +13,7 @@ import 'package:ros_flutter_gui_app/display/waypoint.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'dart:math';
 import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MapEditPage extends StatefulWidget {
   final VoidCallback? onExit;
@@ -271,12 +272,13 @@ class _MapEditPageState extends State<MapEditPage> {
                     
                     // 显示保存成功提示
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('保存成功！'),
-                          backgroundColor: Colors.green,
-                          duration: Duration(seconds: 2),
-                        ),
+                      Fluttertoast.showToast(
+                        msg: '保存成功！',
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.TOP,
+                        backgroundColor: Colors.green,
+                        textColor: Colors.white,
+                        fontSize: 16.0,
                       );
                     }
                   },
