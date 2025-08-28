@@ -132,7 +132,7 @@ class _MapEditPageState extends State<MapEditPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('导航点编辑'),
+          title: const Text('添加导航点'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -365,7 +365,7 @@ class _MapEditPageState extends State<MapEditPage> {
             // 导航点添加工具
             _buildEditTool(
               icon: Icons.add_location,
-              label: '添加导航点',
+              label: '导航点编辑',
               toolName: 'addNavPoint',
               color: Colors.blue,
             ),

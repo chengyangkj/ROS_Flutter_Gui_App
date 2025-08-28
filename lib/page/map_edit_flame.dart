@@ -16,7 +16,7 @@ class MapEditFlame extends FlameGame {
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
   
-  final double minScale = 0.05;
+  final double minScale = 0.01;
   final double maxScale = 10.0;
   
   // 地图变换参数

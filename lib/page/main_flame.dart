@@ -57,7 +57,7 @@ class MainFlame extends FlameGame {
   bool _showInfoPanel = false;
   Function(NavPoint?)? onNavPointTap;
   
-  final double minScale = 0.05;
+  final double minScale = 0.01;
   final double maxScale = 10.0;
 
   // 地图变换参数（使用camera.viewfinder）
