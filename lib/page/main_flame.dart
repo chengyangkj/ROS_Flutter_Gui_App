@@ -53,11 +53,9 @@ class MainFlame extends FlameGame {
   late NavPointManager navPointManager;
   
   // 添加右侧信息面板相关变量
-  NavPoint? _selectedNavPoint;
+  WayPoint? selectedWayPoint;
   bool _showInfoPanel = false;
-  
-  // 添加信息面板更新回调
-  Function(NavPoint)? onNavPointTap;
+  Function(NavPoint?)? onNavPointTap;
   
   final double minScale = 0.05;
   final double maxScale = 10.0;
@@ -127,8 +125,7 @@ class MainFlame extends FlameGame {
     _topologyLineComponent = TopologyLine(
       points: [],
       routes: [],
-      mapResolution: 0.05,
-      mapOrigin: Offset.zero,
+      occMap: null, // 初始化时occMap可能还没有加载
     );
     
     // 初始化机器人轮廓组件
@@ -365,8 +362,7 @@ class MainFlame extends FlameGame {
     _topologyLineComponent = TopologyLine(
       points: topologyMap.points,
       routes: topologyMap.routes,
-      mapResolution: 0.05,
-      mapOrigin: Offset.zero,
+      occMap: _occMap, // 传递occMap参数
     );
     
     // 清除旧的路径点组件
@@ -377,28 +373,13 @@ class MainFlame extends FlameGame {
     
     // 合并离线导航点和拓扑地图点
     List<NavPoint> navPoints = List<NavPoint>.from(topologyMap.points);
-    
-    // 添加离线导航点，避免重复
-    for (var point in offLineNavPoints) {
-      if (navPoints.where((p) => p.name == point.name).isEmpty) {
-        // 创建新的导航点副本，避免修改原始数据
-        var occPose = _occMap!.xy2idx(vm.Vector2(point.x, point.y));
-        var newNavPoint = NavPoint(
-          x: occPose.x,
-          y: occPose.y,
-          theta: point.theta,
-          name: point.name,
-          type: point.type,
-        );
-        navPoints.add(newNavPoint);
-      }
-    }
+    navPoints.addAll(offLineNavPoints);
     
     print('合并后的导航点总数: ${navPoints.length}');
     
     // 创建新的路径点组件
     for (final point in navPoints) {
-      
+      var occPose = _occMap!.xy2idx(vm.Vector2(point.x, point.y));
       final waypoint = WayPoint(
         waypointSize: globalSetting.robotSize,
         color: Colors.blue,
@@ -409,7 +390,7 @@ class MainFlame extends FlameGame {
       );
       
       // 设置路径点位置（使用地图索引坐标）
-      waypoint.position = Vector2(point.x, point.y);
+      waypoint.position = Vector2(occPose.x, occPose.y);
       _wayPointComponents.add(waypoint);
       
     }
@@ -617,16 +598,28 @@ class MainFlame extends FlameGame {
     }
   }
   
-  // 点击WayPoint回调
-  void _onWayPointTap(NavPoint navPoint) {
-    print('选中的导航点: ${navPoint.name}');
-    _selectedNavPoint = navPoint;
-    _showInfoPanel = true;
-    onNavPointTap?.call(navPoint);
+
+  NavPoint? getSelectedWayPointInfo() {
+    final wayPoint = selectedWayPoint;
+    if (wayPoint == null) return null;
+    var x = wayPoint.position.x;
+    var y = wayPoint.position.y;
+    var direction = -wayPoint.direction;
+    double mapx = 0;
+    double mapy = 0;
+    if(_occMap != null){
+      vm.Vector2 mapPose = _occMap!.idx2xy(vm.Vector2(x, y));
+      mapx = mapPose.x;
+      mapy = mapPose.y;
+    }
+    var pointInfo = wayPoint.getPointInfo();
+    pointInfo!.x = mapx;
+    pointInfo!.y = mapy;
+    pointInfo!.theta = direction;
+    return pointInfo;
   }
-  
-  // 获取选中的导航点
-  NavPoint? get selectedNavPoint => _selectedNavPoint;
+
+
   
   // 获取信息面板显示状态
   bool get showInfoPanel => _showInfoPanel;
@@ -634,8 +627,6 @@ class MainFlame extends FlameGame {
   // 隐藏信息面板
   void hideInfoPanel() {
     _showInfoPanel = false;
-    _selectedNavPoint = null;
-    onNavPointTap?.call(NavPoint(x: 0, y: 0, theta: 0, name: '', type: NavPointType.navGoal));
   }
   
   // 检测点击的waypoint
@@ -650,12 +641,17 @@ class MainFlame extends FlameGame {
       
       if (waypoint.containsPoint(worldPoint)) {
         if (waypoint.navPoint != null) {
-          _onWayPointTap(waypoint.navPoint!);
+          selectedWayPoint = waypoint;
+          _showInfoPanel = true;
+          onNavPointTap?.call(getSelectedWayPointInfo()!);
+          print('选中的导航点: ${waypoint.navPoint!.name}');
         } 
-        break;
+       return;
       }
     }
   
+   _showInfoPanel=false;
+    onNavPointTap?.call(null);
   }
   
 

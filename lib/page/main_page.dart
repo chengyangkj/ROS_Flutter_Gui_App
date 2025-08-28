@@ -38,9 +38,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
       globalState: globalState,
       navPointManager: navPointManager,
     );
-
-    // 设置信息面板更新回调
-    game.onNavPointTap = (NavPoint point) {
+    game.onNavPointTap = (NavPoint? point) {
       setState(() {
         selectedNavPoint = point;
       });
@@ -405,7 +403,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
       child: Row(
         children: [
           // 右侧信息面板
-          if (game.showInfoPanel && game.selectedNavPoint != null)
+          if (game.showInfoPanel && selectedNavPoint != null)
             Container(
               width: 340,
               margin: const EdgeInsets.only(right: 20),
@@ -516,7 +514,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      game.selectedNavPoint!.name,
+                                      selectedNavPoint!.name,
                                       style: theme.textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.blue[800],
@@ -526,18 +524,18 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: _getTypeColor(game.selectedNavPoint!.type),
+                                        color: _getTypeColor(selectedNavPoint!.type),
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: _getTypeColor(game.selectedNavPoint!.type).withOpacity(0.3),
+                                            color: _getTypeColor(selectedNavPoint!.type).withOpacity(0.3),
                                             blurRadius: 4,
                                             offset: Offset(0, 1),
                                           ),
                                         ],
                                       ),
                                       child: Text(
-                                        _getTypeText(game.selectedNavPoint!.type),
+                                        _getTypeText(selectedNavPoint!.type),
                                         style: theme.textTheme.bodySmall?.copyWith(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w600,
@@ -560,9 +558,9 @@ class _MainFlamePageState extends State<MainFlamePage> {
                           '位置坐标',
                           Icons.gps_fixed,
                           [
-                            _buildInfoRow('X坐标', '${game.selectedNavPoint!.x.toStringAsFixed(2)} m'),
-                            _buildInfoRow('Y坐标', '${game.selectedNavPoint!.y.toStringAsFixed(2)} m'),
-                            _buildInfoRow('方向', '${(game.selectedNavPoint!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
+                            _buildInfoRow('X坐标', '${selectedNavPoint!.x.toStringAsFixed(2)} m'),
+                            _buildInfoRow('Y坐标', '${selectedNavPoint!.y.toStringAsFixed(2)} m'),
+                            _buildInfoRow('方向', '${(selectedNavPoint!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
                           ],
                         ),
                         
@@ -586,9 +584,9 @@ class _MainFlamePageState extends State<MainFlamePage> {
                               // 使用RosChannel发送导航目标
                               Provider.of<RosChannel>(context, listen: false).sendNavigationGoal(
                                 RobotPose(
-                                  game.selectedNavPoint!.x, 
-                                  game.selectedNavPoint!.y, 
-                                  game.selectedNavPoint!.theta
+                                  selectedNavPoint!.x, 
+                                  selectedNavPoint!.y, 
+                                  selectedNavPoint!.theta
                                 )
                               );
                               
@@ -599,7 +597,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                     children: [
                                       Icon(Icons.check_circle, color: Colors.white, size: 20),
                                       const SizedBox(width: 8),
-                                      Text('已发送导航目标到 ${game.selectedNavPoint!.name}'),
+                                      Text('已发送导航目标到 ${selectedNavPoint!.name}'),
                                     ],
                                   ),
                                   backgroundColor: Colors.green[600],

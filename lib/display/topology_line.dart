@@ -5,20 +5,20 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
+import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 
 class TopologyLine extends Component with HasGameRef {
   final List<NavPoint> points;
   final List<TopologyRoute> routes;
-  final double mapResolution;
-  final Offset mapOrigin;
+  final OccupancyMap? occMap; 
   late Timer animationTimer;
   double animationValue = 0.0;
 
   TopologyLine({
     required this.points,
     required this.routes,
-    required this.mapResolution,
-    required this.mapOrigin,
+    this.occMap, 
   });
 
   @override
@@ -33,8 +33,7 @@ class TopologyLine extends Component with HasGameRef {
     add(TopologyLineRenderer(
       points: points,
       routes: routes,
-      mapResolution: mapResolution,
-      mapOrigin: mapOrigin,
+      occMap: occMap, // 传递occMap到渲染器
       animationValue: animationValue,
     ));
   }
@@ -55,17 +54,23 @@ class TopologyLine extends Component with HasGameRef {
 class TopologyLineRenderer extends Component with HasGameRef {
   final List<NavPoint> points;
   final List<TopologyRoute> routes;
-  final double mapResolution;
-  final Offset mapOrigin;
+  final OccupancyMap? occMap; // 添加OccupancyMap参数
   final double animationValue;
 
   TopologyLineRenderer({
     required this.points,
     required this.routes,
-    required this.mapResolution,
-    required this.mapOrigin,
+    this.occMap, // 可选参数，保持向后兼容
     required this.animationValue,
   });
+
+  // 获取地图分辨率
+  double get mapResolution => occMap?.mapConfig.resolution ?? 0.05; // 默认值0.05
+
+  // 获取地图原点
+  Offset get mapOrigin => occMap != null 
+      ? Offset(occMap!.mapConfig.originX, occMap!.mapConfig.originY)
+      : Offset.zero; // 默认原点
 
   @override
   void render(Canvas canvas) {
@@ -81,7 +86,8 @@ class TopologyLineRenderer extends Component with HasGameRef {
 
       final Map<String, Offset> pointMap = {};
       for (final point in points) {
-        pointMap[point.name] = Offset(point.x, point.y);
+        var occPose = occMap!.xy2idx(vm.Vector2(point.x, point.y));
+        pointMap[point.name] = Offset(occPose.x, occPose.y);
       }
 
       // 统计每条路径的连接数量以判断是否为双向

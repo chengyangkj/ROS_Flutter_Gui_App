@@ -419,9 +419,6 @@ class RosChannel {
   }
 
   Future<void> sendNavigationGoal(RobotPose pose) async {
-    vm.Vector2 p = map_.value.idx2xy(vm.Vector2(pose.x, pose.y));
-    pose.x = p.x;
-    pose.y = p.y;
     vm.Quaternion quaternion = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
@@ -902,11 +899,10 @@ class RosChannel {
 
     // 创建新的 points 列表
     final updatedPoints = map.points.map((point) {
-      vm.Vector2 pointScene = map_.value.xy2idx(vm.Vector2(point.x, point.y));
       // 创建新的 NavPoint 对象
       return NavPoint(
-        x: pointScene.x,
-        y: pointScene.y,
+        x: point.x,
+        y: point.y,
         theta: point.theta,
         name: point.name,
         type: point.type,
