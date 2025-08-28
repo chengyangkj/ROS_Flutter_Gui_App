@@ -26,9 +26,7 @@ class WayPoint extends PositionComponent with HasGameRef {
   
   // 添加拖拽更新回调
   VoidCallback? onDragUpdate;
-  
-  // 添加点击回调
-  Function(NavPoint)? onTap;
+
   
   // 存储导航点信息
   NavPoint? navPoint;
@@ -42,7 +40,6 @@ class WayPoint extends PositionComponent with HasGameRef {
     this.isEditMode = false,
     this.direction = 0.0,
     this.onDragUpdate,
-    this.onTap,
     this.navPoint,
   });
   
@@ -166,13 +163,6 @@ class WayPoint extends PositionComponent with HasGameRef {
     navPoint = point;
   }
   
-  // 处理点击事件（由外部调用）
-  void handleTap() {
-    if (onTap != null && navPoint != null) {
-      onTap!(navPoint!);
-    } else {
-    }
-  }
 }
 
 // 方向控制组件

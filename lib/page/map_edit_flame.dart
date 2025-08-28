@@ -293,8 +293,8 @@ class MapEditFlame extends FlameGame {
   // 查找指定位置的导航点
   WayPoint? _findWayPointAtPosition(Vector2 position) {
     for (final wayPoint in wayPoints) {
-      final distance = (wayPoint.position - position).length;
-      if (distance <= wayPoint.waypointSize) {
+      // 使用containsPoint方法检测点击，与MainFlame的实现保持一致
+      if (wayPoint.containsPoint(position)) {
         return wayPoint;
       }
     }

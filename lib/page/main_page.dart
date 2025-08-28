@@ -3,7 +3,6 @@ import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:ros_flutter_gui_app/page/connect_page.dart';
 import 'package:ros_flutter_gui_app/page/main_flame.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
@@ -13,6 +12,7 @@ import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 
 
 
@@ -25,7 +25,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
   late MainFlame game;
   bool showLayerControl = false;
   bool showCamera = false;
-
+  NavPoint? selectedNavPoint;
 
   @override
   void initState() {
@@ -40,8 +40,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
     );
 
     // 设置信息面板更新回调
-    game.onInfoPanelUpdate = () {
-      setState(() {});
+    game.onNavPointTap = (NavPoint point) {
+      setState(() {
+        selectedNavPoint = point;
+      });
     };
     
     // 加载图层设置
@@ -405,68 +407,232 @@ class _MainFlamePageState extends State<MainFlamePage> {
           // 右侧信息面板
           if (game.showInfoPanel && game.selectedNavPoint != null)
             Container(
-              width: 300,
+              width: 340,
               margin: const EdgeInsets.only(right: 20),
               child: Card(
-                elevation: 10,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 标题栏
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '导航点信息',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
+                elevation: 16,
+                shadowColor: Colors.black.withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white,
+                        Colors.blue[50]!,
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 标题栏
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.location_on,
+                                    color: Colors.blue[700],
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '导航点信息',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                              ],
                             ),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.close, size: 20),
+                                onPressed: () {
+                                  game.hideInfoPanel();
+                                },
+                                tooltip: '关闭',
+                                style: IconButton.styleFrom(
+                                  padding: const EdgeInsets.all(8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                         Divider(height: 32, thickness: 1, color: Colors.grey[300]),
+                        
+                        // 导航点名称和类型
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.blue[200]!, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blue[100]!.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              game.hideInfoPanel();
-                            },
-                            tooltip: '关闭',
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      
-                      // 导航点详细信息
-                      _buildInfoRow('名称', game.selectedNavPoint!.name),
-                      _buildInfoRow('X坐标', '${game.selectedNavPoint!.x.toStringAsFixed(2)} m'),
-                      _buildInfoRow('Y坐标', '${game.selectedNavPoint!.y.toStringAsFixed(2)} m'),
-                      _buildInfoRow('方向', '${(game.selectedNavPoint!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // 导航按钮
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            await game.sendNavigationGoal();
-                            Fluttertoast.showToast(
-                              msg: '已发送导航目标',
-                              toastLength: Toast.LENGTH_SHORT,
-                              gravity: ToastGravity.BOTTOM,
-                            );
-                          },
-                          icon: const Icon(Icons.navigation),
-                          label: const Text('发送导航目标'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.label,
+                                  color: Colors.blue[700],
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      game.selectedNavPoint!.name,
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue[800],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _getTypeColor(game.selectedNavPoint!.type),
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: _getTypeColor(game.selectedNavPoint!.type).withOpacity(0.3),
+                                            blurRadius: 4,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        _getTypeText(game.selectedNavPoint!.type),
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        
+                        const SizedBox(height: 24),
+                        
+                        // 坐标信息
+                        _buildInfoSection(
+                          context,
+                          theme,
+                          '位置坐标',
+                          Icons.gps_fixed,
+                          [
+                            _buildInfoRow('X坐标', '${game.selectedNavPoint!.x.toStringAsFixed(2)} m'),
+                            _buildInfoRow('Y坐标', '${game.selectedNavPoint!.y.toStringAsFixed(2)} m'),
+                            _buildInfoRow('方向', '${(game.selectedNavPoint!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // 导航按钮
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blue[400]!.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              // 使用RosChannel发送导航目标
+                              Provider.of<RosChannel>(context, listen: false).sendNavigationGoal(
+                                RobotPose(
+                                  game.selectedNavPoint!.x, 
+                                  game.selectedNavPoint!.y, 
+                                  game.selectedNavPoint!.theta
+                                )
+                              );
+                              
+                              // 使用ScaffoldMessenger显示成功消息，替代Fluttertoast
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      Icon(Icons.check_circle, color: Colors.white, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text('已发送导航目标到 ${game.selectedNavPoint!.name}'),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.green[600],
+                                  duration: const Duration(seconds: 3),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  margin: const EdgeInsets.all(16),
+                                ),
+                              );
+                              
+                              // 发送导航目标后自动关闭信息面板
+                              game.hideInfoPanel();
+                            },
+                            icon: const Icon(Icons.navigation, size: 22),
+                            label: const Text(
+                              '发送导航目标',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[600],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -606,10 +772,23 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       onPressed: () {
                         Provider.of<RosChannel>(context, listen: false)
                             .sendEmergencyStop();
-                        Fluttertoast.showToast(
-                          msg: '急停已触发',
-                          toastLength: Toast.LENGTH_SHORT,
-                          gravity: ToastGravity.BOTTOM,
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(Icons.warning, color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
+                                Text('急停已触发'),
+                              ],
+                            ),
+                            backgroundColor: Colors.red[600],
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            margin: const EdgeInsets.all(16),
+                          ),
                         );
                       },
                     ),
@@ -639,10 +818,23 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                   Provider.of<RosChannel>(context,
                                           listen: false)
                                       .sendCancelNav();
-                                  Fluttertoast.showToast(
-                                    msg: '导航已停止',
-                                    toastLength: Toast.LENGTH_SHORT,
-                                    gravity: ToastGravity.BOTTOM,
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          Icon(Icons.stop_circle, color: Colors.white, size: 20),
+                                          const SizedBox(width: 8),
+                                          Text('导航已停止'),
+                                        ],
+                                      ),
+                                      backgroundColor: Colors.blue[600],
+                                      duration: const Duration(seconds: 2),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      margin: const EdgeInsets.all(16),
+                                    ),
                                   );
                                 },
                               ),
@@ -661,14 +853,58 @@ class _MainFlamePageState extends State<MainFlamePage> {
     );
   }
 
+  Widget _buildInfoSection(BuildContext context, ThemeData theme, String title, IconData icon, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: Colors.grey[600], size: 18),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            label, 
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
+          Text(
+            value, 
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
         ],
       ),
     );
@@ -677,9 +913,29 @@ class _MainFlamePageState extends State<MainFlamePage> {
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
   }
+
+  Color _getTypeColor(NavPointType type) {
+    switch (type) {
+      case NavPointType.navGoal:
+        return Colors.blue[600]!;
+      case NavPointType.chargeStation:
+        return Colors.green[600]!;
+      default:
+        return Colors.grey[600]!;
+    }
+  }
+
+  String _getTypeText(NavPointType type) {
+    switch (type) {
+      case NavPointType.navGoal:
+        return '导航目标';
+      case NavPointType.chargeStation:
+        return '充电站';
+      default:
+        return '未知类型';
+    }
+  }
 }
-
-
 
 
 

@@ -57,7 +57,7 @@ class MainFlame extends FlameGame {
   bool _showInfoPanel = false;
   
   // 添加信息面板更新回调
-  VoidCallback? onInfoPanelUpdate;
+  Function(NavPoint)? onNavPointTap;
   
   final double minScale = 0.05;
   final double maxScale = 10.0;
@@ -405,7 +405,6 @@ class MainFlame extends FlameGame {
         count: 2,
         isEditMode: false,
         direction: point.theta,
-        onTap: _onWayPointTap,
         navPoint: point,
       );
       
@@ -414,8 +413,6 @@ class MainFlame extends FlameGame {
       _wayPointComponents.add(waypoint);
       
     }
-    
-
     
     // 根据当前图层状态决定是否添加到world
     if (globalState.isLayerVisible('showTopology')) {
@@ -622,11 +619,10 @@ class MainFlame extends FlameGame {
   
   // 点击WayPoint回调
   void _onWayPointTap(NavPoint navPoint) {
-    print('=== _onWayPointTap 被调用 ===');
     print('选中的导航点: ${navPoint.name}');
     _selectedNavPoint = navPoint;
     _showInfoPanel = true;
-    onInfoPanelUpdate?.call();
+    onNavPointTap?.call(navPoint);
   }
   
   // 获取选中的导航点
@@ -639,61 +635,28 @@ class MainFlame extends FlameGame {
   void hideInfoPanel() {
     _showInfoPanel = false;
     _selectedNavPoint = null;
-    onInfoPanelUpdate?.call();
-  }
-  
-  // 发送导航目标
-  Future<void> sendNavigationGoal() async {
-    if (_selectedNavPoint != null && rosChannel != null) {
-      final robotPose = RobotPose(
-        _selectedNavPoint!.x,
-        _selectedNavPoint!.y,
-        _selectedNavPoint!.theta,
-      );
-      await rosChannel!.sendNavigationGoal(robotPose);
-    }
+    onNavPointTap?.call(NavPoint(x: 0, y: 0, theta: 0, name: '', type: NavPointType.navGoal));
   }
   
   // 检测点击的waypoint
   void onTap(Offset position) {
-    print('=== onTap 调试信息 ===');
-    print('屏幕点击位置: $position');
-    
-    final worldPosition = screenToWorld(position);
-    print('转换后的世界坐标: $worldPosition');
-    print('当前地图缩放: $mapScale');
-    print('当前地图偏移: $mapOffset');
-    
-    // 检查是否点击到了waypoint
-    print('检查 ${_wayPointComponents.length} 个waypoint...');
+
+    // 使用camera.globalToLocal转换坐标，参考map_edit_flame.dart的实现
+    final worldPoint = camera.globalToLocal(Vector2(position.dx, position.dy));
+
+  
     for (int i = 0; i < _wayPointComponents.length; i++) {
       final waypoint = _wayPointComponents[i];
-      print('Waypoint $i: 位置=${waypoint.position}, 大小=${waypoint.size}');
       
-      if (waypoint.containsPoint(worldPosition)) {
-        print('✅ 点击到了waypoint $i!');
-        if (waypoint.onTap != null && waypoint.navPoint != null) {
-          print('调用onTap回调，导航点: ${waypoint.navPoint!.name}');
-          waypoint.onTap!(waypoint.navPoint!);
-        } else {
-          print('❌ onTap或navPoint为空: onTap=${waypoint.onTap}, navPoint=${waypoint.navPoint}');
-        }
+      if (waypoint.containsPoint(worldPoint)) {
+        if (waypoint.navPoint != null) {
+          _onWayPointTap(waypoint.navPoint!);
+        } 
         break;
-      } else {
-        print('❌ 未点击到waypoint $i');
       }
     }
-    print('=== onTap 调试结束 ===');
+  
   }
   
-  // 屏幕坐标转换为世界坐标
-  Vector2 screenToWorld(Offset screenPosition) {
-    final worldX = (screenPosition.dx - mapOffset.x) / mapScale;
-    final worldY = (screenPosition.dy - mapOffset.y) / mapScale;
-    
-    print('坐标转换: 屏幕(${screenPosition.dx}, ${screenPosition.dy}) -> 世界($worldX, $worldY)');
-    print('转换参数: mapOffset=(${mapOffset.x}, ${mapOffset.y}), mapScale=$mapScale');
-    
-    return Vector2(worldX, worldY);
-  }
+
 }
