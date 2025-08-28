@@ -1,43 +1,5 @@
-enum NavPointType {
-  navGoal,
-  chargeStation
-}
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 
-class NavPoint {
-  double x;
-  double y;
-  double theta;
-  String name;
-  NavPointType type;
-
-  NavPoint({
-    required this.x,
-    required this.y,
-    required this.theta,
-    required this.name,
-    required this.type,
-  });
-
-  factory NavPoint.fromJson(Map<String, dynamic> json) {
-    return NavPoint(
-      x: (json['x'] as num).toDouble(),
-      y: (json['y'] as num).toDouble(),
-      theta: (json['theta'] as num).toDouble(),
-      name: json['name'] as String,
-      type: NavPointType.values[json['type'] as int],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'x': x,
-      'y': y,
-      'theta': theta,
-      'name': name,
-      'type': type.index,
-    };
-  }
-}
 
 class MapProperty {
   List<String> supportControllers;

@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 
 class TopologyLine extends Component with HasGameRef {
   final List<NavPoint> points;

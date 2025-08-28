@@ -6,8 +6,9 @@ import 'package:ros_flutter_gui_app/display/grid.dart';
 import 'package:ros_flutter_gui_app/display/waypoint.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
-import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 
 // 专门的地图编辑Flame组件
 class MapEditFlame extends FlameGame {
@@ -15,7 +16,7 @@ class MapEditFlame extends FlameGame {
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
   
-  final double minScale = 0.1;
+  final double minScale = 0.05;
   final double maxScale = 10.0;
   
   // 地图变换参数
@@ -25,7 +26,7 @@ class MapEditFlame extends FlameGame {
   String? selectedTool;
   
   // 回调函数，用于通知外部添加导航点
-  Function(double x, double y)? onAddNavPoint;
+  Future<NavPoint?> Function(double x, double y)? onAddNavPoint;
   
   // 回调函数，用于通知外部导航点选择状态变化
   VoidCallback? onWayPointSelectionChanged;
@@ -36,15 +37,11 @@ class MapEditFlame extends FlameGame {
   // 导航点组件列表
   final List<WayPoint> wayPoints = [];
   
-  // 双击检测
-  DateTime? _lastTapTime;
-  Vector2? _lastTapPosition;
+  WayPoint? currentSelectedWayPoint;
   
   // 手势相关变量
   double _baseScale = 1.0;
   Vector2? _lastFocalPoint;
-  bool _isDragging = false;
-  Vector2? _dragStartPosition;
 
   OccupancyMap? _occupancyMap;
   
@@ -62,16 +59,16 @@ class MapEditFlame extends FlameGame {
   
   // 获取当前选中的导航点
   WayPoint? get selectedWayPoint {
-    return wayPoints.where((wp) => wp.isSelected).firstOrNull;
+    return currentSelectedWayPoint;
   }
   
   // 获取当前选中导航点的信息
-  Map<String, dynamic>? getSelectedWayPointInfo() {
+  NavPoint? getSelectedWayPointInfo() {
     final wayPoint = selectedWayPoint;
     if (wayPoint == null) return null;
     var x = wayPoint.position.x;
     var y = wayPoint.position.y;
-    var direction = -wayPoint.directionAngle;
+    var direction = -wayPoint.direction;
     double mapx = 0;
     double mapy = 0;
     if(_occupancyMap != null){
@@ -80,24 +77,25 @@ class MapEditFlame extends FlameGame {
       mapy = mapPose.y;
     }
 
+    var pointInfo = wayPoint.getPointInfo();
+    if (pointInfo != null) {
+      pointInfo.x=mapx;
+      pointInfo.y=mapy;
+      pointInfo.theta=direction;
+    }
 
-    return {
-      'x': mapx.toStringAsFixed(2),
-      'y': mapy.toStringAsFixed(2),
-      'direction': direction.toStringAsFixed(1),
-      'name': '导航点 ${wayPoints.indexOf(wayPoint) + 1}',
-    };
+    return pointInfo;
   }
   
   // 获取所有导航点的信息
-  List<Map<String, dynamic>> getAllWayPoint() {
-    List<Map<String, dynamic>> allWayPoints = [];
+  List<NavPoint> getAllWayPoint() {
+    List<NavPoint> allWayPoints = [];
     
     for (int i = 0; i < wayPoints.length; i++) {
       final wayPoint = wayPoints[i];
       var x = wayPoint.position.x;
       var y = wayPoint.position.y;
-      var direction = -wayPoint.directionAngle;
+      var direction = -wayPoint.direction;
       double mapx = 0;
       double mapy = 0;
       
@@ -106,15 +104,15 @@ class MapEditFlame extends FlameGame {
         mapx = mapPose.x;
         mapy = mapPose.y;
       }
+
+      var pointInfo = wayPoint.getPointInfo();
+      if (pointInfo != null) {
+        pointInfo.x=mapx;
+        pointInfo.y=mapy;
+        pointInfo.theta=direction;
+      }
       
-      allWayPoints.add({
-        'x': mapx.toStringAsFixed(2),
-        'y': mapy.toStringAsFixed(2),
-        'direction': direction.toStringAsFixed(1),
-        'name': '导航点 ${i + 1}',
-        'isSelected': wayPoint.isSelected,
-        'index': i,
-      });
+      allWayPoints.add(pointInfo!);
     }
     
     return allWayPoints;
@@ -155,70 +153,43 @@ class MapEditFlame extends FlameGame {
   }
   
   // 处理单击事件，实现双击检测
-  bool onTapDown(Vector2 position) {
+  Future<bool> onTapDown(Vector2 position) async {
     if (selectedTool == 'addNavPoint') {
+      // position 为 GestureDetector.localPosition
       final worldPoint = camera.globalToLocal(position);
       final clickedWayPoint = _findWayPointAtPosition(worldPoint);
       
       if (clickedWayPoint != null) {
+        print('clickedWayPoint: ${clickedWayPoint.navPoint?.name}');
         // 选中导航点
         _selectWayPoint(clickedWayPoint);
+        currentSelectPointUpdate?.call();
         return true;
       }
-      
-      // 双击检测
-      final now = DateTime.now();
-      if (_lastTapTime != null && 
-          _lastTapPosition != null &&
-          now.difference(_lastTapTime!).inMilliseconds < 300 && // 300ms内
-          (_lastTapPosition! - worldPoint).length < 20) { // 20像素内
-        
-        // 双击：创建新的导航点
-        _createWayPoint(worldPoint.x, worldPoint.y);
-        
-        // 调用回调函数添加导航点
-        if (onAddNavPoint != null) {
-          onAddNavPoint!(worldPoint.x, worldPoint.y);
+        double mapX=0;
+        double mapY=0;
+        if(_occupancyMap != null){
+          vm.Vector2 mapPose = _occupancyMap!.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
+          mapX = mapPose.x;
+          mapY = mapPose.y;
         }
-        
-        // 重置双击检测
-        _lastTapTime = null;
-        _lastTapPosition = null;
-        return true;
-      }
+
+        final result = await onAddNavPoint!(mapX, mapY);
+        if (result != null) {
+          print('导航点添加结果: $result');
+          // 用户确定了名称，创建新的导航点
+          addWayPoint(result,worldPoint.x,worldPoint.y,0);
+        } else {
+          print('用户取消了导航点添加');
+        }
       
-      // 记录单击信息
-      _lastTapTime = now;
-      _lastTapPosition = worldPoint;
+        return true;  
+  
     }
     return false;
   }
   
-  // 处理拖拽开始
-  bool onDragStart(Vector2 position) {
-    _isDragging = true;
-    _dragStartPosition = position;
-    _lastFocalPoint = position;
-    return true;
-  }
-  
-  // 处理拖拽更新
-  bool onDragUpdate(Vector2 position) {
-    if (!_isDragging || _lastFocalPoint == null) return false;
-    
-    final delta = position - _lastFocalPoint!;
-    camera.viewfinder.position -= delta / camera.viewfinder.zoom;
-    _lastFocalPoint = position;
-    return true;
-  }
-  
-  // 处理拖拽结束
-  bool onDragEnd() {
-    _isDragging = false;
-    _dragStartPosition = null;
-    _lastFocalPoint = null;
-    return true;
-  }
+  // 地图拖拽改由 onScaleStart/Update/End 处理
   
   // 处理缩放开始
   bool onScaleStart(Vector2 position) {
@@ -241,7 +212,6 @@ class MapEditFlame extends FlameGame {
     // 计算焦点偏移
     final focalPointDelta = position - _lastFocalPoint!;
     camera.viewfinder.position -= focalPointDelta / camera.viewfinder.zoom;
-    
     _lastFocalPoint = position;
     return true;
   }
@@ -274,50 +244,47 @@ class MapEditFlame extends FlameGame {
   }
   
   // 创建导航点
-  WayPoint _createWayPoint(double x, double y) {
+  WayPoint addWayPoint(NavPoint navPoint,double occX,double occY,double direction) {
     final wayPoint = WayPoint(
-      waypointSize:globalSetting.robotSize,
+      waypointSize: globalSetting.robotSize,
       color: const Color(0xFF0080ff),
       count: 2,
-      isEditMode: true,
-      directionAngle: 0.0,
+      isEditMode: false,
+      direction: direction,
       onDragUpdate: () {
         // 调用拖拽更新回调
         currentSelectPointUpdate?.call();
       },
+      navPoint: navPoint,
     );
     
-    wayPoint.position = Vector2(x, y);
+    wayPoint.position = Vector2(occX, occY);
     wayPoint.priority = 1000; // 确保在最上层
     
     // 添加到WayPoint列表和世界中
     wayPoints.add(wayPoint);
     world.add(wayPoint);
     
+    // 新增点位默认选中并显示编辑环
+    _selectWayPoint(wayPoint);
+    wayPoint.setEditMode(false);
+    wayPoint.setSelected(false);
     return wayPoint;
   }
   
-  // 添加导航点
-  void _addNavPoint(double x, double y) {
-    final wayPoint = _createWayPoint(x, y);
-    
-    // 选中新创建的WayPoint
-    _selectWayPoint(wayPoint);
-    
-    // 通知外部添加了新的导航点
-    onAddNavPoint?.call(x, y);
-  }
   
   // 删除选中的导航点
-  void deleteSelectedWayPoint() {
-    final selectedWayPoint = wayPoints.where((wp) => wp.isSelected).firstOrNull;
+  String deleteSelectedWayPoint() {
     if (selectedWayPoint != null) {
+      var name = selectedWayPoint?.navPoint?.name;
       wayPoints.remove(selectedWayPoint);
-      selectedWayPoint.removeFromParent();
+      selectedWayPoint?.removeFromParent();
       
       // 通知选择状态变化
       onWayPointSelectionChanged?.call();
+      return name!;
     }
+    return "";
   }
   
   // 获取导航点数量
@@ -327,20 +294,29 @@ class MapEditFlame extends FlameGame {
   WayPoint? _findWayPointAtPosition(Vector2 position) {
     for (final wayPoint in wayPoints) {
       final distance = (wayPoint.position - position).length;
-      if (distance <= wayPoint.waypointSize / 2) {
+      if (distance <= wayPoint.waypointSize) {
         return wayPoint;
       }
     }
+    currentSelectedWayPoint?.setEditMode(false);
+    currentSelectedWayPoint?.setSelected(false);
+    currentSelectedWayPoint = null;
     return null;
   }
   
   // 选中导航点
   void _selectWayPoint(WayPoint wayPoint) {
+    currentSelectedWayPoint = wayPoint;
     // 取消其他导航点的选中状态
     for (final wp in wayPoints) {
-      wp.isSelected = false;
+      if (wp.navPoint?.name != wayPoint.navPoint?.name) {
+        wp.setEditMode(false);
+        wp.onDragUpdate = null;
+      }
     }
-    wayPoint.isSelected = true;
+    wayPoint.setEditMode(true);
+    wayPoint.setSelected(true);
+    wayPoint.onDragUpdate = currentSelectPointUpdate;
     
     // 通知外部导航点选择状态变化
     onWayPointSelectionChanged?.call();

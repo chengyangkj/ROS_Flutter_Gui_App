@@ -25,7 +25,7 @@ import "package:ros_flutter_gui_app/basic/math.dart";
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:image/image.dart' as img;
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/polygon_stamped.dart';
 import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 

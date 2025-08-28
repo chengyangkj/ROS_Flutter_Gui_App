@@ -1,49 +1,49 @@
 import 'dart:convert';
 
+enum NavPointType {
+  navGoal,
+  chargeStation
+}
+
 class NavPoint {
-  final String id;
-  final double x;
-  final double y;
-  final double theta; // 方向角度（弧度）
-  final String name;
-  final DateTime createdAt;
+  double x; // 地图坐标
+  double y; // 地图坐标
+  double theta; // 方向角度（弧度）
+  String name;
+  NavPointType type;
 
   NavPoint({
-    required this.id,
     required this.x,
     required this.y,
     required this.theta,
     required this.name,
-    required this.createdAt,
+    required this.type,
   });
 
   // 从JSON创建NavPoint
   factory NavPoint.fromJson(Map<String, dynamic> json) {
     return NavPoint(
-      id: json['id'] as String,
       x: json['x'] as double,
       y: json['y'] as double,
       theta: json['theta'] as double,
       name: json['name'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      type: NavPointType.values[json['type'] as int],
     );
   }
 
   // 转换为JSON
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'x': x,
       'y': y,
       'theta': theta,
       'name': name,
-      'createdAt': createdAt.toIso8601String(),
+      'type': type.index,
     };
   }
 
   // 复制并修改某些属性
   NavPoint copyWith({
-    String? id,
     double? x,
     double? y,
     double? theta,
@@ -51,17 +51,16 @@ class NavPoint {
     DateTime? createdAt,
   }) {
     return NavPoint(
-      id: id ?? this.id,
       x: x ?? this.x,
       y: y ?? this.y,
       theta: theta ?? this.theta,
       name: name ?? this.name,
-      createdAt: createdAt ?? this.createdAt,
+      type: type ?? this.type,
     );
   }
 
   @override
   String toString() {
-    return 'NavPoint(id: $id, x: $x, y: $y, theta: $theta, name: $name)';
+    return 'NavPoint(x: $x, y: $y, theta: $theta, name: $name, type: $type)';
   }
 }

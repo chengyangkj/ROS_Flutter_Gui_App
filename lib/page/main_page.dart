@@ -11,7 +11,9 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
+import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
+
 
 
 class MainFlamePage extends StatefulWidget {
@@ -24,13 +26,19 @@ class _MainFlamePageState extends State<MainFlamePage> {
   bool showLayerControl = false;
   bool showCamera = false;
 
+
   @override
   void initState() {
     super.initState();
     final rosChannel = Provider.of<RosChannel>(context, listen: false);
     final globalState = Provider.of<GlobalState>(context, listen: false);
-    game = MainFlame(rosChannel: rosChannel, globalState: globalState);
-    
+    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+    game = MainFlame(
+      rosChannel: rosChannel, 
+      globalState: globalState,
+      navPointManager: navPointManager,
+    );
+
     // 设置信息面板更新回调
     game.onInfoPanelUpdate = () {
       setState(() {});
@@ -429,7 +437,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       _buildInfoRow('X坐标', '${game.selectedNavPoint!.x.toStringAsFixed(2)} m'),
                       _buildInfoRow('Y坐标', '${game.selectedNavPoint!.y.toStringAsFixed(2)} m'),
                       _buildInfoRow('方向', '${(game.selectedNavPoint!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
-                      _buildInfoRow('创建时间', _formatDateTime(game.selectedNavPoint!.createdAt)),
                       
                       const SizedBox(height: 16),
                       

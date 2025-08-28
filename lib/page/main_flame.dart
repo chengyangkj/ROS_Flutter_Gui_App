@@ -19,6 +19,7 @@ import 'package:ros_flutter_gui_app/display/polygon.dart' as custom;
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'dart:math';
 
 class MainFlame extends FlameGame {
@@ -26,7 +27,9 @@ class MainFlame extends FlameGame {
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
   late SvgComponent _displayRobot;
-  
+
+  List<NavPoint> offLineNavPoints = [];
+
   // 新的Flame组件
   late LaserComponent _laserComponent;
   late PointCloudComponent _pointCloudComponent;
@@ -46,6 +49,9 @@ class MainFlame extends FlameGame {
   // 全局状态引用
   late GlobalState globalState;
   
+  // NavPointManager 实例
+  late NavPointManager navPointManager;
+  
   // 添加右侧信息面板相关变量
   NavPoint? _selectedNavPoint;
   bool _showInfoPanel = false;
@@ -53,8 +59,8 @@ class MainFlame extends FlameGame {
   // 添加信息面板更新回调
   VoidCallback? onInfoPanelUpdate;
   
-  final double minScale = 0.7;
-  final double maxScale = 20.0;
+  final double minScale = 0.05;
+  final double maxScale = 10.0;
 
   // 地图变换参数（使用camera.viewfinder）
   double mapScale = 1.0;
@@ -64,13 +70,13 @@ class MainFlame extends FlameGame {
   double _baseScale = 1.0;
   Vector2? _lastFocalPoint;
   
-  // WayPoint拖拽/旋转状态
-  WayPoint? _activeWaypoint;
-  bool _dragIsRotation = false;
-  Vector2? _dragOffset; // waypoint.position - worldPointer
-  
-  MainFlame({this.rosChannel, required GlobalState globalState}) {
+  MainFlame({
+    this.rosChannel, 
+    required GlobalState globalState,
+    required NavPointManager navPointManager,
+  }) {
     this.globalState = globalState;
+    this.navPointManager = navPointManager;
   }
   
   @override
@@ -160,6 +166,17 @@ class MainFlame extends FlameGame {
 
   }
   
+      // 加载导航点
+  Future<void> _loadOfflineNavPoints() async {
+    // 使用传入的 NavPointManager 实例
+    offLineNavPoints = await navPointManager.loadNavPoints();
+    
+    // 如果地图已经加载，立即更新拓扑图层
+    if (_occMap != null) {
+      _updateTopologyLayers();
+    }
+  }
+
   void _setupRosListeners() {
     rosChannel!.robotPoseScene.addListener(() {
       _displayRobot.position = Vector2(
@@ -231,6 +248,8 @@ class MainFlame extends FlameGame {
     // 立即更新地图数据
     _displayMap.updateMapData(rosChannel!.map_.value);
     _occMap = rosChannel!.map_.value;
+
+    _loadOfflineNavPoints();
     
     // 立即更新拓扑图层数据
     _updateTopologyLayers();
@@ -242,57 +261,12 @@ class MainFlame extends FlameGame {
     _baseScale = mapScale;
     _lastFocalPoint = position;
     
-    // 命中检测：优先检查waypoint交互
-    final worldPos = camera.globalToLocal(position);
-    _activeWaypoint = null;
-    _dragIsRotation = false;
-    _dragOffset = null;
-    
-    for (final waypoint in _wayPointComponents) {
-      // 非编辑模式下，WayPoint不拦截地图手势
-      if (!waypoint.isEditMode) {
-        continue;
-      }
-      // 以中心为锚点
-      final local = worldPos - waypoint.position;
-      final dist = local.length;
-      final radius = waypoint.waypointSize / 2;
-      if (dist <= radius + 6) {
-        final directionControl = waypoint.children.whereType<DirectionControl>().firstOrNull;
-        if (directionControl != null && directionControl.isInRotationArea(local)) {
-          _activeWaypoint = waypoint;
-          _dragIsRotation = true;
-          return true;
-        }
-        // 移动
-        _activeWaypoint = waypoint;
-        _dragIsRotation = false;
-        _dragOffset = waypoint.position - worldPos;
-        return true;
-      }
-    }
     return true;
   }
   
   // 处理缩放更新（同时处理拖拽和缩放）
   bool onScaleUpdate(double scale, Vector2 position) {
     if (_lastFocalPoint == null) return false;
-    
-    // 如果正在操作waypoint，优先处理
-    if (_activeWaypoint != null) {
-      final worldPos = camera.globalToLocal(position);
-      if (_dragIsRotation) {
-        final local = worldPos - _activeWaypoint!.position;
-        final newAngle = atan2(local.y, local.x);
-        _activeWaypoint!.setAngleDirect(newAngle);
-      } else {
-        if (_dragOffset != null) {
-          _activeWaypoint!.position = worldPos + _dragOffset!;
-        }
-      }
-      _lastFocalPoint = position;
-      return true;
-    }
     
     // 地图缩放/移动
     final newScale = (_baseScale * scale).clamp(minScale, maxScale);
@@ -309,9 +283,6 @@ class MainFlame extends FlameGame {
   // 处理缩放结束
   bool onScaleEnd() {
     _lastFocalPoint = null;
-    _activeWaypoint = null;
-    _dragIsRotation = false;
-    _dragOffset = null;
     return true;
   }
   
@@ -364,9 +335,15 @@ class MainFlame extends FlameGame {
   
   // 更新拓扑图层
   void _updateTopologyLayers() {
+    if (rosChannel?.topologyMap_.value == null) {
+      print('拓扑地图数据为空，跳过更新');
+      return;
+    }
+    
     final topologyMap = rosChannel!.topologyMap_.value;
     
     print('更新拓扑图层: ${topologyMap.points.length} 个点, ${topologyMap.routes.length} 条路径');
+    print('离线导航点数量: ${offLineNavPoints.length}');
     
     // 更新拓扑线组件数据，但不直接添加到world
     _topologyLineComponent.removeFromParent();
@@ -383,46 +360,71 @@ class MainFlame extends FlameGame {
     }
     _wayPointComponents.clear();
     
-    // 创建新的路径点组件，但不直接添加到world
-    for (final point in topologyMap.points) {
-      // 创建导航点对象，使用正确的字段
-      final navPoint = NavPoint(
-        id: point.name, // 使用name作为id
-        x: point.x,
-        y: point.y,
-        theta: point.theta,
-        name: point.name,
-        createdAt: DateTime.now(), // 使用当前时间
-      );
+    // 合并离线导航点和拓扑地图点
+    List<NavPoint> navPoints = List<NavPoint>.from(topologyMap.points);
+    
+    // 添加离线导航点，避免重复
+    for (var point in offLineNavPoints) {
+      if (navPoints.where((p) => p.name == point.name).isEmpty) {
+        // 创建新的导航点副本，避免修改原始数据
+        var occPose = _occMap!.xy2idx(vm.Vector2(point.x, point.y));
+        var newNavPoint = NavPoint(
+          x: occPose.x,
+          y: occPose.y,
+          theta: point.theta,
+          name: point.name,
+          type: point.type,
+        );
+        navPoints.add(newNavPoint);
+      }
+    }
+    
+    print('合并后的导航点总数: ${navPoints.length}');
+    
+    // 创建新的路径点组件
+    for (final point in navPoints) {
       
       final waypoint = WayPoint(
-        waypointSize: 20.0,
+        waypointSize: globalSetting.robotSize,
         color: Colors.blue,
         count: 2,
         isEditMode: false,
-        directionAngle: point.theta,
+        direction: point.theta,
         onTap: _onWayPointTap,
-        navPoint: navPoint,
+        navPoint: point,
       );
-      // 设置路径点位置
+      
+      // 设置路径点位置（使用地图索引坐标）
       waypoint.position = Vector2(point.x, point.y);
       _wayPointComponents.add(waypoint);
+      
     }
     
-    print('已创建 ${_wayPointComponents.length} 个路径点组件');
+
     
     // 根据当前图层状态决定是否添加到world
     if (globalState.isLayerVisible('showTopology')) {
+      // 添加拓扑线组件
       if (!world.contains(_topologyLineComponent)) {
         world.add(_topologyLineComponent);
       }
+      
+      // 添加所有导航点组件
       for (final waypoint in _wayPointComponents) {
         if (!world.contains(waypoint)) {
           world.add(waypoint);
         }
       }
-    }else{
-      print('拓扑图层不可见');
+      
+      print('拓扑图层已更新，显示 ${_wayPointComponents.length} 个导航点');
+    } else {
+      print('拓扑图层不可见，移除所有导航点组件');
+      // 当图层不可见时，移除所有导航点组件
+      for (final waypoint in _wayPointComponents) {
+        if (world.contains(waypoint)) {
+          waypoint.removeFromParent();
+        }
+      }
     }
   }
   

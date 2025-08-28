@@ -3,74 +3,16 @@ import 'package:flutter/gestures.dart';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/page/main_page.dart';
+import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
-import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
-import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/display/waypoint.dart';
-import 'package:ros_flutter_gui_app/global/setting.dart';
-import 'package:ros_flutter_gui_app/basic/math.dart';
+import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'dart:math';
-
-// 点位信息类
-class WayPointInfo {
-  final String name;
-  final double x;
-  final double y;
-  final double direction;
-  final bool isSelected;
-  
-  WayPointInfo({
-    required this.name,
-    required this.x,
-    required this.y,
-    required this.direction,
-    this.isSelected = false,
-  });
-  
-  // 从Map创建
-  factory WayPointInfo.fromMap(Map<String, dynamic> map) {
-    return WayPointInfo(
-      name: map['name'] ?? '',
-      x: double.tryParse(map['x'].toString()) ?? 0.0,
-      y: double.tryParse(map['y'].toString()) ?? 0.0,
-      direction: double.tryParse(map['direction'].toString()) ?? 0.0,
-      isSelected: map['isSelected'] ?? false,
-    );
-  }
-  
-  // 转换为Map
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'x': x.toStringAsFixed(2),
-      'y': y.toStringAsFixed(2),
-      'direction': direction.toStringAsFixed(1),
-      'isSelected': isSelected,
-    };
-  }
-  
-  // 复制并更新
-  WayPointInfo copyWith({
-    String? name,
-    double? x,
-    double? y,
-    double? direction,
-    bool? isSelected,
-  }) {
-    return WayPointInfo(
-      name: name ?? this.name,
-      x: x ?? this.x,
-      y: y ?? this.y,
-      direction: direction ?? this.direction,
-      isSelected: isSelected ?? this.isSelected,
-    );
-  }
-}
+import 'package:vector_math/vector_math_64.dart' as vm;
 
 class MapEditPage extends StatefulWidget {
   const MapEditPage({super.key});
@@ -83,7 +25,8 @@ class _MapEditPageState extends State<MapEditPage> {
   late MapEditFlame game;
   late GlobalState globalState;
   late RosChannel rosChannel;
-  late NavPointManager navPointManager;
+
+  OccupancyMap? occupancyMap;
   
   // 当前选中的编辑工具
   String? selectedTool;
@@ -92,224 +35,86 @@ class _MapEditPageState extends State<MapEditPage> {
   List<NavPoint> navPoints = [];
   
   // 当前选中的点位信息
-  WayPointInfo? selectedWayPointInfo;
-  
-  // 当前选中点位的动态更新回调
-  VoidCallback? _onCurrentSelectPointUpdate;
+  NavPoint? selectedWayPointInfo;
 
-  // WayPoint手势处理相关变量
-  bool _isDraggingWayPoint = false;
-  WayPoint? _draggedWayPoint;
-  Vector2? _dragStartPosition;
-  Vector2? _dragStartWorldPosition;
 
   @override
   void initState() {
     super.initState();
     globalState = Provider.of<GlobalState>(context, listen: false);
     rosChannel = Provider.of<RosChannel>(context, listen: false);
-    navPointManager = NavPointManager();
+ 
+    // 监听地图数据
+    rosChannel.map_.addListener(() {
+      occupancyMap=rosChannel.map_.value;
+    });
+      
+    // 立即更新地图数据
+    occupancyMap=rosChannel.map_.value;
+    
+
     
     // 创建专门的地图编辑Flame组件，传入回调函数
     game = MapEditFlame(
       rosChannel: rosChannel,
-      onAddNavPoint: _addNavPoint,
+      onAddNavPoint: (x, y) async {
+        final wayPointInfo = await _addNavPoint(x, y);
+        return wayPointInfo;
+      },
       onWayPointSelectionChanged: _onWayPointSelectionChanged,
-      currentSelectPointUpdate: _onCurrentSelectPointUpdate,
     );
+    // 拖拽/旋转实时回调，刷新右侧信息
+    game.currentSelectPointUpdate = () {
+      setState(() {
+        final info = game.getSelectedWayPointInfo();
+        selectedWayPointInfo = info;
+      });
+    };
     
     // 加载导航点
     _loadNavPoints();
   }
-  
-  // WayPoint拖拽开始处理
-  void _handleWayPointDragStart(Vector2 position) {
-    // 检查是否点击在WayPoint上
-    final worldPosition = game.camera.globalToLocal(position);
-    final wayPoint = _findWayPointAtPosition(worldPosition);
-    
-    if (wayPoint != null) {
-      _isDraggingWayPoint = true;
-      _draggedWayPoint = wayPoint;
-      _dragStartPosition = position;
-      _dragStartWorldPosition = wayPoint.position.clone();
-      
-      // 选中该WayPoint
-      _selectWayPoint(wayPoint);
-    }
-  }
-  
-  // WayPoint拖拽更新处理
-  void _handleWayPointDragUpdate(Vector2 position) {
-    if (_isDraggingWayPoint && _draggedWayPoint != null && _dragStartPosition != null && _dragStartWorldPosition != null) {
-      // 计算拖拽增量
-      final delta = position - _dragStartPosition!;
-      
-      // 将屏幕增量转换为世界坐标增量
-      final worldDelta = delta / game.camera.viewfinder.zoom;
-      
-      // 更新WayPoint位置
-      _draggedWayPoint!.position = _dragStartWorldPosition! + worldDelta;
-      
-      // 调用拖拽更新回调
-      _draggedWayPoint!.onDragUpdate?.call();
-      
-      // 通知外部更新
-      _onCurrentSelectPointUpdate?.call();
-    }
-  }
-  
-  // WayPoint拖拽结束处理
-  void _handleWayPointDragEnd() {
-    _isDraggingWayPoint = false;
-    _draggedWayPoint = null;
-    _dragStartPosition = null;
-    _dragStartWorldPosition = null;
-  }
 
-  // WayPoint缩放开始处理
-  void _handleWayPointScaleStart(Vector2 position) {
-    final worldPosition = game.camera.globalToLocal(position);
-    final wayPoint = _findWayPointAtPosition(worldPosition);
-
-    if (wayPoint != null) {
-      // 如果触摸在WayPoint上，开始WayPoint手势
-      _isDraggingWayPoint = true;
-      _draggedWayPoint = wayPoint;
-      _dragStartPosition = position;
-      _dragStartWorldPosition = wayPoint.position.clone();
-      
-      // 选中该WayPoint
-      _selectWayPoint(wayPoint);
-    } else {
-      // 如果触摸不在WayPoint上，开始地图手势
-      game.onScaleStart(position);
-    }
-  }
-
-  // WayPoint缩放更新处理（同时处理地图缩放、WayPoint拖拽和旋转）
-  void _handleWayPointScaleUpdate(double scale, Vector2 position) {
-    if (_isDraggingWayPoint && _draggedWayPoint != null && _dragStartPosition != null && _dragStartWorldPosition != null) {
-      // 检查是否是旋转手势（scale接近1.0，但位置有变化）
-      final delta = position - _dragStartPosition!;
-      final isRotation = (scale - 1.0).abs() < 0.1 && delta.length > 5.0;
-      
-      if (isRotation) {
-        // 处理WayPoint旋转
-        final center = _draggedWayPoint!.position;
-        final startVector = _dragStartPosition! - center;
-        final currentVector = position - center;
-        
-        // 计算角度变化
-        final startAngle = atan2(startVector.y, startVector.x);
-        final currentAngle = atan2(currentVector.y, currentVector.x);
-        final angleDelta = currentAngle - startAngle;
-        
-        // 更新WayPoint方向角度
-        _draggedWayPoint!.directionAngle += angleDelta;
-        
-        // 同时更新DirectionControl的角度
-        final directionControl = _draggedWayPoint!.children.whereType<DirectionControl>().firstOrNull;
-        if (directionControl != null) {
-          directionControl.updateAngle(_draggedWayPoint!.directionAngle);
-        }
-        
-        // 调用拖拽更新回调
-        _draggedWayPoint!.onDragUpdate?.call();
-        
-        // 通知外部更新
-        _onCurrentSelectPointUpdate?.call();
-        
-        // 更新起始位置，用于连续旋转
-        _dragStartPosition = position;
-      } else {
-        // 处理WayPoint拖拽 - 使用累积增量
-        final worldDelta = delta / game.camera.viewfinder.zoom;
-        _draggedWayPoint!.position = _dragStartWorldPosition! + worldDelta;
-        
-        // 调用拖拽更新回调
-        _draggedWayPoint!.onDragUpdate?.call();
-        
-        // 通知外部更新
-        _onCurrentSelectPointUpdate?.call();
-      }
-    } else {
-      // 处理地图手势（拖拽和缩放）
-      game.onScaleUpdate(scale, position);
-    }
-  }
-
-  // WayPoint缩放结束处理
-  void _handleWayPointScaleEnd() {
-    if (_isDraggingWayPoint) {
-      // 结束WayPoint手势
-      _isDraggingWayPoint = false;
-      _draggedWayPoint = null;
-      _dragStartPosition = null;
-      _dragStartWorldPosition = null;
-    } else {
-      // 结束地图手势
-      game.onScaleEnd();
-    }
-  }
-  
-  // 查找指定位置的WayPoint
-  WayPoint? _findWayPointAtPosition(Vector2 worldPosition) {
-    for (final wayPoint in game.wayPoints) {
-      final distance = (wayPoint.position - worldPosition).length;
-      if (distance <= wayPoint.waypointSize / 2) {
-        return wayPoint;
-      }
-    }
-    return null;
-  }
-  
-  // 选中WayPoint
-  void _selectWayPoint(WayPoint wayPoint) {
-    // 取消其他WayPoint的选中状态
-    for (final wp in game.wayPoints) {
-      wp.isSelected = false;
-    }
-    wayPoint.isSelected = true;
-    
-    // 通知外部WayPoint选择状态变化
-    _onWayPointSelectionChanged();
-  }
-  
   // 导航点选择状态变化回调
   void _onWayPointSelectionChanged() {
     setState(() {
       final info = game.getSelectedWayPointInfo();
-      selectedWayPointInfo = info != null ? WayPointInfo.fromMap(info) : null;
+      selectedWayPointInfo = info;
     });
   }
   
   // 加载导航点
   Future<void> _loadNavPoints() async {
-    await navPointManager.loadNavPoints();
+    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+    navPoints = await navPointManager.loadNavPoints();
+    for(var navPoint in navPoints){
+      vm.Vector2 occPose = occupancyMap!.xy2idx(vm.Vector2(navPoint.x, navPoint.y));
+      game.addWayPoint(navPoint,occPose.x,occPose.y,navPoint.theta);
+    }
     setState(() {
-      navPoints = navPointManager.navPoints;
     });
   }
   
   // 添加导航点
-  Future<void> _addNavPoint(double x, double y) async {
+  Future<NavPoint?> _addNavPoint(double x, double y) async {
     final name = await _showAddNavPointDialog(x, y);
     if (name != null && name.isNotEmpty) {
-      await navPointManager.addNavPoint(x, y, 0.0, name);
-      await _loadNavPoints();
-      
-      // 清除选中状态
-      setState(() {
-        selectedWayPointInfo = null;
-      });
+      // 用户输入了名称并点击确定，创建导航点
+      final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+      final navPoint = await navPointManager.addNavPoint(x, y, 0.0, name);
+      return navPoint;
+    } else {
+      // 用户点击取消或没有输入名称
+      return null;
     }
   }
   
   // 显示添加导航点对话框
   Future<String?> _showAddNavPointDialog(double x, double y) async {
     final TextEditingController nameController = TextEditingController();
-    nameController.text = '导航点_${navPoints.length + 1}';
+    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+    int id = await navPointManager.getNextId();
+    nameController.text = 'POINT_${id.toString()}';
     
     return showDialog<String>(
       context: context,
@@ -362,22 +167,28 @@ class _MapEditPageState extends State<MapEditPage> {
               }
             },
             child: GestureDetector(
-              onTapDown: (details) {
-                final position = Vector2(details.globalPosition.dx, details.globalPosition.dy);
-                game.onTapDown(position);
+              onTapDown: (details) async {
+                // 使用局部坐标，避免受栈内其他控件偏移影响
+                final position = Vector2(details.localPosition.dx, details.localPosition.dy);
+                await game.onTapDown(position);
               },
               onScaleStart: (details) {
                 final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-                _handleWayPointScaleStart(position);
+                  game.onScaleStart(position);
               },
               onScaleUpdate: (details) {
                 final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-                _handleWayPointScaleUpdate(details.scale, position);
+                game.onScaleUpdate(details.scale, position);
               },
               onScaleEnd: (details) {
-                _handleWayPointScaleEnd();
+                  game.onScaleEnd();
               },
-              child: GameWidget(game: game),
+              child: MouseRegion(
+                cursor: (selectedTool == 'addNavPoint')
+                    ? SystemMouseCursors.precise
+                    : SystemMouseCursors.basic,
+                child: GameWidget(game: game),
+              ),
             ),
           ),
           
@@ -409,7 +220,7 @@ class _MapEditPageState extends State<MapEditPage> {
 
   Widget _buildTopToolbar(BuildContext context, ThemeData theme) {
     return Container(
-      height: 80,
+      height: 60,
       decoration: BoxDecoration(
         color: Colors.orange,
         boxShadow: [
@@ -441,9 +252,21 @@ class _MapEditPageState extends State<MapEditPage> {
                 // 保存按钮
                 IconButton(
                   icon: const Icon(Icons.save, color: Colors.white, size: 28),
-                  onPressed: () {
-                    // TODO: 实现保存功能
-                    print('保存');
+                  onPressed: () async {
+                    List<NavPoint> navPoints = game.getAllWayPoint();
+                    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+                    await navPointManager.saveNavPoints(navPoints);
+                    
+                    // 显示保存成功提示
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('保存成功！'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
                   tooltip: '保存',
                 ),
@@ -479,7 +302,7 @@ class _MapEditPageState extends State<MapEditPage> {
           Expanded(
             child: Center(
               child: Text(
-                '地图编辑模式',
+                '地图编辑',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -548,17 +371,6 @@ class _MapEditPageState extends State<MapEditPage> {
             
             const SizedBox(height: 8),
             
-            // 删除选中的导航点
-            if (selectedTool == 'addNavPoint') ...[
-              _buildEditTool(
-                icon: Icons.delete,
-                label: '删除选中',
-                toolName: 'deleteSelected',
-                color: Colors.red,
-              ),
-              
-              const SizedBox(height: 8),
-            ],
 
           ],
         ),
@@ -584,16 +396,24 @@ class _MapEditPageState extends State<MapEditPage> {
             icon: Icon(icon, size: 24),
             color: isActive ? color : Colors.grey,
             onPressed: () {
-              if (toolName == 'deleteSelected') {
-                // 删除选中的导航点
-                game.deleteSelectedWayPoint();
-                setState(() {});
-              } else if (isActive) {
+               if (isActive) {
                 selectedTool = null; // 取消选择
                 game.setSelectedTool(null);
+                // 退出所有点位编辑模式
+                for (final wp in game.wayPoints) {
+                  wp.setSelected(false);
+                  wp.setEditMode(false);
+                }
               } else {
                 selectedTool = toolName; // 选择工具
                 game.setSelectedTool(toolName);
+                // 切换到其他工具时退出所有点位编辑模式
+                if (toolName != 'addNavPoint') {
+                  for (final wp in game.wayPoints) {
+                    wp.setSelected(false);
+                    wp.setEditMode(false);
+                  }
+                }
               }
               setState(() {});
             },
@@ -766,26 +586,33 @@ class _MapEditPageState extends State<MapEditPage> {
           _buildInfoRow('名称', selectedWayPointInfo!.name),
           _buildInfoRow('X坐标', '${selectedWayPointInfo!.x.toStringAsFixed(2)} m'),
           _buildInfoRow('Y坐标', '${selectedWayPointInfo!.y.toStringAsFixed(2)} m'),
-          _buildInfoRow('方向', '${(selectedWayPointInfo!.direction * 180 / 3.14159).toStringAsFixed(1)}°'),
+          _buildInfoRow('方向', '${(selectedWayPointInfo!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
           
           const SizedBox(height: 12),
           
-          // 关闭按钮
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  selectedWayPointInfo = null;
-                });
-              },
-              icon: const Icon(Icons.close, size: 16),
-              label: const Text('关闭'),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.grey.withOpacity(0.2),
-                padding: const EdgeInsets.symmetric(vertical: 8),
+          // 操作区：删除选中
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    String name = game.deleteSelectedWayPoint();
+                    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+                    navPointManager.removeNavPoint(name);
+                    setState(() {
+                      selectedWayPointInfo = null;
+                    });
+                  },
+                  icon: const Icon(Icons.delete, size: 16),
+                  label: const Text('删除选中'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
