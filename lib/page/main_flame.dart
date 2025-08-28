@@ -140,7 +140,7 @@ class MainFlame extends FlameGame {
     world.add(_robotFootprintComponent);
     
     //机器人位置 - 放在最上层
-    var svg = await loadSvg('icons/robot/robot2.svg');
+    var svg = await loadSvg('icons/robot/robot.svg');
     _displayRobot= SvgComponent(
       svg: svg,
       size: Vector2.all(globalSetting.robotSize),
@@ -195,7 +195,7 @@ class MainFlame extends FlameGame {
         rosChannel!.robotPoseScene.value.x,
         rosChannel!.robotPoseScene.value.y,
       );
-      _displayRobot.angle = -pi/2 - rosChannel!.robotPoseScene.value.theta;
+      _displayRobot.angle = pi/4 - rosChannel!.robotPoseScene.value.theta;
     });
     
     // 监听机器人轮廓数据
