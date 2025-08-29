@@ -139,6 +139,7 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                   child: Joystick(
                     controller: rightJoystickController,
                     mode: JoystickMode.all,
+                    includeInitialAnimation: false,
                     listener: (details) {
                       double max_vw =
                           double.parse(globalSetting.getConfig('MaxVw'));
