@@ -256,6 +256,7 @@ class MapEditFlame extends FlameGame {
       },
       navPoint: navPoint,
       rosChannel: rosChannel,
+      poseType: PoseType.waypoint,
     );
     
     wayPoint.priority = 1000; // 确保在最上层

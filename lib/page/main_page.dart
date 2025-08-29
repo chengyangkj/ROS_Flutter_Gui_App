@@ -359,6 +359,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         Provider.of<GlobalState>(context, listen: false)
                             .mode
                             .value = Mode.normal;
+                        game.setRelocMode(false);
                         setState(() {});
                       },
                       icon: Icon(Icons.check, color: Colors.green),
@@ -369,6 +370,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         Provider.of<GlobalState>(context, listen: false)
                             .mode
                             .value = Mode.normal;
+                        game.setRelocMode(false);
                         setState(() {});
                       },
                       icon: Icon(Icons.close, color: Colors.red),

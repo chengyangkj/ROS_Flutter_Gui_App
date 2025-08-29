@@ -69,6 +69,7 @@ class MainFlame extends FlameGame {
   Vector2? _lastFocalPoint;
 
   bool isRelocMode = false;
+  RobotPose relocRobotPose = RobotPose(0, 0, 0);
   
   MainFlame({
     this.rosChannel, 
@@ -144,13 +145,14 @@ class MainFlame extends FlameGame {
     //机器人位置 - 放在最上层
     _displayRobot = PoseComponent(
       PoseComponentSize: globalSetting.robotSize,
-      color: const Color(0xFF0080ff),
+      color: Colors.blue,
       count: 2,
       isEditMode: false,
       onPoseChanged: (RobotPose pose) {
-      
+       relocRobotPose=pose;
       },
       rosChannel: rosChannel,
+      poseType: PoseType.robot,
     );
     _displayRobot.priority = 1002;
     world.add(_displayRobot);
@@ -204,6 +206,7 @@ class MainFlame extends FlameGame {
       // 使用新的updatePose方法更新机器人位置
       if(isRelocMode) return;
       _displayRobot.updatePose(rosChannel!.robotPoseMap.value);
+      relocRobotPose=rosChannel!.robotPoseMap.value;
     });
     
     // 监听机器人轮廓数据
@@ -217,7 +220,10 @@ class MainFlame extends FlameGame {
     rosChannel!.laserPointData.addListener(() {
       if(rosChannel!.map_.value == null || rosChannel!.map_.value.mapConfig.resolution <= 0 || rosChannel!.map_.value.height() <= 0) return;
       final laserPoints = rosChannel!.laserPointData.value;
-      final robotPose = laserPoints.robotPose;
+      var robotPose = laserPoints.robotPose;
+      if(isRelocMode){
+        robotPose=relocRobotPose;
+      }
       List<Vector2> vector2Points =[];
       for (int i = 0; i < laserPoints.laserPoseBaseLink.length; i++) {
         final laserPointMap=absoluteSum(robotPose, RobotPose(laserPoints.laserPoseBaseLink[i].x, laserPoints.laserPoseBaseLink[i].y, 0));
@@ -393,6 +399,7 @@ class MainFlame extends FlameGame {
         direction: point.theta,
         navPoint: point,
         rosChannel: rosChannel,
+        poseType: PoseType.waypoint,
       );
       
       // 设置路径点位置（使用地图索引坐标）

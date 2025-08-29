@@ -74,6 +74,7 @@ class PoseComponent extends PositionComponent with HasGameRef {
       color: color,
       count: count,
       animationValue: animationValue,
+      poseType: poseType,
     ));
     
     // 根据编辑模式与选中状态控制方向环
@@ -207,9 +208,17 @@ class PoseComponent extends PositionComponent with HasGameRef {
   void _triggerPoseChangedCallback() {
     if (onPoseChanged != null) {
       // 创建RobotPose对象，包含当前位置和方向
+      var occMap = getOccMap();
+      double mapPosex=0;
+      double mapPosey=0;
+      if(occMap != null){
+        var p = occMap.idx2xy(vm.Vector2(position.x, position.y));
+        mapPosex=p.x;
+        mapPosey=p.y;
+      }
       final robotPose = RobotPose(
-        position.x,  // x坐标
-        position.y,  // y坐标
+        mapPosex,  // x坐标
+        mapPosey,  // y坐标
         -direction,   // 方向角度
       );
       onPoseChanged!(robotPose);
@@ -432,12 +441,14 @@ class PoseComponentRenderer extends Component with HasGameRef {
   final Color color;
   final int count;
   double animationValue; // 移除final，允许更新
+  final PoseType poseType;
 
   PoseComponentRenderer({
     required this.size,
     required this.color,
     required this.count,
     required this.animationValue,
+    required this.poseType,
   });
   
   // 添加更新动画值的方法
@@ -468,41 +479,68 @@ class PoseComponentRenderer extends Component with HasGameRef {
         // 绘制机器人坐标
         double radius = min(size / 2, size / 2);
 
-        for (int i = count; i >= 0; i--) {
-          final double opacity = (1.0 - ((i + animationValue) / (count + 1)));
-          final paint = Paint()
-            ..color = color.withOpacity(opacity)
+        // 根据点位类型绘制不同的水波纹样式
+        if (poseType == PoseType.robot) {
+          // 机器人类型：绘制圆形水波纹
+          for (int i = count; i >= 0; i--) {
+            final double opacity = (1.0 - ((i + animationValue) / (count + 1)));
+            final paint = Paint()
+              ..color = color.withOpacity(opacity)
+              ..style = PaintingStyle.fill;
+
+            double _radius = radius * ((i + animationValue) / (count + 1));
+            canvas.drawCircle(Offset.zero, _radius, paint);
+          }
+        } else {
+          // 导航点类型：绘制菱形水波纹
+          for (int i = count; i >= 0; i--) {
+            final double opacity = (1.0 - ((i + animationValue) / (count + 1)));
+            final paint = Paint()
+              ..color = color.withOpacity(opacity)
+              ..style = PaintingStyle.fill;
+
+            double _radius = radius * ((i + animationValue) / (count + 1));
+
+            // 计算菱形的四个顶点，中心点在(0, 0)
+            final path = Path()
+              ..moveTo(_radius, 0) // 右顶点
+              ..lineTo(0, _radius) // 下顶点
+              ..lineTo(-_radius, 0) // 左顶点
+              ..lineTo(0, -_radius) // 上顶点
+              ..close(); // 闭合路径
+
+            // 绘制路径
+            canvas.drawPath(path, paint);
+          }
+        }
+
+        // 根据点位类型绘制不同的中心样式
+        if (poseType == PoseType.robot) {
+          // 机器人类型：绘制圆形中心，添加轻微的脉动动画
+          final double centerPulse = 1.0 + 0.1 * sin(animationValue * 4 * pi);
+          final centerPaint = Paint()
+            ..color = color.withOpacity(0.8 + 0.2 * sin(animationValue * 2 * pi))
             ..style = PaintingStyle.fill;
-
-          double _radius = radius * ((i + animationValue) / (count + 1));
-
-          // 计算菱形的四个顶点，中心点在(0, 0)
-          final path = Path()
-            ..moveTo(_radius, 0) // 右顶点
-            ..lineTo(0, _radius) // 下顶点
-            ..lineTo(-_radius, 0) // 左顶点
-            ..lineTo(0, -_radius) // 上顶点
+          
+          final centerRadius = radius / 3 * centerPulse;
+          canvas.drawCircle(Offset.zero, centerRadius, centerPaint);
+        } else {
+          // 导航点类型：绘制菱形中心，添加轻微的脉动动画
+          final double centerPulse = 1.0 + 0.1 * sin(animationValue * 4 * pi);
+          final centerPaint = Paint()
+            ..color = color.withOpacity(0.8 + 0.2 * sin(animationValue * 2 * pi))
+            ..style = PaintingStyle.fill;
+          
+          final centerPath = Path()
+            ..moveTo(radius / 3 * centerPulse, 0) // 右顶点
+            ..lineTo(0, radius / 3 * centerPulse) // 下顶点
+            ..lineTo(-radius / 3 * centerPulse, 0) // 左顶点
+            ..lineTo(0, -radius / 3 * centerPulse) // 上顶点
             ..close(); // 闭合路径
 
           // 绘制路径
-          canvas.drawPath(path, paint);
+          canvas.drawPath(centerPath, centerPaint);
         }
-
-        // 绘制中心菱形，中心点在(0, 0)，添加轻微的脉动动画
-        final double centerPulse = 1.0 + 0.1 * sin(animationValue * 4 * pi);
-        final centerPaint = Paint()
-          ..color = color.withOpacity(0.8 + 0.2 * sin(animationValue * 2 * pi))
-          ..style = PaintingStyle.fill;
-        
-        final centerPath = Path()
-          ..moveTo(radius / 3 * centerPulse, 0) // 右顶点
-          ..lineTo(0, radius / 3 * centerPulse) // 下顶点
-          ..lineTo(-radius / 3 * centerPulse, 0) // 左顶点
-          ..lineTo(0, -radius / 3 * centerPulse) // 上顶点
-          ..close(); // 闭合路径
-
-        // 绘制路径
-        canvas.drawPath(centerPath, centerPaint);
 
         // 绘制方向指示器，中心点在(0, 0)
         Paint dirPainter = Paint()
