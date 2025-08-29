@@ -13,7 +13,10 @@ import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:toastification/toastification.dart';
+import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
 
 
 
@@ -27,6 +30,13 @@ class _MainFlamePageState extends State<MainFlamePage> {
   bool showLayerControl = false;
   bool showCamera = false;
   NavPoint? selectedNavPoint;
+  
+  // 相机相关变量
+  Offset camPosition = Offset(30, 10); // 初始位置
+  bool isCamFullscreen = false; // 是否全屏
+  Offset camPreviousPosition = Offset(30, 10); // 保存进入全屏前的位置
+  late double camWidgetWidth;
+  late double camWidgetHeight;
 
   @override
   void initState() {
@@ -47,6 +57,15 @@ class _MainFlamePageState extends State<MainFlamePage> {
     
     // 加载图层设置
     Provider.of<GlobalState>(context, listen: false).loadLayerSettings();
+    
+    // 初始化相机尺寸
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final screenSize = MediaQuery.of(context).size;
+        camWidgetWidth = screenSize.width / 3.5;
+        camWidgetHeight = camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
+      }
+    });
   }
   
   // 重新加载导航点和地图数据
@@ -94,6 +113,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
               _buildLeftToolbar(context, theme),
               _buildRightToolbar(context, theme),
               _buildBottomControls(context, theme),
+              _buildCameraWidget(context, theme),
+              _buildGamepadWidget(context, theme),
             ],
           ),
         );
@@ -356,7 +377,9 @@ class _MainFlamePageState extends State<MainFlamePage> {
               ),
             ),
           ),
-
+          
+          const SizedBox(height: 8),
+          
           // 显示相机图像
           Card(
             elevation: 10,
@@ -368,9 +391,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   showCamera = !showCamera;
                 });
               },
+              tooltip: '相机图像',
             ),
           ),
-
+          
+          const SizedBox(height: 8),
+          
           // 手动控制
           Card(
             elevation: 10,
@@ -384,11 +410,23 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     : theme.iconTheme.color,
               ),
               onPressed: () {
-                var globalState =
-                    Provider.of<GlobalState>(context, listen: false);
-                globalState.isManualCtrl.value =
-                    !globalState.isManualCtrl.value;
-                setState(() {});
+                if (Provider.of<GlobalState>(context, listen: false)
+                    .isManualCtrl
+                    .value) {
+                  Provider.of<GlobalState>(context, listen: false)
+                      .isManualCtrl
+                      .value = false;
+                  Provider.of<RosChannel>(context, listen: false)
+                      .stopMunalCtrl();
+                  setState(() {});
+                } else {
+                  Provider.of<GlobalState>(context, listen: false)
+                      .isManualCtrl
+                      .value = true;
+                  Provider.of<RosChannel>(context, listen: false)
+                      .startMunalCtrl();
+                  setState(() {});
+                }
               },
             ),
           ),
@@ -585,6 +623,15 @@ class _MainFlamePageState extends State<MainFlamePage> {
                           ),
                           child: ElevatedButton.icon(
                             onPressed: () async {
+                              if(Provider.of<GlobalState>(context, listen: false).isManualCtrl.value){
+                                toastification.show(
+                                  context: context,
+                                  title: Text('请先停止手动控制'),
+                                  autoCloseDuration: const Duration(seconds: 3),
+                                );
+                                return;
+                              }
+                              
                               // 使用RosChannel发送导航目标
                               Provider.of<RosChannel>(context, listen: false).sendNavigationGoal(
                                 RobotPose(
@@ -595,13 +642,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
                               );
                               
                               // 使用fluttertoast显示成功消息
-                              Fluttertoast.showToast(
-                                msg: '已发送导航目标到 ${selectedNavPoint!.name}',
-                                toastLength: Toast.LENGTH_SHORT,
-                                gravity: ToastGravity.TOP,
-                                backgroundColor: Colors.blue[600],
-                                textColor: Colors.white,
-                                fontSize: 16.0,
+                              toastification.show(
+                                context: context,
+                                title: Text('已发送导航目标到 ${selectedNavPoint!.name}'),
+                                autoCloseDuration: const Duration(seconds: 3),
                               );
                               
                               // 发送导航目标后自动关闭信息面板
@@ -736,6 +780,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   tooltip: '退出',
                 ),
               ),
+                             // 移除这里的GamepadWidget，我们将把它移到屏幕底部
             ],
           ),
         ],
@@ -767,13 +812,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       onPressed: () {
                         Provider.of<RosChannel>(context, listen: false)
                             .sendEmergencyStop();
-                        Fluttertoast.showToast(
-                          msg: '急停已触发',
-                          toastLength: Toast.LENGTH_SHORT,
-                          gravity: ToastGravity.CENTER,
-                          backgroundColor: Colors.red[600],
-                          textColor: Colors.white,
-                          fontSize: 16.0,
+                        toastification.show(
+                          context: context,
+                          title: Text('急停已触发'),
+                          autoCloseDuration: const Duration(seconds: 3),
                         );
                       },
                     ),
@@ -803,13 +845,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                   Provider.of<RosChannel>(context,
                                           listen: false)
                                       .sendCancelNav();
-                                  Fluttertoast.showToast(
-                                    msg: '导航已停止',
-                                    toastLength: Toast.LENGTH_SHORT,
-                                    gravity: ToastGravity.CENTER,
-                                    backgroundColor: Colors.blue[600],
-                                    textColor: Colors.white,
-                                    fontSize: 16.0,
+                                  toastification.show(
+                                    context: context,
+                                    title: Text('导航已停止'),
+                                    autoCloseDuration: const Duration(seconds: 3),
                                   );
                                 },
                               ),
@@ -909,6 +948,96 @@ class _MainFlamePageState extends State<MainFlamePage> {
       default:
         return '未知类型';
     }
+  }
+  
+  // 构建相机显示组件
+  Widget _buildCameraWidget(BuildContext context, ThemeData theme) {
+    if (!showCamera) return const SizedBox.shrink();
+    
+    final screenSize = MediaQuery.of(context).size;
+    
+    return Positioned(
+      left: camPosition.dx,
+      top: camPosition.dy,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          if (!isCamFullscreen) {
+            setState(() {
+              double newX = camPosition.dx + details.delta.dx;
+              double newY = camPosition.dy + details.delta.dy;
+              // 限制位置在屏幕范围内
+              newX = newX.clamp(0.0, screenSize.width - camWidgetWidth);
+              newY = newY.clamp(0.0, screenSize.height - camWidgetHeight);
+              camPosition = Offset(newX, newY);
+            });
+          }
+        },
+        child: Container(
+          child: Stack(
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // 在非全屏状态下，获取屏幕宽高
+                  double containerWidth = isCamFullscreen
+                      ? screenSize.width
+                      : camWidgetWidth;
+                  double containerHeight = isCamFullscreen
+                      ? screenSize.height
+                      : camWidgetHeight;
+
+                  return Mjpeg(
+                    stream: 'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
+                    isLive: true,
+                    width: containerWidth,
+                    height: containerHeight,
+                    fit: BoxFit.fill,
+                  );
+                },
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: Icon(
+                    isCamFullscreen
+                        ? Icons.fullscreen_exit
+                        : Icons.fullscreen,
+                    color: Colors.black,
+                  ),
+                  constraints: BoxConstraints(), // 移除按钮的默认大小约束，变得更加紧凑
+                  onPressed: () {
+                    setState(() {
+                      isCamFullscreen = !isCamFullscreen;
+                      if (isCamFullscreen) {
+                        // 进入全屏时，保存当前位置，并将位置设为 (0, 0)
+                        camPreviousPosition = camPosition;
+                        camPosition = Offset(0, 0);
+                      } else {
+                        // 退出全屏时，恢复之前的位置
+                        camPosition = camPreviousPosition;
+                      }
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  // 构建游戏手柄组件
+  Widget _buildGamepadWidget(BuildContext context, ThemeData theme) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Container(
+        height: 150, // 给GamepadWidget一个明确的高度
+        child: GamepadWidget(),
+      ),
+    );
   }
 }
 

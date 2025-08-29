@@ -52,11 +52,12 @@ dependencies:
   package_info_plus: ^8.1.0
   flutter_mjpeg: ^2.0.4
   http: ^0.13.6
-  fluttertoast: ^8.2.12
+  toastification: ^1.0.0
   intl: any
   flutter_localizations:
     sdk: flutter
   flutter_svg: ^2.0.9
+  oktoast: ^3.4.0
 
 flutter_icons:
   android: true

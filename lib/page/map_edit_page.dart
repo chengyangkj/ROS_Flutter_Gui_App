@@ -11,9 +11,9 @@ import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/display/waypoint.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:toastification/toastification.dart';
 import 'dart:math';
 import 'package:vector_math/vector_math_64.dart' as vm;
-import 'package:fluttertoast/fluttertoast.dart';
 
 class MapEditPage extends StatefulWidget {
   final VoidCallback? onExit;
@@ -272,13 +272,12 @@ class _MapEditPageState extends State<MapEditPage> {
                     
                     // 显示保存成功提示
                     if (mounted) {
-                      Fluttertoast.showToast(
-                        msg: '保存成功！',
-                        toastLength: Toast.LENGTH_SHORT,
-                        gravity: ToastGravity.TOP,
-                        backgroundColor: Colors.green,
-                        textColor: Colors.white,
-                        fontSize: 16.0,
+                      toastification.show(
+                        context: context,
+                        type: ToastificationType.success,
+                        style: ToastificationStyle.flatColored,
+                        title:const Text('保存成功！'),
+                        autoCloseDuration: const Duration(seconds: 2),
                       );
                     }
                   },

@@ -16,6 +16,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'provider/them_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
+import 'package:toastification/toastification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../global/setting.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 class GamepadMappingPage extends StatefulWidget {

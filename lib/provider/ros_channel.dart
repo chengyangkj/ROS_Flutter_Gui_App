@@ -24,10 +24,10 @@ import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 import "package:ros_flutter_gui_app/basic/math.dart";
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:image/image.dart' as img;
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/polygon_stamped.dart';
 import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
+import 'package:oktoast/oktoast.dart';
 
 class LaserData {
   RobotPose robotPose;
@@ -120,24 +120,30 @@ class RosChannel {
         //重连
         Timer.periodic(const Duration(seconds: 5), (timer) async {
           if (isReconnect_ && rosConnectState_ != Status.connected){
-            Fluttertoast.showToast(
-              msg: "lost connection to ${rosUrl_} try reconnect...",
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.TOP,
+            showToast(
+              "lost connection to ${rosUrl_} try reconnect...",
+              position: ToastPosition.bottom,
+              backgroundColor: Colors.black.withOpacity(0.8),
+              radius: 13.0,
+              textStyle: const TextStyle(fontSize: 18.0, color: Colors.white),
             );
             String error = await connect(rosUrl_);
-            if(error.isEmpty){
-              Fluttertoast.showToast(
-                msg: "reconnect success to ${rosUrl_}!",
-                toastLength: Toast.LENGTH_SHORT,
-                gravity: ToastGravity.TOP,
-              );
-            }else{
-              Fluttertoast.showToast(
-                msg: "reconnect failed to ${rosUrl_} error: $error",
-                toastLength: Toast.LENGTH_LONG,
-                gravity: ToastGravity.TOP,
-              );
+                         if(error.isEmpty){
+               showToast(
+                 "reconnect success to ${rosUrl_}!",
+                 position: ToastPosition.bottom,
+                 backgroundColor: Colors.green.withOpacity(0.8),
+                 radius: 13.0,
+                 textStyle: const TextStyle(fontSize: 18.0, color: Colors.white),
+               );
+             }else{
+               showToast(
+                 "reconnect failed to ${rosUrl_} error: $error",
+                 position: ToastPosition.bottom,
+                 backgroundColor: Colors.red.withOpacity(0.8),
+                 radius: 13.0,
+                 textStyle: const TextStyle(fontSize: 18.0, color: Colors.white),
+               );
             }
           }
         });
@@ -492,6 +498,14 @@ class RosChannel {
       cmdVelTimer!.cancel();
       cmdVelTimer = null;
     }
+    
+    // 重置速度命令，确保机器人停止
+    cmdVel_.vx = 0;
+    cmdVel_.vy = 0;
+    cmdVel_.vw = 0;
+    
+    // 发送一次停止命令
+    sendSpeed(0, 0, 0);
   }
 
   Future<void> sendSpeed(double vx, double vy, double vw) async {

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:toastification/toastification.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 class ConnectPage extends StatefulWidget {
@@ -324,10 +324,10 @@ class _ConnectPageState extends State<ConnectPage> {
       if (error.isEmpty) {
         Navigator.pushNamed(context, "/map");
       } else {
-        Fluttertoast.showToast(
-          msg: "connect to ROS failed: $error",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
+        toastification.show(
+          context: context,
+          title: Text("connect to ROS failed: $error"),
+          autoCloseDuration: const Duration(seconds: 5),
         );
       }
     } finally {
