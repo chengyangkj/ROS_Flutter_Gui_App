@@ -7,14 +7,14 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 class PolygonComponent extends Component {
   List<vm.Vector2> pointList = [];
   Color color = Colors.green;
-  bool enableWaterDropAnimation = true;
+  bool enableWaterDropAnimation = false;
   
   late double _animationTime;
   
   PolygonComponent({
     required this.pointList, 
     required this.color,
-    this.enableWaterDropAnimation = true, // 默认启用动画
+    this.enableWaterDropAnimation = false, // 默认启用动画
   }) {
     _animationTime = 0.0;
   }

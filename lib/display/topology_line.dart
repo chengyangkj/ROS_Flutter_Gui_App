@@ -6,19 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 
 class TopologyLine extends Component with HasGameRef {
   final List<NavPoint> points;
   final List<TopologyRoute> routes;
-  final OccupancyMap? occMap; 
+  final OccupancyMap? occMap;
+  final RosChannel? rosChannel;
   late Timer animationTimer;
   double animationValue = 0.0;
 
   TopologyLine({
     required this.points,
     required this.routes,
-    this.occMap, 
+    this.occMap,
+    this.rosChannel,
   });
 
   @override
@@ -33,7 +36,8 @@ class TopologyLine extends Component with HasGameRef {
     add(TopologyLineRenderer(
       points: points,
       routes: routes,
-      occMap: occMap, // 传递occMap到渲染器
+      occMap: occMap,
+      rosChannel: rosChannel,
       animationValue: animationValue,
     ));
   }
@@ -54,23 +58,36 @@ class TopologyLine extends Component with HasGameRef {
 class TopologyLineRenderer extends Component with HasGameRef {
   final List<NavPoint> points;
   final List<TopologyRoute> routes;
-  final OccupancyMap? occMap; // 添加OccupancyMap参数
+  final OccupancyMap? occMap;
+  final RosChannel? rosChannel;
   final double animationValue;
 
   TopologyLineRenderer({
     required this.points,
     required this.routes,
-    this.occMap, // 可选参数，保持向后兼容
+    this.occMap,
+    this.rosChannel,
     required this.animationValue,
   });
 
+  // 获取当前地图数据
+  OccupancyMap? get currentMap {
+    if (occMap != null) {
+      return occMap;
+    }
+    if (rosChannel != null) {
+      return rosChannel!.map_.value;
+    }
+    return null;
+  }
+
   // 获取地图分辨率
-  double get mapResolution => occMap?.mapConfig.resolution ?? 0.05; // 默认值0.05
+  double get mapResolution => currentMap?.mapConfig.resolution ?? 0.05;
 
   // 获取地图原点
-  Offset get mapOrigin => occMap != null 
-      ? Offset(occMap!.mapConfig.originX, occMap!.mapConfig.originY)
-      : Offset.zero; // 默认原点
+  Offset get mapOrigin => currentMap != null 
+      ? Offset(currentMap!.mapConfig.originX, currentMap!.mapConfig.originY)
+      : Offset.zero;
 
   @override
   void render(Canvas canvas) {
@@ -84,9 +101,14 @@ class TopologyLineRenderer extends Component with HasGameRef {
         ..strokeWidth = 1.0
         ..strokeCap = StrokeCap.round;
 
+      final currentMapData = currentMap;
+      if (currentMapData == null) {
+        return; // 没有地图数据时不渲染
+      }
+
       final Map<String, Offset> pointMap = {};
       for (final point in points) {
-        var occPose = occMap!.xy2idx(vm.Vector2(point.x, point.y));
+        var occPose = currentMapData.xy2idx(vm.Vector2(point.x, point.y));
         pointMap[point.name] = Offset(occPose.x, occPose.y);
       }
 

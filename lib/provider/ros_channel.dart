@@ -84,7 +84,7 @@ class RosChannel {
   ValueNotifier<TopologyMap> topologyMap_ =
       ValueNotifier<TopologyMap>(TopologyMap(points: []));
   Status rosConnectState_ = Status.none;
-  ValueNotifier<RobotPose> currRobotPose_ = ValueNotifier(RobotPose.zero());
+  ValueNotifier<RobotPose> robotPoseMap = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
   ValueNotifier<List<vm.Vector2>> laserBasePoint_ = ValueNotifier([]);
   ValueNotifier<List<vm.Vector2>> localPath = ValueNotifier([]);
@@ -106,12 +106,12 @@ class RosChannel {
         Timer.periodic(const Duration(milliseconds: 50), (timer) {
           if (rosConnectState_ != Status.connected) return;
           try {
-            currRobotPose_.value = tf_.lookUpForTransform(
+            robotPoseMap.value = tf_.lookUpForTransform(
                 globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
                             vm.Vector2 poseScene = map_.value
-            .xy2idx(vm.Vector2(currRobotPose_.value.x, currRobotPose_.value.y));
+            .xy2idx(vm.Vector2(robotPoseMap.value.x, robotPoseMap.value.y));
         robotPoseScene.value = RobotPose(
-            poseScene.x, poseScene.y, currRobotPose_.value.theta);
+            poseScene.x, poseScene.y, robotPoseMap.value.theta);
           } catch (e) {
             print("get robot pose error:${e}");
           }
@@ -151,9 +151,6 @@ class RosChannel {
     });
   }
 
-  RobotPose get robotPoseMap {
-    return currRobotPose_.value;
-  }
 
   Future<String> connect(String url) async {
     rosUrl_ = url;
@@ -205,7 +202,7 @@ class RosChannel {
     robotSpeed_.value.vx = 0;
     robotSpeed_.value.vy = 0;
     robotSpeed_.value.vw = 0;
-    currRobotPose_.value = RobotPose.zero();
+    robotPoseMap.value = RobotPose.zero();
     robotPoseScene.value = RobotPose.zero();
     navStatus_.value = ActionStatus.unknown;
     battery_.value = 0;
@@ -856,7 +853,7 @@ class RosChannel {
     // 使用新的列表赋值来触发监听器
     laserBasePoint_.value = newLaserPoints;
     laserPointData.value = LaserData(
-        robotPose: currRobotPose_.value, laserPoseBaseLink: newLaserPoints);
+        robotPose: robotPoseMap.value, laserPoseBaseLink: newLaserPoints);
   }
 
   DateTime? _lastMapCallbackTime;

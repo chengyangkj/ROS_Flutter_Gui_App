@@ -682,7 +682,7 @@ class Setting {
   }
   
   double get robotSize {
-    return prefs.getDouble('robotSize') ?? 6.0;
+    return prefs.getDouble('robotSize') ?? 8.0;
   }
   
 }

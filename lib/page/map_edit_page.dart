@@ -9,7 +9,7 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
-import 'package:ros_flutter_gui_app/display/waypoint.dart';
+import 'package:ros_flutter_gui_app/display/pose.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:toastification/toastification.dart';
 import 'dart:math';
@@ -29,8 +29,6 @@ class _MapEditPageState extends State<MapEditPage> {
   late GlobalState globalState;
   late RosChannel rosChannel;
 
-  OccupancyMap? occupancyMap;
-  
   // 当前选中的编辑工具
   String? selectedTool;
   
@@ -50,16 +48,6 @@ class _MapEditPageState extends State<MapEditPage> {
     // 设置地图编辑模式
     globalState.mode.value = Mode.mapEdit;
  
-    // 监听地图数据
-    rosChannel.map_.addListener(() {
-      occupancyMap=rosChannel.map_.value;
-    });
-      
-    // 立即更新地图数据
-    occupancyMap=rosChannel.map_.value;
-    
-
-    
     // 创建专门的地图编辑Flame组件，传入回调函数
     game = MapEditFlame(
       rosChannel: rosChannel,
@@ -101,8 +89,7 @@ class _MapEditPageState extends State<MapEditPage> {
     final navPointManager = Provider.of<NavPointManager>(context, listen: false);
     navPoints = await navPointManager.loadNavPoints();
     for(var navPoint in navPoints){
-      vm.Vector2 occPose = occupancyMap!.xy2idx(vm.Vector2(navPoint.x, navPoint.y));
-      game.addWayPoint(navPoint,occPose.x,occPose.y,navPoint.theta);
+      game.addWayPoint(navPoint);
     }
     setState(() {
     });
@@ -423,7 +410,6 @@ class _MapEditPageState extends State<MapEditPage> {
                 game.setSelectedTool(null);
                 // 退出所有点位编辑模式
                 for (final wp in game.wayPoints) {
-                  wp.setSelected(false);
                   wp.setEditMode(false);
                 }
               } else {
@@ -432,7 +418,6 @@ class _MapEditPageState extends State<MapEditPage> {
                 // 切换到其他工具时退出所有点位编辑模式
                 if (toolName != 'addNavPoint') {
                   for (final wp in game.wayPoints) {
-                    wp.setSelected(false);
                     wp.setEditMode(false);
                   }
                 }

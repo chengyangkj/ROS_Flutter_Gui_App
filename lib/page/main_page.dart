@@ -336,6 +336,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       } else {
                         globalState.mode.value = Mode.reloc;
                       }
+                      game.setRelocMode(globalState.mode.value == Mode.reloc);
                       setState(() {});
                     },
                     icon: Icon(

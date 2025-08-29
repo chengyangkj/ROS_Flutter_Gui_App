@@ -6,46 +6,58 @@ import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
-// import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
+import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 
-class WayPoint extends PositionComponent with HasGameRef {
-  late double waypointSize;
+enum PoseType{
+  robot,
+  waypoint,
+}
+
+class PoseComponent extends PositionComponent with HasGameRef {
+  late double PoseComponentSize;
   late Color color;
   int count;
   late Timer animationTimer;
   double animationValue = 0.0;
-  
-  // 添加选中状态
-  bool isSelected = false;
-  
+
   // 添加编辑模式控制
   bool isEditMode = false;
   
   // 添加方向角度（弧度）
   double direction = 0.0;
   
-  // 添加拖拽更新回调
-  VoidCallback? onDragUpdate;
+  // 添加姿态变化回调
+  Function(RobotPose)? onPoseChanged;
 
-  
   // 存储导航点信息
   NavPoint? navPoint;
   
+  // 存储占用地图信息
+  OccupancyMap? occMap;
+  
+  // 添加RosChannel引用
+  RosChannel? rosChannel;
+  PoseType poseType;
+  
   // 组件内处理手势，无需对外状态
-
-  WayPoint({
-    required this.waypointSize,
+  PoseComponent({
+    required this.PoseComponentSize,
     this.color = const Color(0xFF0080ff),
     this.count = 2,
     this.isEditMode = false,
     this.direction = 0.0,
-    this.onDragUpdate,
+    this.onPoseChanged,
     this.navPoint,
+    this.occMap,
+    this.rosChannel,
+    this.poseType = PoseType.waypoint,
   });
   
   @override
   Future<void> onLoad() async {
-    size = Vector2.all(waypointSize);
+    size = Vector2.all(PoseComponentSize);
     anchor = Anchor.center;
     animationTimer = Timer(
       2.0,
@@ -57,8 +69,8 @@ class WayPoint extends PositionComponent with HasGameRef {
     );
     
     // 添加渲染器
-    add(WayPointRenderer(
-      size: waypointSize,
+    add(PoseComponentRenderer(
+      size: PoseComponentSize,
       color: color,
       count: count,
       animationValue: animationValue,
@@ -75,7 +87,7 @@ class WayPoint extends PositionComponent with HasGameRef {
     animationValue = animationTimer.progress;
     
     // 同步更新渲染器的动画值
-    final renderer = children.whereType<WayPointRenderer>().firstOrNull;
+    final renderer = children.whereType<PoseComponentRenderer>().firstOrNull;
     if (renderer != null) {
       renderer.updateAnimationValue(animationValue);
     }
@@ -91,6 +103,23 @@ class WayPoint extends PositionComponent with HasGameRef {
     super.onRemove();
   }
 
+  void updatePose(RobotPose pose) {
+    // 优先使用传入的occMap，如果没有则从RosChannel获取
+    OccupancyMap? currentMap = occMap;
+    if (currentMap == null && rosChannel != null) {
+      currentMap = rosChannel!.map_.value;
+    }
+    
+    if (currentMap != null && currentMap.mapConfig.resolution > 0) {
+      var occPose = currentMap.xy2idx(vm.Vector2(pose.x, pose.y));
+      position = Vector2(occPose.x, occPose.y);
+    } else {
+      // 如果没有地图数据，直接使用原始坐标
+      position = Vector2(pose.x, pose.y);
+    }
+    direction = -pose.theta;
+  }
+
   // 更新方向角度
   void updatedirection(double newAngle) {
     direction = newAngle;
@@ -99,10 +128,10 @@ class WayPoint extends PositionComponent with HasGameRef {
     final directionControl = children.whereType<DirectionControl>().firstOrNull;
     if (directionControl != null) {
       directionControl.updateAngle(direction);
-    } else {
     }
-    // 通知外部实时刷新（用于右侧信息面板）
-    onDragUpdate?.call();
+  
+    // 触发姿态变化回调
+    _triggerPoseChangedCallback();
   }
   
   // 静默设置角度，避免回调递归
@@ -123,12 +152,6 @@ class WayPoint extends PositionComponent with HasGameRef {
     return navPoint;
   }
 
-  // 设置选中状态（仅选中时显示编辑环）
-  void setSelected(bool selected) {
-    if (isSelected == selected) return;
-    isSelected = selected;
-    _updateDirectionControlVisibility();
-  }
   
   // 设置编辑模式（地图编辑工具控制）
   void setEditMode(bool edit) {
@@ -139,11 +162,11 @@ class WayPoint extends PositionComponent with HasGameRef {
   
   void _updateDirectionControlVisibility() {
     final exists = children.whereType<DirectionControl>().firstOrNull;
-    final shouldShow = isEditMode && isSelected;
+    final shouldShow = isEditMode;
     if (shouldShow) {
       if (exists == null) {
         final directionControl = DirectionControl(
-          controlSize: waypointSize,
+          controlSize: PoseComponentSize,
           onDirectionChanged: updatedirection,
           initAngle: direction,
         );
@@ -161,6 +184,41 @@ class WayPoint extends PositionComponent with HasGameRef {
   // 设置导航点信息
   void setNavPoint(NavPoint point) {
     navPoint = point;
+  }
+  
+  // 设置占用地图信息
+  void setOccMap(OccupancyMap map) {
+    occMap = map;
+  }
+  
+  // 获取占用地图信息
+  OccupancyMap? getOccMap() {
+    // 优先返回传入的occMap，如果没有则从RosChannel获取
+    if (occMap != null) {
+      return occMap;
+    }
+    if (rosChannel != null) {
+      return rosChannel!.map_.value;
+    }
+    return null;
+  }
+  
+  // 触发姿态变化回调
+  void _triggerPoseChangedCallback() {
+    if (onPoseChanged != null) {
+      // 创建RobotPose对象，包含当前位置和方向
+      final robotPose = RobotPose(
+        position.x,  // x坐标
+        position.y,  // y坐标
+        -direction,   // 方向角度
+      );
+      onPoseChanged!(robotPose);
+    }
+  }
+  
+  // 设置RosChannel引用
+  void setRosChannel(RosChannel channel) {
+    rosChannel = channel;
   }
   
 }
@@ -211,9 +269,9 @@ class DirectionControl extends PositionComponent with DragCallbacks {
     super.onDragStart(event);
     
     // 检查父组件是否处于编辑模式
-    if (parent is WayPoint) {
-      final wayPoint = parent as WayPoint;
-      if (!wayPoint.isEditMode || !wayPoint.isSelected) {
+    if (parent is PoseComponent) {
+      final poseComponent = parent as PoseComponent;
+      if (!poseComponent.isEditMode) {
         return false; // 不在编辑模式时不拦截手势
       }
     }
@@ -242,9 +300,9 @@ class DirectionControl extends PositionComponent with DragCallbacks {
     super.onDragUpdate(event);
     
     // 检查父组件是否处于编辑模式
-    if (parent is WayPoint) {
-      final wayPoint = parent as WayPoint;
-      if (!wayPoint.isEditMode || !wayPoint.isSelected) {
+    if (parent is PoseComponent) {
+      final poseComponent = parent as PoseComponent;
+      if (!poseComponent.isEditMode) {
         return false; // 不在编辑模式时不拦截手势
       }
     }
@@ -265,11 +323,12 @@ class DirectionControl extends PositionComponent with DragCallbacks {
       }
       return true;
     } else if (_isPositionDragging) {
-      if (parent is WayPoint && _positionDragStart != null) {
-        final wayPoint = parent as WayPoint;
+      if (parent is PoseComponent && _positionDragStart != null) {
+        final poseComponent = parent as PoseComponent;
         final delta = event.localDelta;
-        wayPoint.position = wayPoint.position + delta;
-        wayPoint.onDragUpdate?.call();
+        poseComponent.position = poseComponent.position + delta;
+        // 触发姿态变化回调
+        poseComponent._triggerPoseChangedCallback();
       }
       return true;
     }
@@ -281,9 +340,9 @@ class DirectionControl extends PositionComponent with DragCallbacks {
     super.onDragEnd(event);
     
     // 检查父组件是否处于编辑模式
-    if (parent is WayPoint) {
-      final wayPoint = parent as WayPoint;
-      if (!wayPoint.isEditMode || !wayPoint.isSelected) {
+    if (parent is PoseComponent) {
+      final poseComponent = parent as PoseComponent;
+      if (!poseComponent.isEditMode) {
         return false; // 不在编辑模式时不拦截手势
       }
     }
@@ -368,13 +427,13 @@ class DirectionControlRenderer extends Component {
 }
 
 // 路径点渲染器
-class WayPointRenderer extends Component with HasGameRef {
+class PoseComponentRenderer extends Component with HasGameRef {
   final double size;
   final Color color;
   final int count;
   double animationValue; // 移除final，允许更新
 
-  WayPointRenderer({
+  PoseComponentRenderer({
     required this.size,
     required this.color,
     required this.count,
@@ -398,7 +457,7 @@ class WayPointRenderer extends Component with HasGameRef {
       
       // 获取父组件的方向角度
       final parentComponent = parent;
-      if (parentComponent is WayPoint) {
+      if (parentComponent is PoseComponent) {
         final double rotationAngle = parentComponent.direction;
         
         // 以组件中心为原点进行旋转和绘制
@@ -459,7 +518,7 @@ class WayPointRenderer extends Component with HasGameRef {
       
       canvas.restore();
     } catch (e) {
-      print('Error rendering waypoint: $e');
+      print('Error rendering PoseComponent: $e');
     }
   }
 }

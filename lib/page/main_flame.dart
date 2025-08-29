@@ -13,7 +13,7 @@ import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/display/costmap.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
-import 'package:ros_flutter_gui_app/display/waypoint.dart';
+import 'package:ros_flutter_gui_app/display/pose.dart';
 import 'package:ros_flutter_gui_app/display/topology_line.dart';
 import 'package:ros_flutter_gui_app/display/polygon.dart' as custom;
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
@@ -21,12 +21,13 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'dart:math';
+import 'package:ros_flutter_gui_app/display/pose.dart';
 
 class MainFlame extends FlameGame {
   late MapComponent _displayMap;
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
-  late SvgComponent _displayRobot;
+  late PoseComponent _displayRobot;
 
   List<NavPoint> offLineNavPoints = [];
 
@@ -37,11 +38,10 @@ class MainFlame extends FlameGame {
   late PathComponent _localPathComponent;
   late CostMapComponent _globalCostMapComponent;
   late CostMapComponent _localCostMapComponent;
-  OccupancyMap? _occMap;
   
   // 拓扑图层组件
   late TopologyLine _topologyLineComponent;
-  late List<WayPoint> _wayPointComponents;
+  late List<PoseComponent> _wayPointComponents;
   
   // 机器人轮廓组件
   late custom.PolygonComponent _robotFootprintComponent;
@@ -53,7 +53,7 @@ class MainFlame extends FlameGame {
   late NavPointManager navPointManager;
   
   // 添加右侧信息面板相关变量
-  WayPoint? selectedWayPoint;
+  PoseComponent? selectedWayPoint;
   bool _showInfoPanel = false;
   Function(NavPoint?)? onNavPointTap;
   
@@ -67,6 +67,8 @@ class MainFlame extends FlameGame {
   // 手势相关变量
   double _baseScale = 1.0;
   Vector2? _lastFocalPoint;
+
+  bool isRelocMode = false;
   
   MainFlame({
     this.rosChannel, 
@@ -125,14 +127,14 @@ class MainFlame extends FlameGame {
     _topologyLineComponent = TopologyLine(
       points: [],
       routes: [],
-      occMap: null, // 初始化时occMap可能还没有加载
+      rosChannel: rosChannel, // 传入rosChannel以获取地图数据
     );
     
     // 初始化机器人轮廓组件
     _robotFootprintComponent = custom.PolygonComponent(
       pointList: [],
       color: Colors.green.withAlpha(50),
-      enableWaterDropAnimation: true, // 启用水波纹动画
+      enableWaterDropAnimation: false, // 启用水波纹动画
     );
     _robotFootprintComponent.priority = 1001;
     
@@ -140,15 +142,18 @@ class MainFlame extends FlameGame {
     world.add(_robotFootprintComponent);
     
     //机器人位置 - 放在最上层
-    var svg = await loadSvg('icons/robot/robot.svg');
-    _displayRobot= SvgComponent(
-      svg: svg,
-      size: Vector2.all(globalSetting.robotSize),
-      anchor: Anchor.center
+    _displayRobot = PoseComponent(
+      PoseComponentSize: globalSetting.robotSize,
+      color: const Color(0xFF0080ff),
+      count: 2,
+      isEditMode: false,
+      onPoseChanged: (RobotPose pose) {
       
+      },
+      rosChannel: rosChannel,
     );
+    _displayRobot.priority = 1002;
     world.add(_displayRobot);
-    _displayRobot.priority = 1000; // 设置高优先级确保在最上层
 
     _wayPointComponents = [];
     
@@ -163,13 +168,18 @@ class MainFlame extends FlameGame {
 
   }
   
+  void setRelocMode(bool isReloc){
+    _displayRobot.setEditMode(isReloc);
+    isRelocMode=isReloc;
+  }
+
       // 加载导航点
   Future<void> _loadOfflineNavPoints() async {
     // 使用传入的 NavPointManager 实例
     offLineNavPoints = await navPointManager.loadNavPoints();
     
     // 如果地图已经加载，立即更新拓扑图层
-    if (_occMap != null) {
+    if (rosChannel?.map_.value != null) {
       _updateTopologyLayers();
     }
   }
@@ -182,7 +192,7 @@ class MainFlame extends FlameGame {
     await _loadOfflineNavPoints();
     
     // 如果地图已经加载，重新更新拓扑图层
-    if (_occMap != null) {
+    if (rosChannel?.map_.value != null) {
       _updateTopologyLayers();
     }
     
@@ -190,12 +200,10 @@ class MainFlame extends FlameGame {
   }
 
   void _setupRosListeners() {
-    rosChannel!.robotPoseScene.addListener(() {
-      _displayRobot.position = Vector2(
-        rosChannel!.robotPoseScene.value.x,
-        rosChannel!.robotPoseScene.value.y,
-      );
-      _displayRobot.angle = pi/4 - rosChannel!.robotPoseScene.value.theta;
+    rosChannel!.robotPoseMap.addListener(() {
+      // 使用新的updatePose方法更新机器人位置
+      if(isRelocMode) return;
+      _displayRobot.updatePose(rosChannel!.robotPoseMap.value);
     });
     
     // 监听机器人轮廓数据
@@ -207,13 +215,13 @@ class MainFlame extends FlameGame {
     
     // 监听激光雷达数据
     rosChannel!.laserPointData.addListener(() {
-      if(_occMap == null || _occMap!.mapConfig.resolution <= 0 || _occMap!.height() <= 0) return;
+      if(rosChannel!.map_.value == null || rosChannel!.map_.value.mapConfig.resolution <= 0 || rosChannel!.map_.value.height() <= 0) return;
       final laserPoints = rosChannel!.laserPointData.value;
       final robotPose = laserPoints.robotPose;
       List<Vector2> vector2Points =[];
       for (int i = 0; i < laserPoints.laserPoseBaseLink.length; i++) {
         final laserPointMap=absoluteSum(robotPose, RobotPose(laserPoints.laserPoseBaseLink[i].x, laserPoints.laserPoseBaseLink[i].y, 0));
-        vm.Vector2 laserPointScene=_occMap!.xy2idx(vm.Vector2(laserPointMap.x, laserPointMap.y));
+        vm.Vector2 laserPointScene=rosChannel!.map_.value.xy2idx(vm.Vector2(laserPointMap.x, laserPointMap.y));
         vector2Points.add(Vector2(laserPointScene.x, laserPointScene.y));
       }
       _laserComponent.updateLaser(vector2Points);
@@ -249,7 +257,6 @@ class MainFlame extends FlameGame {
     // 监听地图数据
     rosChannel!.map_.addListener(() {
       _displayMap.updateMapData(rosChannel!.map_.value);
-      _occMap = rosChannel!.map_.value;
     });
     
     // 监听拓扑地图数据
@@ -259,7 +266,6 @@ class MainFlame extends FlameGame {
     
     // 立即更新地图数据
     _displayMap.updateMapData(rosChannel!.map_.value);
-    _occMap = rosChannel!.map_.value;
 
     _loadOfflineNavPoints();
     
@@ -362,7 +368,7 @@ class MainFlame extends FlameGame {
     _topologyLineComponent = TopologyLine(
       points: topologyMap.points,
       routes: topologyMap.routes,
-      occMap: _occMap, // 传递occMap参数
+      rosChannel: rosChannel, // 传递rosChannel参数
     );
     
     // 清除旧的路径点组件
@@ -379,18 +385,18 @@ class MainFlame extends FlameGame {
     
     // 创建新的路径点组件
     for (final point in navPoints) {
-      var occPose = _occMap!.xy2idx(vm.Vector2(point.x, point.y));
-      final waypoint = WayPoint(
-        waypointSize: globalSetting.robotSize,
+      final waypoint = PoseComponent(
+        PoseComponentSize: globalSetting.robotSize,
         color: Colors.blue,
         count: 2,
         isEditMode: false,
         direction: point.theta,
         navPoint: point,
+        rosChannel: rosChannel,
       );
       
       // 设置路径点位置（使用地图索引坐标）
-      waypoint.position = Vector2(occPose.x, occPose.y);
+      waypoint.updatePose(RobotPose(point.x, point.y, point.theta));
       _wayPointComponents.add(waypoint);
       
     }
@@ -607,8 +613,8 @@ class MainFlame extends FlameGame {
     var direction = -wayPoint.direction;
     double mapx = 0;
     double mapy = 0;
-    if(_occMap != null){
-      vm.Vector2 mapPose = _occMap!.idx2xy(vm.Vector2(x, y));
+    if(rosChannel?.map_.value != null){
+      vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(x, y));
       mapx = mapPose.x;
       mapy = mapPose.y;
     }
@@ -653,6 +659,13 @@ class MainFlame extends FlameGame {
    _showInfoPanel=false;
     onNavPointTap?.call(null);
   }
+  
+  // 设置机器人编辑模式
+  void setRobotEditMode(bool edit) {
+    _displayRobot.setEditMode(edit);
+  }
+  
+ 
   
 
 }
