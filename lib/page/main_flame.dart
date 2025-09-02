@@ -353,9 +353,9 @@ class MainFlame extends FlameGame {
   
   void centerOnRobot(bool isCenterOnRobot) {
     if(isCenterOnRobot){
-     camera.viewfinder.position = _displayRobot.position;
+     camera.follow(_displayRobot);
     }else{
-     camera.viewfinder.position = _displayMap.position;
+     camera.stop();
     }
     camera.viewfinder.zoom = 6.0;
     mapScale = 6.0;
