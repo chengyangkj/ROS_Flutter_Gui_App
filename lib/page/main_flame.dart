@@ -60,7 +60,7 @@ class MainFlame extends FlameGame {
   final double minScale = 0.01;
   final double maxScale = 10.0;
 
-  bool isDarkMode=false;
+  bool isDarkMode=true;
 
   // 地图变换参数（使用camera.viewfinder）
   double mapScale = 1.0;
