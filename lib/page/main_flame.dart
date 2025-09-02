@@ -403,7 +403,7 @@ class MainFlame extends FlameGame {
     for (final point in navPoints) {
       final waypoint = PoseComponent(
         PoseComponentSize: globalSetting.robotSize,
-        color: Colors.yellow,
+        color: Colors.green,
         count: 2,
         isEditMode: false,
         direction: point.theta,

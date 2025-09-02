@@ -19,9 +19,9 @@ class LaserComponent extends Component {
     if (pointList.isEmpty) return;
 
     Paint paint = Paint()
-      ..color = Colors.lightGreen
+      ..color = Colors.redAccent
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 3;
+      ..strokeWidth = 1;
 
     List<Offset> offsetPoints = pointList
         .map((v) => Offset(v.x, v.y))
