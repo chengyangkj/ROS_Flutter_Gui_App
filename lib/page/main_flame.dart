@@ -83,11 +83,14 @@ class MainFlame extends FlameGame {
   }
   
   @override
+  Color backgroundColor() => isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+  
+  @override
   Future<void> onLoad() async {
     super.onLoad();
     
-       // 加载图层设置
-      await globalState.loadLayerSettings();
+        // 加载图层设置
+       await globalState.loadLayerSettings();
     
        // 添加地图组件
       _displayMap = MapComponent(rosChannel: rosChannel);
@@ -174,10 +177,9 @@ class MainFlame extends FlameGame {
   }
  
   void updateMapTheme(bool darkMode) {
-    if(_displayMap != null){
-     _displayMap.updateThemeMode(darkMode);
-    }
-    isDarkMode=darkMode;
+    _displayMap.updateThemeMode(darkMode);
+    _displayGrid.updateThemeMode(darkMode);
+    isDarkMode = darkMode;
   }
 
   RobotPose getRelocRobotPose(){
@@ -351,9 +353,9 @@ class MainFlame extends FlameGame {
   
   void centerOnRobot(bool isCenterOnRobot) {
     if(isCenterOnRobot){
-     camera..viewfinder..follow(_displayRobot);
+     camera.viewfinder.position = _displayRobot.position;
     }else{
-     camera..viewfinder..stop();
+     camera.viewfinder.position = _displayMap.position;
     }
     camera.viewfinder.zoom = 6.0;
     mapScale = 6.0;

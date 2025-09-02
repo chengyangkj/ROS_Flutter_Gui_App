@@ -1,18 +1,26 @@
-import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:flame/components.dart';
 class GridComponent extends RectangleComponent with HasGameRef {
   final RosChannel? rosChannel;
+  bool _isDarkMode = true;
   
   GridComponent({required Vector2 size, this.rosChannel}) : super(
     size: size,
     paint: Paint()..color = const Color(0xFF2C2C2C), // 深灰色背景
   );
+  
+  void updateThemeMode(bool isDarkMode) {
+    _isDarkMode = isDarkMode;
+    // 更新背景颜色
+    if (_isDarkMode) {
+      paint = Paint()..color = const Color(0xFF2C2C2C); // 深灰色背景
+    } else {
+      paint = Paint()..color = Colors.white; // 白色背景
+    }
+  }
   
   @override
   void render(Canvas canvas) {
@@ -33,7 +41,7 @@ class GridComponent extends RectangleComponent with HasGameRef {
     
     // 网格线画笔
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = _isDarkMode ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.3)
       ..strokeWidth = 0.5
       ..style = PaintingStyle.stroke;
     
