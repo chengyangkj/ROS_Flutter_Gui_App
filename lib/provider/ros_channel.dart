@@ -518,10 +518,7 @@ class RosChannel {
     await speedCtrlChannel_.publish(msg);
   }
 
-  Future<void> sendRelocPoseScene(RobotPose pose) async {
-    vm.Vector2 p = map_.value.xy2idx(vm.Vector2(pose.x, pose.y));
-    pose.x = p.x;
-    pose.y = p.y;
+  Future<void> sendRelocPose(RobotPose pose) async {
     vm.Quaternion quation = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {

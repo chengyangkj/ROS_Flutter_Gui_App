@@ -360,6 +360,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                             .mode
                             .value = Mode.normal;
                         game.setRelocMode(false);
+                        Provider.of<RosChannel>(context, listen: false).sendRelocPose(game.getRelocRobotPose());
                         setState(() {});
                       },
                       icon: Icon(Icons.check, color: Colors.green),
@@ -753,9 +754,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         Provider.of<GlobalState>(context, listen: false);
                     if (globalState.mode.value == Mode.robotFixedCenter) {
                       globalState.mode.value = Mode.normal;
+                      game.centerOnRobot(false);
                     } else {
                       globalState.mode.value = Mode.robotFixedCenter;
-                      game.centerOnRobot();
+                      game.centerOnRobot(true);
                     }
                     setState(() {});
                   },

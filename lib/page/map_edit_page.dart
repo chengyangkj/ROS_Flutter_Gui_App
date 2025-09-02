@@ -358,27 +358,27 @@ class _MapEditPageState extends State<MapEditPage> {
               color: Colors.blue,
             ),
             
-            const SizedBox(height: 8),
+            // const SizedBox(height: 8),
             
-            // 障碍物绘制工具
-            _buildEditTool(
-              icon: Icons.brush,
-              label: '绘制障碍物',
-              toolName: 'drawObstacle',
-              color: Colors.red,
-            ),
+            // // 障碍物绘制工具
+            // _buildEditTool(
+            //   icon: Icons.brush,
+            //   label: '绘制障碍物',
+            //   toolName: 'drawObstacle',
+            //   color: Colors.red,
+            // ),
             
-            const SizedBox(height: 8),
+            // const SizedBox(height: 8),
             
-            // 障碍物擦除工具
-            _buildEditTool(
-              icon: Icons.auto_fix_high,
-              label: '擦除障碍物',
-              toolName: 'eraseObstacle',
-              color: Colors.green,
-            ),
+            // // 障碍物擦除工具
+            // _buildEditTool(
+            //   icon: Icons.auto_fix_high,
+            //   label: '擦除障碍物',
+            //   toolName: 'eraseObstacle',
+            //   color: Colors.green,
+            // ),
             
-            const SizedBox(height: 8),
+            // const SizedBox(height: 8),
             
 
           ],

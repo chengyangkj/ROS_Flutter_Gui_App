@@ -169,10 +169,17 @@ class MainFlame extends FlameGame {
     _initializeLayerComponents();
 
   }
+
+  RobotPose getRelocRobotPose(){
+    return relocRobotPose;
+  }
   
   void setRelocMode(bool isReloc){
     _displayRobot.setEditMode(isReloc);
     isRelocMode=isReloc;
+    if(!isReloc){
+      camera..viewfinder..stop();
+    }
   }
 
       // 加载导航点
@@ -332,11 +339,14 @@ class MainFlame extends FlameGame {
   }
 
   
-  void centerOnRobot() {
-    // 将相机重置到默认位置和缩放
-    camera.viewfinder.position = Vector2.zero();
-    camera.viewfinder.zoom = 1.0;
-    mapScale = 1.0;
+  void centerOnRobot(bool isCenterOnRobot) {
+    if(isCenterOnRobot){
+     camera..viewfinder..follow(_displayRobot);
+    }else{
+     camera..viewfinder..stop();
+    }
+    camera.viewfinder.zoom = 6.0;
+    mapScale = 6.0;
   }
   
   void zoomIn() {
