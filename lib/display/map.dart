@@ -5,13 +5,16 @@ import 'package:flutter/rendering.dart';
 
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+
 import 'package:flame/components.dart';
+
 
 class MapComponent extends PositionComponent {
   OccupancyMap? _currentMap;
   ui.Image? _mapImage;
   bool _isProcessing = false;
   RosChannel? _rosChannel;
+  bool _isDarkMode = false;
   
   // 公开访问当前地图数据
   OccupancyMap? get currentMap => _currentMap;
@@ -55,6 +58,16 @@ class MapComponent extends PositionComponent {
     await _processMapToImage(map);
   }
   
+  void updateThemeMode(bool isDarkMode) {
+    if (_isDarkMode != isDarkMode) {
+      _isDarkMode = isDarkMode;
+      // 重新渲染地图以应用新的主题
+      if (_currentMap != null) {
+        _processMapToImage(_currentMap!);
+      }
+    }
+  }
+  
   Future<void> _processMapToImage(OccupancyMap map) async {
     if (_isProcessing) return;
     _isProcessing = true;
@@ -79,24 +92,51 @@ class MapComponent extends PositionComponent {
           final int pixelIndex = (j * width + i) * 4;
           
           if (mapValue > 0) {
-            // 占据区域 - 黑色
+            // 占据区域
             int alpha = (mapValue * 2.55).clamp(0, 255).toInt();
-            pixelData[pixelIndex] = 0;       // R
-            pixelData[pixelIndex + 1] = 0;   // G
-            pixelData[pixelIndex + 2] = 0;   // B
-            pixelData[pixelIndex + 3] = alpha; // A
+            if (_isDarkMode) {
+              // 暗色主题 - 浅灰色障碍物
+              pixelData[pixelIndex] = 200;     // R
+              pixelData[pixelIndex + 1] = 200; // G
+              pixelData[pixelIndex + 2] = 200; // B
+              pixelData[pixelIndex + 3] = alpha; // A
+            } else {
+              // 亮色主题 - 深灰色障碍物
+              pixelData[pixelIndex] = 60;      // R
+              pixelData[pixelIndex + 1] = 60;  // G
+              pixelData[pixelIndex + 2] = 60;  // B
+              pixelData[pixelIndex + 3] = alpha; // A
+            }
           } else if (mapValue == 0) {
-            // 自由区域 - 白色
-            pixelData[pixelIndex] = 255;     // R
-            pixelData[pixelIndex + 1] = 255; // G
-            pixelData[pixelIndex + 2] = 255; // B
-            pixelData[pixelIndex + 3] = 255; // A
+            // 自由区域
+            if (_isDarkMode) {
+              // 暗色主题 - 深色背景
+              pixelData[pixelIndex] = 30;      // R
+              pixelData[pixelIndex + 1] = 30;  // G
+              pixelData[pixelIndex + 2] = 30;  // B
+              pixelData[pixelIndex + 3] = 255; // A
+            } else {
+              // 亮色主题 - 白色背景
+              pixelData[pixelIndex] = 255;     // R
+              pixelData[pixelIndex + 1] = 255; // G
+              pixelData[pixelIndex + 2] = 255; // B
+              pixelData[pixelIndex + 3] = 255; // A
+            }
           } else {
-            // 未知区域 - 灰色
-            pixelData[pixelIndex] = 128;     // R
-            pixelData[pixelIndex + 1] = 128; // G
-            pixelData[pixelIndex + 2] = 128; // B
-            pixelData[pixelIndex + 3] = 128; // A
+            // 未知区域
+            if (_isDarkMode) {
+              // 暗色主题 - 中等灰色
+              pixelData[pixelIndex] = 80;      // R
+              pixelData[pixelIndex + 1] = 80;  // G
+              pixelData[pixelIndex + 2] = 80;  // B
+              pixelData[pixelIndex + 3] = 128; // A
+            } else {
+              // 亮色主题 - 浅灰色
+              pixelData[pixelIndex] = 200;     // R
+              pixelData[pixelIndex + 1] = 200; // G
+              pixelData[pixelIndex + 2] = 200; // B
+              pixelData[pixelIndex + 3] = 128; // A
+            }
           }
         }
       }

@@ -12,6 +12,7 @@ import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
+import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
@@ -78,6 +79,16 @@ class _MainFlamePageState extends State<MainFlamePage> {
     @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
+    
+    // 监听主题变化，更新地图主题
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
+      // 延迟执行，确保地图组件已经初始化
+      Future.delayed(Duration(milliseconds: 100), () {
+        game.updateMapTheme(isDarkMode);
+      });
+    });
     
     return Scaffold(
           body: Stack(

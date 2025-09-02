@@ -60,6 +60,8 @@ class MainFlame extends FlameGame {
   final double minScale = 0.01;
   final double maxScale = 10.0;
 
+  bool isDarkMode=false;
+
   // 地图变换参数（使用camera.viewfinder）
   double mapScale = 1.0;
   Vector2 mapOffset = Vector2.zero();
@@ -84,13 +86,14 @@ class MainFlame extends FlameGame {
   Future<void> onLoad() async {
     super.onLoad();
     
-    // 加载图层设置
-    await globalState.loadLayerSettings();
+       // 加载图层设置
+      await globalState.loadLayerSettings();
     
-    // 添加地图组件
-    _displayMap = MapComponent();
-    world.add(_displayMap);
-    
+       // 添加地图组件
+      _displayMap = MapComponent(rosChannel: rosChannel);
+      world.add(_displayMap);
+      _displayMap.updateThemeMode(isDarkMode);
+
      _displayGrid = GridComponent(
       size: size,
       rosChannel: rosChannel,
@@ -168,6 +171,13 @@ class MainFlame extends FlameGame {
     // 根据初始图层状态添加组件
     _initializeLayerComponents();
 
+  }
+ 
+  void updateMapTheme(bool darkMode) {
+    if(_displayMap != null){
+     _displayMap.updateThemeMode(darkMode);
+    }
+    isDarkMode=darkMode;
   }
 
   RobotPose getRelocRobotPose(){
