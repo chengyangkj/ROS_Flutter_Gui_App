@@ -401,9 +401,10 @@ class MainFlame extends FlameGame {
         rosChannel: rosChannel,
         poseType: PoseType.waypoint,
       );
-      
+
       // 设置路径点位置（使用地图索引坐标）
       waypoint.updatePose(RobotPose(point.x, point.y, point.theta));
+      print('waypoint: ${waypoint.position} point: $point');
       _wayPointComponents.add(waypoint);
       
     }

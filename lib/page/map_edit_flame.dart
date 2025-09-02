@@ -73,7 +73,7 @@ class MapEditFlame extends FlameGame {
     double mapx = 0;
     double mapy = 0;
     if(rosChannel != null && rosChannel!.map_.value != null){
-      vm.Vector2 mapPose = rosChannel!.map_.value.xy2idx(vm.Vector2(x, y));
+      vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(x, y));
       mapx = mapPose.x;
       mapy = mapPose.y;
     }
@@ -101,7 +101,7 @@ class MapEditFlame extends FlameGame {
       double mapy = 0;
       
       if (rosChannel != null && rosChannel!.map_.value != null) {
-        vm.Vector2 mapPose = rosChannel!.map_.value.xy2idx(vm.Vector2(x, y));
+        vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(x, y));
         mapx = mapPose.x;
         mapy = mapPose.y;
       }
@@ -168,14 +168,14 @@ class MapEditFlame extends FlameGame {
         double mapX=0;
         double mapY=0;
         if(rosChannel != null && rosChannel!.map_.value != null){
-          vm.Vector2 mapPose = rosChannel!.map_.value.xy2idx(vm.Vector2(worldPoint.x, worldPoint.y));
+          vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
           mapX = mapPose.x;
           mapY = mapPose.y;
         }
 
         final result = await onAddNavPoint!(mapX, mapY);
         if (result != null) {
-          print('导航点添加结果: $result');
+          print('导航点添加结果: $result mapX: $mapX mapY: $mapY');
           // 用户确定了名称，创建新的导航点
           addWayPoint(result);
         } else {

@@ -75,27 +75,10 @@ class OccupancyMap {
         //默认透明
         List<int> colorRgba = [0,0,0,0]; 
         
+        //内切障碍，机器人内切半径，所能触及的区域，进入此区域，一定会发生碰撞
         if (pixelValue >= 100) {
-          colorRgba = [0xff, 0x00, 0xff, 120]; // 紫色 - 最高代价
-        } else if (pixelValue >= 90 && pixelValue < 100) {
-          colorRgba = [0x66, 0xff, 0xff, 110]; // 青色
-        } else if (pixelValue >= 70 && pixelValue <= 90) {
-          colorRgba = [0xff, 0x00, 0x33, 100]; // 深红色
-        } else if (pixelValue >= 60 && pixelValue <= 70) {
-          colorRgba = [0xbe, 0x28, 0x1a, 90]; // 红棕色
-        } else if (pixelValue >= 50 && pixelValue < 60) {
-          colorRgba = [0xBE, 0x1F, 0x58, 80]; // 粉红色
-        } else if (pixelValue >= 40 && pixelValue < 50) {
-          colorRgba = [0xBE, 0x25, 0x76, 70]; // 紫红色
-        } else if (pixelValue >= 30 && pixelValue < 40) {
-          colorRgba = [0xBE, 0x2A, 0x99, 60]; // 紫色
-        } else if (pixelValue >= 20 && pixelValue < 30) {
-          colorRgba = [0xBE, 0x35, 0xB3, 50]; // 深紫色
-        } else if (pixelValue >= 10 && pixelValue < 20) {
-          colorRgba = [0xB0, 0x3C, 0xbE, 40]; // 紫蓝色
-        } else if (pixelValue > 0) {
-          colorRgba = [0x80, 0x40, 0xBE, 30]; // 最浅紫色 - 最低代价
-        } else {
+          colorRgba = [0x80, 0x80, 0x80, 255];// 灰色
+        }else {
           // 其他值保持透明
           colorRgba =  [0,0,0,0]; 
         }
