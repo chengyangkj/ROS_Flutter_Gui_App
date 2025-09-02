@@ -59,12 +59,10 @@ class MapComponent extends PositionComponent {
   }
   
   void updateThemeMode(bool isDarkMode) {
-    if (_isDarkMode != isDarkMode) {
-      _isDarkMode = isDarkMode;
-      // 重新渲染地图以应用新的主题
-      if (_currentMap != null) {
-        _processMapToImage(_currentMap!);
-      }
+    _isDarkMode = isDarkMode;
+    // 重新渲染地图以应用新的主题
+    if (_currentMap != null) {
+      _processMapToImage(_currentMap!);
     }
   }
   

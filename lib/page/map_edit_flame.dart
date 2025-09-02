@@ -5,6 +5,7 @@ import 'package:ros_flutter_gui_app/display/map.dart';
 import 'package:ros_flutter_gui_app/display/grid.dart';
 import 'package:ros_flutter_gui_app/display/pose.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
@@ -16,12 +17,16 @@ class MapEditFlame extends FlameGame {
   late MapComponent _displayMap;
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
+  final ThemeProvider? themeProvider;
   
   final double minScale = 0.01;
   final double maxScale = 10.0;
   
   // 地图变换参数
   double mapScale = 1.0;
+  
+  // 主题模式
+  bool isDarkMode = true;
   
   // 当前选中的编辑工具
   String? selectedTool;
@@ -48,10 +53,19 @@ class MapEditFlame extends FlameGame {
   
   MapEditFlame({
     this.rosChannel, 
+    this.themeProvider,
     this.onAddNavPoint, 
     this.onWayPointSelectionChanged,
     this.currentSelectPointUpdate,
-  });
+  }) {
+    // 初始化主题模式
+    isDarkMode = themeProvider?.themeMode == ThemeMode.dark;
+  }
+  
+  @override
+  Color backgroundColor() => isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+  
+
   
   // 设置当前选中的工具
   void setSelectedTool(String? tool) {
@@ -126,14 +140,15 @@ class MapEditFlame extends FlameGame {
     // 添加地图组件
     _displayMap = MapComponent(rosChannel: rosChannel);
     world.add(_displayMap);
-    _displayMap.priority = 900;
+    _displayMap.updateThemeMode(isDarkMode);
     
     // 添加网格组件
     _displayGrid = GridComponent(
       size: size,
       rosChannel: rosChannel,
     );
-    _displayGrid.priority = 910;
+    _displayGrid.updateThemeMode(isDarkMode);
+    world.add(_displayGrid);
     
     // 设置ROS监听器
     _setupRosListeners();

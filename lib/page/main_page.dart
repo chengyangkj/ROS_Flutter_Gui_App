@@ -45,8 +45,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
     final rosChannel = Provider.of<RosChannel>(context, listen: false);
     final globalState = Provider.of<GlobalState>(context, listen: false);
     final navPointManager = Provider.of<NavPointManager>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     game = MainFlame(
       rosChannel: rosChannel, 
+      themeProvider: themeProvider,
       globalState: globalState,
       navPointManager: navPointManager,
     );
@@ -79,16 +81,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
     @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
-    
-    // 监听主题变化，更新地图主题
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
-      // 延迟执行，确保地图组件已经初始化
-      Future.delayed(Duration(milliseconds: 100), () {
-        game.updateMapTheme(isDarkMode);
-      });
-    });
     
     return Scaffold(
           body: Stack(
@@ -782,20 +774,20 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   ),
                 ),
               ),
-              // 退出按钮
-              Card(
-                elevation: 10,
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
-                  },
-                  icon: Icon(
-                    Icons.exit_to_app,
-                    color: theme.iconTheme.color,
-                  ),
-                  tooltip: '退出',
-                ),
-              ),
+              // // 退出按钮
+              // Card(
+              //   elevation: 10,
+              //   child: IconButton(
+              //     onPressed: () {
+              //       Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
+              //     },
+              //     icon: Icon(
+              //       Icons.exit_to_app,
+              //       color: theme.iconTheme.color,
+              //     ),
+              //     tooltip: '退出',
+              //   ),
+              // ),
                              // 移除这里的GamepadWidget，我们将把它移到屏幕底部
             ],
           ),

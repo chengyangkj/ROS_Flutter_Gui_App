@@ -17,6 +17,7 @@ import 'package:ros_flutter_gui_app/display/pose.dart';
 import 'package:ros_flutter_gui_app/display/topology_line.dart';
 import 'package:ros_flutter_gui_app/display/polygon.dart' as custom;
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
@@ -27,6 +28,7 @@ class MainFlame extends FlameGame {
   late MapComponent _displayMap;
   late GridComponent _displayGrid;
   final RosChannel? rosChannel;
+  final ThemeProvider? themeProvider;
   late PoseComponent _displayRobot;
 
   List<NavPoint> offLineNavPoints = [];
@@ -75,11 +77,14 @@ class MainFlame extends FlameGame {
   
   MainFlame({
     this.rosChannel, 
+    this.themeProvider,
     required GlobalState globalState,
     required NavPointManager navPointManager,
   }) {
     this.globalState = globalState;
     this.navPointManager = navPointManager;
+    // 初始化主题模式
+    isDarkMode = themeProvider?.themeMode == ThemeMode.dark;
   }
   
   @override
@@ -101,6 +106,7 @@ class MainFlame extends FlameGame {
       size: size,
       rosChannel: rosChannel,
     );
+    _displayGrid.updateThemeMode(isDarkMode);
 
     _globalCostMapComponent = CostMapComponent(
       opacity: 0.3,
@@ -176,11 +182,7 @@ class MainFlame extends FlameGame {
 
   }
  
-  void updateMapTheme(bool darkMode) {
-    _displayMap.updateThemeMode(darkMode);
-    _displayGrid.updateThemeMode(darkMode);
-    isDarkMode = darkMode;
-  }
+ 
 
   RobotPose getRelocRobotPose(){
     return relocRobotPose;

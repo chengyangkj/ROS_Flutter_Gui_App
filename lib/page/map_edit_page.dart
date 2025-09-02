@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
@@ -44,6 +45,7 @@ class _MapEditPageState extends State<MapEditPage> {
     super.initState();
     globalState = Provider.of<GlobalState>(context, listen: false);
     rosChannel = Provider.of<RosChannel>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     
     // 设置地图编辑模式
     globalState.mode.value = Mode.mapEdit;
@@ -51,6 +53,7 @@ class _MapEditPageState extends State<MapEditPage> {
     // 创建专门的地图编辑Flame组件，传入回调函数
     game = MapEditFlame(
       rosChannel: rosChannel,
+      themeProvider: themeProvider,
       onAddNavPoint: (x, y) async {
         final wayPointInfo = await _addNavPoint(x, y);
         return wayPointInfo;
