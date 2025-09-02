@@ -35,6 +35,7 @@ class MainFlame extends FlameGame {
 
   // 新的Flame组件
   late LaserComponent _laserComponent;
+  late PathComponent _tracePathComponent;
   late PointCloudComponent _pointCloudComponent;
   late PathComponent _globalPathComponent;
   late PathComponent _localPathComponent;
@@ -130,11 +131,19 @@ class MainFlame extends FlameGame {
       pointList: [], 
       color: Colors.blue
     );
+     _globalPathComponent.priority = 149;
     
     _localPathComponent = PathComponent(
       pointList: [], 
       color: Colors.green
     );
+    _localPathComponent.priority = 151;
+
+    _tracePathComponent = PathComponent(
+      pointList: [], 
+      color: Colors.yellow
+    );
+    _tracePathComponent.priority = 150;
 
     // 初始化拓扑图层组件
     _topologyLineComponent = TopologyLine(
@@ -270,6 +279,12 @@ class MainFlame extends FlameGame {
     rosChannel!.localPath.addListener(() {
       final localPathPoints = rosChannel!.localPath.value;
       _localPathComponent.updatePath(localPathPoints);
+    });
+
+    // 监听轨迹路径
+    rosChannel!.tracePath.addListener(() {
+      final tracePathPoints = rosChannel!.tracePath.value;
+      _tracePathComponent.updatePath(tracePathPoints);
     });
     
     // 监听代价地图
@@ -472,6 +487,7 @@ class MainFlame extends FlameGame {
       'showPointCloud': _pointCloudComponent,
       'showGlobalPath': _globalPathComponent,
       'showLocalPath': _localPathComponent,
+      'showTracePath': _tracePathComponent,
       'showTopology': _topologyLineComponent,
       'showRobotFootprint': _robotFootprintComponent,
     };
@@ -549,6 +565,7 @@ class MainFlame extends FlameGame {
       'showPointCloud': _pointCloudComponent,
       'showGlobalPath': _globalPathComponent,
       'showLocalPath': _localPathComponent,
+      'showTracePath': _tracePathComponent,
       'showTopology': _topologyLineComponent,
       'showRobotFootprint': _robotFootprintComponent,
     };
@@ -585,6 +602,7 @@ class MainFlame extends FlameGame {
       'showPointCloud': _pointCloudComponent,
       'showGlobalPath': _globalPathComponent,
       'showLocalPath': _localPathComponent,
+      'showTracePath': _tracePathComponent,
       'showTopology': _topologyLineComponent,
       'showRobotFootprint': _robotFootprintComponent,
     };

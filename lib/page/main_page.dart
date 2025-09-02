@@ -282,6 +282,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
                           'color': Colors.green,
                           'tooltip': '局部路径',
                         },
+                        'showTracePath': {
+                          'icon': Icons.timeline,
+                          'iconOff': Icons.timeline_outlined,
+                          'color': Colors.yellow,
+                          'tooltip': '轨迹路径',
+                        },
                         'showTopology': {
                           'icon': Icons.account_tree,
                           'iconOff': Icons.account_tree_outlined,

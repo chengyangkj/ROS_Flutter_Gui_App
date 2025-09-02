@@ -66,6 +66,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get local_path_topic => 'Local Path Topic';
 
   @override
+  String get trace_path_topic => 'Trace Path Topic';
+
+  @override
   String get reloc_topic => 'Reloc Topic';
 
   @override

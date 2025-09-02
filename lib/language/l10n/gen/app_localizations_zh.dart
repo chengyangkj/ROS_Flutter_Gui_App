@@ -66,6 +66,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get local_path_topic => '局部路径话题';
 
   @override
+  String get trace_path_topic => '轨迹路径话题';
+
+  @override
   String get reloc_topic => '重定位话题';
 
   @override

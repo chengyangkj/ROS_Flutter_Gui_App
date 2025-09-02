@@ -212,6 +212,12 @@ abstract class AppLocalizations {
   /// **'局部路径话题'**
   String get local_path_topic;
 
+  /// No description provided for @trace_path_topic.
+  ///
+  /// In zh, this message translates to:
+  /// **'轨迹路径话题'**
+  String get trace_path_topic;
+
   /// No description provided for @reloc_topic.
   ///
   /// In zh, this message translates to:

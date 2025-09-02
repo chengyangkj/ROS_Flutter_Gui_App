@@ -18,6 +18,7 @@
   "laser_topic": "激光雷达话题",
   "global_path_topic": "全局路径话题",
   "local_path_topic": "局部路径话题",
+  "trace_path_topic": "轨迹路径话题",
   "reloc_topic": "重定位话题",
   "nav_goal_topic": "导航目标话题",
   "odometry_topic": "里程计话题",

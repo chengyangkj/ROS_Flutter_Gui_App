@@ -51,6 +51,7 @@ class RosChannel {
   late Topic laserChannel_;
   late Topic localPathChannel_;
   late Topic globalPathChannel_;
+  late Topic tracePathChannel_;
   late Topic relocChannel_;
   late Topic navGoalChannel_;
   late Topic navGoalCancelChannel_;
@@ -89,6 +90,7 @@ class RosChannel {
   ValueNotifier<List<vm.Vector2>> laserBasePoint_ = ValueNotifier([]);
   ValueNotifier<List<vm.Vector2>> localPath = ValueNotifier([]);
   ValueNotifier<List<vm.Vector2>> globalPath = ValueNotifier([]);
+  ValueNotifier<List<vm.Vector2>> tracePath = ValueNotifier([]);
   ValueNotifier<LaserData> laserPointData = ValueNotifier(
       LaserData(robotPose: RobotPose(0, 0, 0), laserPoseBaseLink: []));
   ValueNotifier<ActionStatus> navStatus_ = ValueNotifier(ActionStatus.unknown);
@@ -194,6 +196,7 @@ class RosChannel {
     laserBasePoint_.value.clear();
     localPath.value.clear();
     globalPath.value.clear();
+    tracePath.value.clear();
     laserPointData.value.laserPoseBaseLink.clear();
     laserPointData.value.robotPose = RobotPose.zero();
     robotSpeed_.value.vx = 0;
@@ -295,6 +298,15 @@ class RosChannel {
       reconnectOnClose: true,
     );
     globalPathChannel_.subscribe(globalPathCallback);
+
+    tracePathChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.tracePathTopic,
+      type: "nav_msgs/Path",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    tracePathChannel_.subscribe(tracePathCallback);
 
     odomChannel_ = Topic(
       ros: ros,
@@ -802,6 +814,31 @@ class RosChannel {
     
     // 使用新的列表赋值来触发监听器
     globalPath.value = newPath;
+  }
+
+  Future<void> tracePathCallback(Map<String, dynamic> msg) async {
+    List<vm.Vector2> newPath = [];
+    RobotPath path = RobotPath.fromJson(msg);
+    String framId = path.header!.frameId!;
+    RobotPose transPose = RobotPose(0, 0, 0);
+    try {
+      transPose = tf_.lookUpForTransform("map", framId);
+    } catch (e) {
+      print("not find trace path transfrom form:map to:$framId");
+      return;
+    }
+
+    for (var pose in path.poses!) {
+      RosTransform tran = RosTransform(
+          translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
+      var poseFrame = tran.getRobotPose();
+      var poseMap = absoluteSum(transPose, poseFrame);
+      vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
+      newPath.add(vm.Vector2(poseScene.x, poseScene.y));
+    }
+    
+    // 使用新的列表赋值来触发监听器
+    tracePath.value = newPath;
   }
 
   Uint8List _hexToBytes(String hex) {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ros_flutter_gui_app/main.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'gamepad_mapping_page.dart';
+
 import 'package:flutter/services.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
@@ -104,6 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'laserTopic': AppLocalizations.of(context)!.laser_topic,
       'globalPathTopic': AppLocalizations.of(context)!.global_path_topic,
       'localPathTopic': AppLocalizations.of(context)!.local_path_topic,
+      'tracePathTopic': AppLocalizations.of(context)!.trace_path_topic,
       'relocTopic': AppLocalizations.of(context)!.reloc_topic,
       'navGoalTopic': AppLocalizations.of(context)!.nav_goal_topic,
       'OdometryTopic': AppLocalizations.of(context)!.odometry_topic,
@@ -149,6 +150,9 @@ class _SettingsPageState extends State<SettingsPage> {
         break;
       case 'localPathTopic':
         globalSetting.setLocalPathTopic(value);
+        break;
+      case 'tracePathTopic':
+        globalSetting.setTracePathTopic(value);
         break;
       case 'relocTopic':
         globalSetting.setRelocTopic(value);
@@ -490,6 +494,8 @@ class _SettingsPageState extends State<SettingsPage> {
             'globalPathTopic', _settings['globalPathTopic'] ?? '/plan'),
         _buildSettingItem(
             'localPathTopic', _settings['localPathTopic'] ?? '/local_plan'),
+        _buildSettingItem(
+            'tracePathTopic', _settings['tracePathTopic'] ?? '/transformed_global_plan'),
         _buildSettingItem(
             'relocTopic', _settings['relocTopic'] ?? '/initialpose'),
         _buildSettingItem(

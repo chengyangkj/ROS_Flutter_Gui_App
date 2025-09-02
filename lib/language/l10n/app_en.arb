@@ -18,6 +18,7 @@
   "laser_topic": "Laser Topic",
   "global_path_topic": "Global Path Topic",
   "local_path_topic": "Local Path Topic",
+  "trace_path_topic": "Trace Path Topic",
   "reloc_topic": "Reloc Topic",
   "nav_goal_topic": "Nav Goal Topic",
   "odometry_topic": "Odometry Topic",

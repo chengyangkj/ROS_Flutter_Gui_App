@@ -22,6 +22,7 @@ class GlobalState extends ChangeNotifier {
     'showPointCloud': ValueNotifier(false),
     'showGlobalPath': ValueNotifier(true),
     'showLocalPath': ValueNotifier(true),
+    'showTracePath': ValueNotifier(true),
     'showTopology': ValueNotifier(true),
     'showRobotFootprint': ValueNotifier(true),
   };

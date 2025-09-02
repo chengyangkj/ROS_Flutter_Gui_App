@@ -232,6 +232,7 @@ class Setting {
     prefs.setString('pointCloud2Topic', "/sensors/lidar_0/points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/plan");
+    prefs.setString('tracePathTopic', "/transformed_global_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/platform/odom/filtered");
@@ -259,6 +260,7 @@ class Setting {
     prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('tracePathTopic', "/transformed_global_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/odom");
@@ -286,6 +288,7 @@ class Setting {
     prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('tracePathTopic', "/transformed_global_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/odom");
@@ -313,6 +316,7 @@ class Setting {
     prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
+    prefs.setString('tracePathTopic', "/transformed_global_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/wheel/odometry");
@@ -452,6 +456,10 @@ class Setting {
 
   String get globalPathTopic {
     return prefs.getString("globalPathTopic") ?? "plan";
+  }
+
+  String get tracePathTopic {
+    return prefs.getString("tracePathTopic") ?? "/transformed_global_plan";
   }
 
   void setLocalPathTopic(String topic) {
@@ -624,6 +632,10 @@ class Setting {
 
   void setGlobalPathTopic(String topic) {
     prefs.setString('globalPathTopic', topic);
+  }
+
+  void setTracePathTopic(String topic) {
+    prefs.setString('tracePathTopic', topic);
   }
 
   // 状态监控相关方法
