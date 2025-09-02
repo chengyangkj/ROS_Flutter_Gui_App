@@ -246,7 +246,7 @@ class MapEditFlame extends FlameGame {
   PoseComponent addWayPoint(NavPoint navPoint) {
     final wayPoint = PoseComponent(
       PoseComponentSize: globalSetting.robotSize,
-      color: const Color(0xFF0080ff),
+      color: Colors.yellow,
       count: 2,
       isEditMode: false,
       direction: navPoint.theta,

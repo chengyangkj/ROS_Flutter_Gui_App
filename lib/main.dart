@@ -16,7 +16,8 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'provider/them_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
-import 'package:toastification/toastification.dart';
+
+import 'package:oktoast/oktoast.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,7 +97,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return OKToast(
+      child: MaterialApp(
       title: 'Ros Flutter GUI App',
       debugShowCheckedModeBanner: false,
       locale: _locale, // 设置应用的语言
@@ -117,7 +119,7 @@ class _MyAppState extends State<MyApp> {
         "/setting": ((context) => SettingsPage()),
         // "/gamepad":((context) => GamepadPage()),
       },
-      themeMode: Provider.of<ThemeProvider>(context, listen: true).themeMode ?? ThemeMode.dark,
+      themeMode: Provider.of<ThemeProvider>(context, listen: true).themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
         colorScheme: ColorScheme.fromSwatch().copyWith(
@@ -185,6 +187,7 @@ class _MyAppState extends State<MyApp> {
             ),
       ),
       home: ConnectPage(),
+      ),
     );
   }
 }

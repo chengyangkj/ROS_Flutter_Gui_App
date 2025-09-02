@@ -124,8 +124,7 @@ class RosChannel {
               "lost connection to ${rosUrl_} try reconnect...",
               position: ToastPosition.bottom,
               backgroundColor: Colors.black.withOpacity(0.8),
-              radius: 13.0,
-              textStyle: const TextStyle(fontSize: 18.0, color: Colors.white),
+              textStyle: const TextStyle( color: Colors.white),
             );
             String error = await connect(rosUrl_);
                          if(error.isEmpty){
@@ -133,16 +132,14 @@ class RosChannel {
                  "reconnect success to ${rosUrl_}!",
                  position: ToastPosition.bottom,
                  backgroundColor: Colors.green.withOpacity(0.8),
-                 radius: 13.0,
-                 textStyle: const TextStyle(fontSize: 18.0, color: Colors.white),
+                 textStyle: const TextStyle(color: Colors.white),
                );
              }else{
                showToast(
                  "reconnect failed to ${rosUrl_} error: $error",
                  position: ToastPosition.bottom,
                  backgroundColor: Colors.red.withOpacity(0.8),
-                 radius: 13.0,
-                 textStyle: const TextStyle(fontSize: 18.0, color: Colors.white),
+                 textStyle: const TextStyle( color: Colors.white),
                );
             }
           }
