@@ -65,6 +65,13 @@ class OccupancyMap {
     }
   }
 
+
+  //  // special values:
+  //   cost_translation_table_[0] = 0;      // NO obstacle
+  //   cost_translation_table_[253] = 99;   // INSCRIBED obstacle
+  //   cost_translation_table_[254] = 100;  // LETHAL obstacle
+  //   cost_translation_table_[255] = -1;   // UNKNOWN
+
   List<int> getCostMapData() {
     List<int> costMapData = [];
     
@@ -75,13 +82,14 @@ class OccupancyMap {
         //默认透明
         List<int> colorRgba = [0,0,0,0]; 
         
-        //内切障碍，机器人内切半径，所能触及的区域，进入此区域，一定会发生碰撞
-        if (pixelValue >= 100) {
-          colorRgba = [0x80, 0x80, 0x80, 255];// 灰色
-        }else {
-          // 其他值保持透明
-          colorRgba =  [0,0,0,0]; 
+        //内切障碍，机器人内切半径，所能触及的区域，机器人进入此区域，一定会发生碰撞
+        if(pixelValue==99){
+          // colorRgba = [0x80, 0x80, 0x80, 10];// 浅灰色
         }
+        else if(pixelValue==100){
+          //实际障碍物点 致命障碍
+          colorRgba = [0x80, 0x80, 0x80, 255];// 灰色
+        } 
         
         // 将 RGBA 值添加到结果数组
         costMapData.addAll(colorRgba);
