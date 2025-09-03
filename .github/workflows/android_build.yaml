@@ -22,6 +22,7 @@ jobs:
       - name: Clean Flutter
         run: flutter clean
       - run: flutter pub cache clean
+      - run: flutter doctor -v
       - run: flutter pub get
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
