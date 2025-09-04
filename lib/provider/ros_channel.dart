@@ -66,6 +66,7 @@ class RosChannel {
   late Topic globalCostmapChannel_;
   late Topic pointCloud2Channel_;
   late Service topologyGoalService_;
+  late Topic topologyMapUpdateChannel_;
 
   String rosUrl_ = "";
   Timer? cmdVelTimer;
@@ -385,6 +386,15 @@ class RosChannel {
       queueSize: 1,
       reconnectOnClose: true,
     );
+
+    topologyMapUpdateChannel_ = Topic(
+        ros: ros,
+        name: "${globalSetting.topologyMapTopic}/update",
+        type: "topology_msgs/TopologyMap",
+        reconnectOnClose: true,
+        queueLength: 10,
+        queueSize: 10);
+
     speedCtrlChannel_ = Topic(
       ros: ros,
       name: globalSetting.getConfig("SpeedCtrlTopic"),
@@ -963,6 +973,17 @@ class RosChannel {
     
     // 更新 ValueNotifier
     topologyMap_.value = updatedMap;
+  }
+
+  Future<void> updateTopologyMap(TopologyMap updatedMap) async {
+    // 转换为JSON并通过ROS发布
+    try {
+      final jsonData = updatedMap.toJson();
+      await topologyMapUpdateChannel_.publish(jsonData);
+      print("拓扑地图已发布到ROS: ${updatedMap.points.length}个点, ${updatedMap.routes.length}条路径");
+    } catch (e) {
+      print("发布拓扑地图失败: $e");
+    }
   }
 
   Future<void> navStatusCallback(Map<String, dynamic> msg) async {

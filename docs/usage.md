@@ -40,6 +40,12 @@ ros2 run web_video_server web_video_server
 
 点击右上角图标进入地图编辑模式，编辑模式下可添加导航点，障碍物绘制（后续支持）
 
+#### 拓扑地图
+- 订阅/map/topolog话题，消息类型定义：https://github.com/chengyangkj/topology_msgs
+- 点击保存按钮，自动发布/map/topology/update话题的topology地图，消息类型定义：https://github.com/chengyangkj/topology_msgs 用户可接受此话题并做保存
+
+
+
 ### 机器人控制
 
 - 左侧摇杆控制前进/后退/左右移动

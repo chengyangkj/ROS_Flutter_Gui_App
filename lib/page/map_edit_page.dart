@@ -3,18 +3,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
-import 'package:ros_flutter_gui_app/display/pose.dart';
-import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:toastification/toastification.dart';
-import 'dart:math';
-import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 
 class MapEditPage extends StatefulWidget {
   final VoidCallback? onExit;
@@ -216,6 +212,13 @@ class _MapEditPageState extends State<MapEditPage> {
             top: 100,
             child: _buildInfoPanel(context, theme),
           ),
+          
+          // 右下角按钮
+          Positioned(
+            right: 20,
+            bottom: 20,
+            child: _buildAddRobotPositionButton(context, theme),
+          ),
         ],
       ),
     );
@@ -260,6 +263,12 @@ class _MapEditPageState extends State<MapEditPage> {
                     final navPointManager = Provider.of<NavPointManager>(context, listen: false);
                     await navPointManager.saveNavPoints(navPoints);
                     
+                    final topologyMap = TopologyMap(
+                      points: navPoints,
+                      routes: [],
+                    );
+                    await rosChannel.updateTopologyMap(topologyMap);
+
                     // 显示保存成功提示
                     if (mounted) {
                       toastification.show(
@@ -687,5 +696,32 @@ class _MapEditPageState extends State<MapEditPage> {
         ),
       ],
     );
+  }
+  
+  // 构建添加机器人位置按钮
+  Widget _buildAddRobotPositionButton(BuildContext context, ThemeData theme) {
+    return AnimatedOpacity(
+      opacity: selectedTool == 'addNavPoint' ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 200),
+      child: ElevatedButton.icon(
+        onPressed: selectedTool == 'addNavPoint' ? _onAddRobotPositionButtonPressed : null,
+        icon: const Icon(Icons.my_location, size: 18),
+        label: const Text('使用当前位置'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 4,
+        ),
+      ),
+    );
+  }
+  
+  // 按钮点击处理
+  void _onAddRobotPositionButtonPressed() async {
+    await game.addNavPointAtRobotPosition();
   }
 }

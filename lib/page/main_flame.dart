@@ -398,6 +398,8 @@ class MainFlame extends FlameGame {
   
   // 更新拓扑图层
   void _updateTopologyLayers() {
+
+    //有在线导航点时，就不再显示离线导航点
     if (rosChannel?.topologyMap_.value == null) {
       print('拓扑地图数据为空，跳过更新');
       return;
@@ -405,7 +407,7 @@ class MainFlame extends FlameGame {
     
     final topologyMap = rosChannel!.topologyMap_.value;
     
-    print('更新拓扑图层: ${topologyMap.points.length} 个点, ${topologyMap.routes.length} 条路径');
+    print('更新在线拓扑图层: ${topologyMap.points.length} 个点, ${topologyMap.routes.length} 条路径');
     print('离线导航点数量: ${offLineNavPoints.length}');
     
     // 更新拓扑线组件数据，但不直接添加到world
@@ -422,12 +424,10 @@ class MainFlame extends FlameGame {
     }
     _wayPointComponents.clear();
     
-    // 合并离线导航点和拓扑地图点
+ 
     List<NavPoint> navPoints = List<NavPoint>.from(topologyMap.points);
-    navPoints.addAll(offLineNavPoints);
     
-    print('合并后的导航点总数: ${navPoints.length}');
-    
+  
     // 创建新的路径点组件
     for (final point in navPoints) {
       final waypoint = PoseComponent(

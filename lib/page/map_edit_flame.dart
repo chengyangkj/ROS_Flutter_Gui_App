@@ -12,6 +12,7 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 
+
 // 专门的地图编辑Flame组件
 class MapEditFlame extends FlameGame {
   late MapComponent _displayMap;
@@ -21,6 +22,8 @@ class MapEditFlame extends FlameGame {
   
   final double minScale = 0.01;
   final double maxScale = 10.0;
+
+  RobotPose currentRobotPose = RobotPose.zero();
   
   // 地图变换参数
   double mapScale = 1.0;
@@ -48,8 +51,6 @@ class MapEditFlame extends FlameGame {
   // 手势相关变量
   double _baseScale = 1.0;
   Vector2? _lastFocalPoint;
-
-  OccupancyMap? _occupancyMap;
   
   MapEditFlame({
     this.rosChannel, 
@@ -65,11 +66,34 @@ class MapEditFlame extends FlameGame {
   @override
   Color backgroundColor() => isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
   
+  
 
   
   // 设置当前选中的工具
   void setSelectedTool(String? tool) {
     selectedTool = tool;
+  }
+  
+  // 使用当前机器人位置添加导航点
+  Future<void> addNavPointAtRobotPosition() async {
+    if (selectedTool != 'addNavPoint') return;
+    
+    // 使用当前机器人位置添加导航点
+    final result = await onAddNavPoint!(currentRobotPose.x, currentRobotPose.y);
+    if (result != null) {
+      print('使用机器人位置添加导航点: $result x: ${currentRobotPose.x} y: ${currentRobotPose.y}');
+      // 创建新的导航点，使用机器人当前朝向
+      final navPointWithRobotPose = NavPoint(
+        name: result.name,
+        x: currentRobotPose.x,
+        y: currentRobotPose.y,
+        theta: currentRobotPose.theta,
+        type: result.type,
+      );
+      addWayPoint(navPointWithRobotPose);
+    } else {
+      print('用户取消了使用机器人位置添加导航点');
+    }
   }
   
   // 获取当前选中的导航点
@@ -159,6 +183,10 @@ class MapEditFlame extends FlameGame {
       // 监听地图数据
       rosChannel!.map_.addListener(() {
         _displayMap.updateMapData(rosChannel!.map_.value);
+      });
+
+      rosChannel!.robotPoseMap.addListener(() {
+        currentRobotPose = rosChannel!.robotPoseMap.value;
       });
       
       // 立即更新地图数据
