@@ -11,6 +11,7 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 
 
 // 专门的地图编辑Flame组件
@@ -32,7 +33,7 @@ class MapEditFlame extends FlameGame {
   bool isDarkMode = true;
   
   // 当前选中的编辑工具
-  String? selectedTool;
+  EditToolType? selectedTool;
   
   // 回调函数，用于通知外部添加导航点
   Future<NavPoint?> Function(double x, double y)? onAddNavPoint;
@@ -70,13 +71,13 @@ class MapEditFlame extends FlameGame {
 
   
   // 设置当前选中的工具
-  void setSelectedTool(String? tool) {
+  void setSelectedTool(EditToolType? tool) {
     selectedTool = tool;
   }
   
   // 使用当前机器人位置添加导航点
   Future<void> addNavPointAtRobotPosition() async {
-    if (selectedTool != 'addNavPoint') return;
+    if (selectedTool != EditToolType.addNavPoint) return;
     
     // 使用当前机器人位置添加导航点
     final result = await onAddNavPoint!(currentRobotPose.x, currentRobotPose.y);
@@ -196,7 +197,7 @@ class MapEditFlame extends FlameGame {
   
   // 处理单击事件，实现双击检测
   Future<bool> onTapDown(Vector2 position) async {
-    if (selectedTool == 'addNavPoint') {
+    if (selectedTool == EditToolType.addNavPoint) {
       // position 为 GestureDetector.localPosition
       final worldPoint = camera.globalToLocal(position);
       final clickedWayPoint = _findWayPointAtPosition(worldPoint);
@@ -227,6 +228,10 @@ class MapEditFlame extends FlameGame {
       
         return true;  
   
+    }else if(selectedTool == EditToolType.drawObstacle){
+      // 绘制障碍物
+      
+      return true;
     }
     return false;
   }

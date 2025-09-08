@@ -12,6 +12,12 @@ import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 
+enum EditToolType {
+  addNavPoint,
+  drawObstacle,
+  eraseObstacle,
+}
+
 class MapEditPage extends StatefulWidget {
   final VoidCallback? onExit;
   
@@ -27,13 +33,14 @@ class _MapEditPageState extends State<MapEditPage> {
   late RosChannel rosChannel;
 
   // 当前选中的编辑工具
-  String? selectedTool;
+  EditToolType? selectedTool;
   
   // 导航点列表
   List<NavPoint> navPoints = [];
   
   // 当前选中的点位信息
   NavPoint? selectedWayPointInfo;
+
 
 
   @override
@@ -183,9 +190,7 @@ class _MapEditPageState extends State<MapEditPage> {
                   game.onScaleEnd();
               },
               child: MouseRegion(
-                cursor: (selectedTool == 'addNavPoint')
-                    ? SystemMouseCursors.precise
-                    : SystemMouseCursors.basic,
+                cursor: _getCursorForTool(selectedTool),
                 child: GameWidget(game: game),
               ),
             ),
@@ -366,31 +371,31 @@ class _MapEditPageState extends State<MapEditPage> {
             _buildEditTool(
               icon: Icons.add_location,
               label: '导航点编辑',
-              toolName: 'addNavPoint',
+              toolName: EditToolType.addNavPoint,
               color: Colors.blue,
             ),
             
-            // const SizedBox(height: 8),
+            const SizedBox(height: 8),
             
-            // // 障碍物绘制工具
-            // _buildEditTool(
-            //   icon: Icons.brush,
-            //   label: '绘制障碍物',
-            //   toolName: 'drawObstacle',
-            //   color: Colors.red,
-            // ),
+            // 障碍物绘制工具
+            _buildEditTool(
+              icon: Icons.brush,
+              label: '绘制障碍物',
+              toolName: EditToolType.drawObstacle,
+              color: Colors.red,
+            ),
             
-            // const SizedBox(height: 8),
+            const SizedBox(height: 8),
             
-            // // 障碍物擦除工具
-            // _buildEditTool(
-            //   icon: Icons.auto_fix_high,
-            //   label: '擦除障碍物',
-            //   toolName: 'eraseObstacle',
-            //   color: Colors.green,
-            // ),
+            // 障碍物擦除工具
+            _buildEditTool(
+              icon: Icons.auto_fix_high,
+              label: '擦除障碍物',
+              toolName: EditToolType.eraseObstacle,
+              color: Colors.green,
+            ),
             
-            // const SizedBox(height: 8),
+            const SizedBox(height: 8),
             
 
           ],
@@ -404,7 +409,7 @@ class _MapEditPageState extends State<MapEditPage> {
   Widget _buildEditTool({
     required IconData icon,
     required String label,
-    required String toolName,
+    required EditToolType toolName,
     required Color color,
   }) {
     final isActive = selectedTool == toolName;
@@ -428,7 +433,7 @@ class _MapEditPageState extends State<MapEditPage> {
                 selectedTool = toolName; // 选择工具
                 game.setSelectedTool(toolName);
                 // 切换到其他工具时退出所有点位编辑模式
-                if (toolName != 'addNavPoint') {
+                if (toolName != EditToolType.addNavPoint) {
                   for (final wp in game.wayPoints) {
                     wp.setEditMode(false);
                   }
@@ -701,10 +706,10 @@ class _MapEditPageState extends State<MapEditPage> {
   // 构建添加机器人位置按钮
   Widget _buildAddRobotPositionButton(BuildContext context, ThemeData theme) {
     return AnimatedOpacity(
-      opacity: selectedTool == 'addNavPoint' ? 1.0 : 0.0,
+      opacity: selectedTool == EditToolType.addNavPoint ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 200),
       child: ElevatedButton.icon(
-        onPressed: selectedTool == 'addNavPoint' ? _onAddRobotPositionButtonPressed : null,
+        onPressed: selectedTool == EditToolType.addNavPoint ? _onAddRobotPositionButtonPressed : null,
         icon: const Icon(Icons.my_location, size: 18),
         label: const Text('使用当前位置'),
         style: ElevatedButton.styleFrom(
@@ -723,5 +728,19 @@ class _MapEditPageState extends State<MapEditPage> {
   // 按钮点击处理
   void _onAddRobotPositionButtonPressed() async {
     await game.addNavPointAtRobotPosition();
+  }
+  
+  // 根据工具类型获取鼠标光标
+  MouseCursor _getCursorForTool(EditToolType? tool) {
+    switch (tool) {
+      case EditToolType.addNavPoint:
+        return SystemMouseCursors.precise;
+      case EditToolType.drawObstacle:
+        return SystemMouseCursors.precise; // 隐藏系统光标，使用自定义画笔光标
+      case EditToolType.eraseObstacle:
+        return SystemMouseCursors.precise; // 隐藏系统光标，使用自定义方块光标
+      case null:
+        return SystemMouseCursors.basic;
+    }
   }
 }
