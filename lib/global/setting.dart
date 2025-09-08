@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:convert';
 
 enum KeyName {
@@ -232,7 +230,7 @@ class Setting {
     prefs.setString('pointCloud2Topic', "/sensors/lidar_0/points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/plan");
-    prefs.setString('tracePathTopic', "/transformed_global_plan");
+        prefs.setString('tracePathTopic', "/transformed_global_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/platform/odom/filtered");
@@ -248,6 +246,7 @@ class Setting {
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
     prefs.setString('imageTopic', "/camera/image_raw");
+    prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
     prefs.setDouble('robotSize', 3.0);
@@ -276,6 +275,7 @@ class Setting {
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
     prefs.setString('imageTopic', "/camera/image_raw");
+    prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
     prefs.setDouble('robotSize', 3.0);
@@ -288,7 +288,7 @@ class Setting {
     prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('tracePathTopic', "/transformed_global_plan");
+    
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/odom");
@@ -304,6 +304,7 @@ class Setting {
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
     prefs.setString('imageTopic', "/camera/image_raw");
+    prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
     prefs.setDouble('robotSize', 3.0);
@@ -316,7 +317,6 @@ class Setting {
     prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('tracePathTopic', "/transformed_global_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/wheel/odometry");
@@ -332,6 +332,7 @@ class Setting {
     prefs.setString('baseLinkFrameName', "base_link");
     prefs.setString('imagePort', "8080");
     prefs.setString('imageTopic', "/camera/image_raw");
+    prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
     prefs.setDouble('robotSize', 3.0);
@@ -457,8 +458,7 @@ class Setting {
   String get globalPathTopic {
     return prefs.getString("globalPathTopic") ?? "plan";
   }
-
-  String get tracePathTopic {
+    String get tracePathTopic {
     return prefs.getString("tracePathTopic") ?? "/transformed_global_plan";
   }
 
@@ -500,6 +500,14 @@ class Setting {
 
   void setBatteryTopic(String topic) {
     prefs.setString('BatteryTopic', topic);
+  }
+
+  String get diagnosticTopic {
+    return prefs.getString("diagnosticTopic") ?? "/diagnostics";
+  }
+
+  void setDiagnosticTopic(String topic) {
+    prefs.setString('diagnosticTopic', topic);
   }
 
   String getConfig(String key) {
@@ -633,11 +641,9 @@ class Setting {
   void setGlobalPathTopic(String topic) {
     prefs.setString('globalPathTopic', topic);
   }
-
   void setTracePathTopic(String topic) {
     prefs.setString('tracePathTopic', topic);
   }
-
   // 状态监控相关方法
   void setRobotStatusTopic(String topic) {
     prefs.setString('robotStatusTopic', topic);

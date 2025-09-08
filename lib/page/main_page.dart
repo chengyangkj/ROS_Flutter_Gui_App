@@ -3,7 +3,6 @@ import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/page/connect_page.dart';
 import 'package:ros_flutter_gui_app/page/main_flame.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
@@ -11,13 +10,15 @@ import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
-import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
+import 'package:ros_flutter_gui_app/basic/diagnostic_status.dart';
+import 'package:ros_flutter_gui_app/page/diagnostic_page.dart';
+import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
 
 
 
@@ -69,13 +70,84 @@ class _MainFlamePageState extends State<MainFlamePage> {
         camWidgetHeight = camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
       }
     });
+    
+    // 监听诊断数据
+    _setupDiagnosticListener();
   }
   
   // 重新加载导航点和地图数据
   Future<void> _reloadData() async {
-    if (game != null) {
-      await game.reloadNavPointsAndMap();
+    await game.reloadNavPointsAndMap();
+  }
+
+  // 设置诊断数据监听器
+  void _setupDiagnosticListener() {
+    final rosChannel = Provider.of<RosChannel>(context, listen: false);
+    
+    // 设置新错误/警告回调
+    rosChannel.diagnosticManager.setOnNewErrorsWarnings(_onNewErrorsWarnings);
+  }
+
+
+  // 新错误/警告/失活回调
+  void _onNewErrorsWarnings(List<Map<String, dynamic>> newErrorsWarnings) {
+    for (var errorWarning in newErrorsWarnings) {
+      final hardwareId = errorWarning['hardwareId'] as String;
+      final componentName = errorWarning['componentName'] as String;
+      final state = errorWarning['state'] as DiagnosticState;
+      
+      // 只对错误、警告和失活状态显示toast
+      if (state.level == DiagnosticStatus.ERROR || 
+          state.level == DiagnosticStatus.WARN || 
+          state.level == DiagnosticStatus.STALE) {
+        _showDiagnosticToast(hardwareId, componentName, state);
+      }
     }
+  }
+
+  // 显示诊断toast通知
+  void _showDiagnosticToast(String hardwareId, String componentName, DiagnosticState state) {
+    if (!mounted) return;
+    
+    String levelText;
+    Color levelColor;
+    ToastificationType toastType;
+    IconData iconData;
+    
+    switch (state.level) {
+      case DiagnosticStatus.WARN:
+        levelText = '警告';
+        levelColor = Colors.orange;
+        toastType = ToastificationType.warning;
+        iconData = Icons.warning;
+        break;
+      case DiagnosticStatus.ERROR:
+        levelText = '错误';
+        levelColor = Colors.red;
+        toastType = ToastificationType.error;
+        iconData = Icons.error;
+        break;
+      case DiagnosticStatus.STALE:
+        levelText = '失活';
+        levelColor = Colors.grey;
+        toastType = ToastificationType.info;
+        iconData = Icons.schedule;
+        break;
+      default:
+        return; // 其他状态不显示toast
+    }
+    
+    toastification.show(
+      context: context,
+      type: toastType,
+      title: Text('健康诊断:[$levelText] $componentName'),
+      description: Text('硬件ID: $hardwareId\n消息: ${state.message}'),
+      autoCloseDuration: const Duration(seconds: 5),
+      icon: Icon(
+        iconData,
+        color: levelColor,
+      ),
+    );
   }
 
     @override
@@ -203,6 +275,53 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       return Text('${navStatus.toString()}');
                     },
                   ),
+                ),
+              ),
+              // 诊断状态显示
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Consumer<RosChannel>(
+                  builder: (context, rosChannel, child) {
+                    final diagnosticManager = rosChannel.diagnosticManager;
+                    final statusCounts = diagnosticManager.getStatusCounts();
+                    
+                    int errorCount = statusCounts[DiagnosticStatus.ERROR] ?? 0;
+                    int warnCount = statusCounts[DiagnosticStatus.WARN] ?? 0;
+                    
+                    Color chipColor = Colors.green;
+                    IconData chipIcon = Icons.check_circle;
+                    String chipText = '正常';
+                    
+                    if (errorCount > 0) {
+                      chipColor = Colors.red;
+                      chipIcon = Icons.error;
+                      chipText = '错误: $errorCount';
+                    } else if (warnCount > 0) {
+                      chipColor = Colors.orange;
+                      chipIcon = Icons.warning;
+                      chipText = '警告: $warnCount';
+                    }
+                    
+                    return  RawChip(
+                          avatar: Icon(
+                            chipIcon,
+                            color: chipColor,
+                            size: 16,
+                          ),
+                          label: Text(chipText),
+                          backgroundColor: chipColor.withOpacity(0.1),
+                          elevation: 0,
+                          onPressed: () {
+                             Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const DiagnosticPage(),
+                            ),
+                          );
+                        },
+
+                    );
+                  },
                 ),
               ),
             ],
@@ -938,9 +1057,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
-  }
 
   Color _getTypeColor(NavPointType type) {
     switch (type) {
@@ -948,8 +1064,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
         return Colors.blue[600]!;
       case NavPointType.chargeStation:
         return Colors.green[600]!;
-      default:
-        return Colors.grey[600]!;
     }
   }
 
@@ -959,8 +1073,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
         return '导航目标';
       case NavPointType.chargeStation:
         return '充电站';
-      default:
-        return '未知类型';
     }
   }
   
@@ -1052,6 +1164,11 @@ class _MainFlamePageState extends State<MainFlamePage> {
         child: GamepadWidget(),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
 

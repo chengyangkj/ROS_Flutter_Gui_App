@@ -1,9 +1,6 @@
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart' as vm;
-import 'dart:io';
-import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -17,16 +14,15 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:roslibdart/roslibdart.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:provider/provider.dart';
 import "package:ros_flutter_gui_app/basic/occupancy_map.dart";
 import 'package:ros_flutter_gui_app/basic/tf.dart';
 import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
 import "package:ros_flutter_gui_app/basic/math.dart";
-import 'package:ros_flutter_gui_app/global/setting.dart';
-import 'package:image/image.dart' as img;
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/polygon_stamped.dart';
 import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
+import 'package:ros_flutter_gui_app/basic/diagnostic_array.dart';
+import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
 import 'package:oktoast/oktoast.dart';
 
 class LaserData {
@@ -65,6 +61,7 @@ class RosChannel {
   late Topic localCostmapChannel_;
   late Topic globalCostmapChannel_;
   late Topic pointCloud2Channel_;
+  late Topic diagnosticChannel_;
   late Service topologyGoalService_;
   late Topic topologyMapUpdateChannel_;
 
@@ -99,8 +96,12 @@ class RosChannel {
   ValueNotifier<OccupancyMap> localCostmap = ValueNotifier(OccupancyMap());
   ValueNotifier<OccupancyMap> globalCostmap = ValueNotifier(OccupancyMap());
   ValueNotifier<List<Point3D>> pointCloud2Data = ValueNotifier([]);
+  ValueNotifier<DiagnosticArray> diagnosticData = ValueNotifier(DiagnosticArray());
+  late DiagnosticManager diagnosticManager;
 
   RosChannel() {
+    diagnosticManager = DiagnosticManager();
+    
     //启动定时器 获取机器人实时坐标
     globalSetting.init().then((success) {
        //监听链接状态
@@ -211,6 +212,7 @@ class RosChannel {
     pointCloud2Data.value.clear();
     localCostmap.value.data.clear();
     globalCostmap.value.data.clear();
+    diagnosticData.value = DiagnosticArray();
     cmdVel_.vx = 0;
     cmdVel_.vy = 0;
     ros.close();
@@ -363,6 +365,15 @@ class RosChannel {
       reconnectOnClose: true,
     );
     pointCloud2Channel_.subscribe(pointCloud2Callback);
+
+    diagnosticChannel_ = Topic(
+      ros: ros,
+      name: globalSetting.diagnosticTopic,
+      type: "diagnostic_msgs/DiagnosticArray",
+      queueSize: 1,
+      reconnectOnClose: true,
+    );
+    diagnosticChannel_.subscribe(diagnosticCallback);
 
 //发布者
     relocChannel_ = Topic(
@@ -851,14 +862,6 @@ class RosChannel {
     tracePath.value = newPath;
   }
 
-  Uint8List _hexToBytes(String hex) {
-    final length = hex.length;
-    final buffer = Uint8List(length ~/ 2);
-    for (int i = 0; i < length; i += 2) {
-      buffer[i ~/ 2] = int.parse(hex.substring(i, i + 2), radix: 16);
-    }
-    return buffer;
-  }
 
   Future<void> laserCallback(Map<String, dynamic> msg) async {
     // print("${json.encode(msg)}");
@@ -873,7 +876,6 @@ class RosChannel {
     }
     // print("find laser size:${laser.ranges!.length}");
     double angleMin = laser.angleMin!.toDouble();
-    double angleMax = laser.angleMax!.toDouble();
     double angleIncrement = laser.angleIncrement!;
     List<vm.Vector2> newLaserPoints = [];
     for (int i = 0; i < laser.ranges!.length; i++) {
@@ -1046,18 +1048,6 @@ class RosChannel {
       double originX = msg["info"]["origin"]["position"]["x"];
       double originY = msg["info"]["origin"]["position"]["y"];
       
-      // 解析四元数获取旋转角度
-      Map<String, dynamic> orientation = msg["info"]["origin"]["orientation"];
-      double qx = orientation["x"]?.toDouble() ?? 0.0;
-      double qy = orientation["y"]?.toDouble() ?? 0.0;
-      double qz = orientation["z"]?.toDouble() ?? 0.0;
-      double qw = orientation["w"]?.toDouble() ?? 1.0;
-      
-      // 四元数转欧拉角
-      vm.Quaternion quaternion = vm.Quaternion(qx, qy, qz, qw);
-      List<double> euler = quaternionToEuler(quaternion);
-      double originTheta = euler[0]; // yaw 角
-      
       // 创建全局代价地图
       OccupancyMap costmap = OccupancyMap();
       costmap.mapConfig.resolution = resolution;
@@ -1083,6 +1073,27 @@ class RosChannel {
       globalCostmap.value = costmap;
     } catch (e) {
       print("Error processing global costmap: $e");
+    }
+  }
+
+  Future<void> diagnosticCallback(Map<String, dynamic> msg) async {
+    try {
+      DiagnosticArray diagnosticArray = DiagnosticArray.fromJson(msg);
+      
+      // 更新诊断数据（保持向后兼容）
+      diagnosticData.value = diagnosticArray;
+      
+      // 使用DiagnosticManager管理诊断状态
+      diagnosticManager.updateDiagnosticStates(diagnosticArray);
+      
+      // 打印诊断信息（可选）
+      print("收到诊断数据: ${diagnosticArray.status.length} 个组件");
+      for (var status in diagnosticArray.status) {
+        print("组件: ${status.name}, 状态: ${status.levelDisplayName}, 消息: ${status.message}");
+      }
+      
+    } catch (e) {
+      print("Error processing diagnostic data: $e");
     }
   }
 }

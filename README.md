@@ -56,24 +56,68 @@ ROS Flutter GUI App 是一个基于 Flutter Flame 游戏框架开发的跨平台
 | 规划轨迹显示   | ✅    |                       |
 | 电池监控       | ✅    |                       |
 | 相机显示       | ✅    | 需要 web_video_server |
-| 地图编辑       | ❌    | 开发中                |
+| 地图编辑       | ✅    |                 |
 | 拓扑地图       | ✅    |                 |
+| 诊断信息显示    | ✅    | /diagnostics topic制表显示及错误Toast弹窗 |
 
 ## 快速开始
 
-### 安装
+### 下载安装包
 
-1. 从 [Release](https://github.com/chengyangkj/ROS_Flutter_Gui_App/releases) 下载对应平台的安装包
+从 [Release页面](https://github.com/chengyangkj/ROS_Flutter_Gui_App/releases) 下载对应平台的最新版本:
 
-2. 安装 ROS 依赖:
+- Windows: `ros_flutter_gui_app_windows.zip`
+- Linux: `ros_flutter_gui_app_linux.tar.gz`
+- Android: `ros_flutter_gui_app_android.apk`
+- Web: `ros_flutter_gui_app_web.tar.gz`
+
+### 环境要求
+
+#### ROS环境
+
+- ROS1 (Melodic/Noetic) 或 ROS2 (Foxy/Galactic/Humble)
+- rosbridge_suite
+- web_video_server (可选,用于相机显示功能)
+
+#### 安装依赖
+
+**ROS1**
 
 ```bash
-# ROS1
 sudo apt install ros-${ROS_DISTRO}-rosbridge-suite
-
-# ROS2
-sudo apt install ros-${ROS_DISTRO}-rosbridge-suite
+sudo apt install ros-${ROS_DISTRO}-web-video-server  # 可选
 ```
+
+**ROS2**
+
+```bash
+sudo apt install ros-${ROS_DISTRO}-rosbridge-suite
+# web_video_server需要从源码编译
+cd ~/ros2_ws/src
+git clone https://github.com/RobotWebTools/web_video_server.git
+cd ~/ros2_ws
+colcon build
+```
+
+### 平台特定说明
+
+#### Web版本部署
+
+1. 解压web版本压缩包
+2. 使用Python快速启动HTTP服务:
+```bash
+cd ros_flutter_gui_app_web
+python -m http.server 8000
+```
+3. 访问 `http://localhost:8000`
+
+#### Android版本
+
+直接安装APK文件即可。
+
+#### Linux/Windows版本
+
+解压后运行可执行文件即可。
 
 ### 配置
 
@@ -89,11 +133,7 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 
 2. 运行应用并配置连接参数
 
-## 详细文档
-
-- [安装指南](docs/installation.md) - 包含各平台的安装步骤和环境配置说明
-- [配置说明](docs/configuration.md) - 详细的参数配置说明和默认值
-- [使用教程](docs/usage.md) - 软件功能使用说明和最佳实践
+详细使用说明参见：[使用说明](docs/usage.md) 
 
 ## Star History
 
