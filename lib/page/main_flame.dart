@@ -407,9 +407,14 @@ class MainFlame extends FlameGame {
     
     final topologyMap = rosChannel!.topologyMap_.value;
     
-    print('更新在线拓扑图层: ${topologyMap.points.length} 个点, ${topologyMap.routes.length} 条路径');
-    print('离线导航点数量: ${offLineNavPoints.length}');
+    print('更新在线拓扑图层: ${topologyMap.points.length} 个点, ${topologyMap.routes.length} 条路径 离线导航点数量: ${offLineNavPoints.length}');
     
+    List<NavPoint> navPoints =offLineNavPoints;
+    if(topologyMap.points.isNotEmpty){
+      navPoints = List<NavPoint>.from(topologyMap.points);
+      print('使用在线拓扑点位');
+    }
+
     // 更新拓扑线组件数据，但不直接添加到world
     _topologyLineComponent.removeFromParent();
     _topologyLineComponent = TopologyLine(
@@ -425,7 +430,7 @@ class MainFlame extends FlameGame {
     _wayPointComponents.clear();
     
  
-    List<NavPoint> navPoints = List<NavPoint>.from(topologyMap.points);
+
     
   
     // 创建新的路径点组件
