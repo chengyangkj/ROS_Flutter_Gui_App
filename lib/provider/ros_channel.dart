@@ -1086,12 +1086,6 @@ class RosChannel {
       // 使用DiagnosticManager管理诊断状态
       diagnosticManager.updateDiagnosticStates(diagnosticArray);
       
-      // 打印诊断信息（可选）
-      print("收到诊断数据: ${diagnosticArray.status.length} 个组件");
-      for (var status in diagnosticArray.status) {
-        print("组件: ${status.name}, 状态: ${status.levelDisplayName}, 消息: ${status.message}");
-      }
-      
     } catch (e) {
       print("Error processing diagnostic data: $e");
     }
