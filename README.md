@@ -55,7 +55,7 @@ ROS Flutter GUI App 是一个基于 Flutter Flame 游戏框架开发的跨平台
 | 单点/多点导航  | ✅    |                       |
 | 规划轨迹显示   | ✅    |                       |
 | 电池监控       | ✅    |                       |
-| 相机显示       | ✅    | 需要 web_video_server |
+| 相机显示       | ✅    | 需要 web_video_server，不支持web |
 | 地图编辑       | ✅    |                 |
 | 拓扑地图       | ✅    |                 |
 | 诊断信息显示    | ✅    | /diagnostics topic制表显示及错误Toast弹窗 |
