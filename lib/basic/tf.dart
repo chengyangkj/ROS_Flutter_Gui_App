@@ -149,10 +149,10 @@ class Stamp {
   });
 
   final num secs;
-  static const String secsKey = "secs";
+  static const String secsKey = "sec";
 
   final num nsecs;
-  static const String nsecsKey = "nsecs";
+  static const String nsecsKey = "nanosec";
 
   Stamp copyWith({
     num? secs,
@@ -166,14 +166,14 @@ class Stamp {
 
   factory Stamp.fromJson(Map<String, dynamic> json) {
     return Stamp(
-      secs: json["secs"] ?? 0,
-      nsecs: json["nsecs"] ?? 0,
+      secs: json["sec"] ?? 0,
+      nsecs: json["nanosec"] ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        "secs": secs,
-        "nsecs": nsecs,
+        "sec": secs,
+        "nanosec": nsecs,
       };
 
   @override
