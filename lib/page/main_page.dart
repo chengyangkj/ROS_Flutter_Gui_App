@@ -190,6 +190,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
               _buildBottomControls(context, theme),
               _buildCameraWidget(context, theme),
               _buildGamepadWidget(context, theme),
+              _buildMapLegend(context, theme),
             ],
           ),
         );
@@ -1164,6 +1165,79 @@ class _MainFlamePageState extends State<MainFlamePage> {
         child: GamepadWidget(),
       ),
     );
+  }
+
+  // 构建地图图例组件
+  Widget _buildMapLegend(BuildContext context, ThemeData theme) {
+    return Positioned(
+      right: 10,
+      top: 2,
+      child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 图例项目 - 横着排列
+              _buildCompactLegendItem('自由', _getFreeAreaColor()),
+              const SizedBox(width: 12),
+              _buildCompactLegendItem('障碍', _getOccupiedAreaColor()),
+              const SizedBox(width: 12),
+              _buildCompactLegendItem('未知', _getUnknownAreaColor()),
+            ],
+          ),
+        ),
+      
+    );
+  }
+
+  // 构建精简图例项目
+  Widget _buildCompactLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 颜色指示器
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            border: Border.all(
+              color: Colors.grey[400]!,
+              width: 0.5,
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        // 标签
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 7,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 获取自由区域颜色 - 与地图渲染中的RGB值完全匹配
+  Color _getFreeAreaColor() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFFFFFFF);
+  }
+
+  // 获取占据区域颜色 - 与地图渲染中的RGB值完全匹配
+  Color _getOccupiedAreaColor() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return isDarkMode ? const Color(0xFFC8C8C8) : const Color(0xFF3C3C3C);
+  }
+
+  // 获取未知区域颜色 - 与地图渲染中的RGB值完全匹配
+  Color _getUnknownAreaColor() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return isDarkMode ? const Color(0xFF505050) : const Color(0xFFC8C8C8);
   }
 
   @override
