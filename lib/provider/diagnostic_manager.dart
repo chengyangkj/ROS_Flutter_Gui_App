@@ -279,10 +279,10 @@ class DiagnosticManager extends ChangeNotifier {
     // 通知监听者，并传递新出现的错误和警告信息
     notifyListeners();
     
-    // 如果有新出现的错误或警告，触发回调
-    if (newErrorsWarnings.isNotEmpty) {
-      _onNewErrorsWarnings?.call(newErrorsWarnings);
-    }
+    // // 如果有新出现的错误或警告，触发回调
+    // if (newErrorsWarnings.isNotEmpty) {
+    //   _onNewErrorsWarnings?.call(newErrorsWarnings);
+    // }
   }
   
   // 清除所有诊断状态

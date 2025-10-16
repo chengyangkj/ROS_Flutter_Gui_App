@@ -116,20 +116,25 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                   height: joystickWidgetSize,
                   child: Joystick(
                     controller: leftJoystickController,
-                    mode: JoystickMode.vertical,
+                    mode: JoystickMode.all,
                     includeInitialAnimation: false,
                     listener: (details) {
                       double max_vx =
                           double.parse(globalSetting.getConfig('MaxVx'));
                       double vx = max_vx * details.y * -1;
                       Provider.of<RosChannel>(context, listen: false).setVx(vx);
+
+                      double max_vy =
+                          double.parse(globalSetting.getConfig('MaxVy'));
+                      double vy = max_vy * details.x * -1;
+                      Provider.of<RosChannel>(context, listen: false).setVy(vy);
                     },
                   ),
                 ),
               ),
             ),
 
-            //右摇杆单制角速度/前进后退
+            //右摇杆单制角速度
             Positioned(
               right: 30,
               bottom: 10,
@@ -138,25 +143,14 @@ class _GamepadWidgetState extends State<GamepadWidget> {
                   height: joystickWidgetSize,
                   child: Joystick(
                     controller: rightJoystickController,
-                    mode: JoystickMode.all,
+                    mode: JoystickMode.horizontal,
                     includeInitialAnimation: false,
                     listener: (details) {
                       double max_vw =
                           double.parse(globalSetting.getConfig('MaxVw'));
-                      double max_vx =
-                          double.parse(globalSetting.getConfig('MaxVx'));
 
                       double vw = max_vw * details.x * -1;
                       Provider.of<RosChannel>(context, listen: false).setVw(vw);
-                      double vx = max_vx * details.y * -1;
-                      Provider.of<RosChannel>(context, listen: false)
-                          .setVxRight(vx);
-
-                      //死区
-                      if (details.y.abs() <= 0.2) {
-                        Provider.of<RosChannel>(context, listen: false)
-                            .setVxRight(0);
-                      }
 
                       if (details.x.abs() <= 0.2) {
                         Provider.of<RosChannel>(context, listen: false)

@@ -43,8 +43,8 @@ ros2 run web_video_server web_video_server
 
 ### 机器人控制
 
-- 左侧摇杆控制前进/后退/左右移动
-- 右侧摇杆控制旋转
+- 左侧摇杆控制vx/vy
+- 右侧摇杆控制旋转vw
 - 点击重定位按钮可手动设置机器人位置
 
 ![main](../doc/image/main.gif)
