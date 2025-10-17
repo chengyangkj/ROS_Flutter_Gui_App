@@ -55,6 +55,8 @@ ros2 run web_video_server web_video_server
 2. 在设置中配置相机话题和端口
 3. 点击相机按钮查看图像流
 
+注意：相机显示依赖flutter mjpeg库，但是mjpeg目前不支持web端
+
 ![camera](../doc/image/camera.png) 
 
 ### 诊断信息显示
