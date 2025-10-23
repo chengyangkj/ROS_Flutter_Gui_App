@@ -1,0 +1,125 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "roslibdart",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "roslibdart (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "roslibdart (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "caller",
+            "cwd": "example\\caller",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "caller (profile mode)",
+            "cwd": "example\\caller",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "caller (release mode)",
+            "cwd": "example\\caller",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "pspad",
+            "cwd": "example\\pspad",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "pspad (profile mode)",
+            "cwd": "example\\pspad",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "pspad (release mode)",
+            "cwd": "example\\pspad",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "publisher",
+            "cwd": "example\\publisher",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "publisher (profile mode)",
+            "cwd": "example\\publisher",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "publisher (release mode)",
+            "cwd": "example\\publisher",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "service",
+            "cwd": "example\\service",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "service (profile mode)",
+            "cwd": "example\\service",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "service (release mode)",
+            "cwd": "example\\service",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "subscriber",
+            "cwd": "example\\subscriber",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "subscriber (profile mode)",
+            "cwd": "example\\subscriber",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "subscriber (release mode)",
+            "cwd": "example\\subscriber",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

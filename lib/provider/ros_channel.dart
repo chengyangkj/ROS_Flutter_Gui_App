@@ -11,9 +11,9 @@ import 'package:ros_flutter_gui_app/basic/tf2_dart.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/basic/transform.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:ros_flutter_gui_app/provider/ros_bridge_player.dart';
 import 'package:roslibdart/roslibdart.dart';
 import 'dart:async';
-import 'dart:convert';
 import "package:ros_flutter_gui_app/basic/occupancy_map.dart";
 import 'package:ros_flutter_gui_app/basic/tf.dart';
 import 'package:ros_flutter_gui_app/basic/laser_scan.dart';
@@ -24,6 +24,7 @@ import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_array.dart';
 import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
 import 'package:oktoast/oktoast.dart';
+
 
 class LaserData {
   RobotPose robotPose;
@@ -39,31 +40,7 @@ class RobotSpeed {
 }
 
 class RosChannel {
-  late Ros ros;
-  late Topic mapChannel_;
-  late Topic topologyMapChannel_;
-  late Topic tfChannel_;
-  late Topic tfStaticChannel_;
-  late Topic laserChannel_;
-  late Topic localPathChannel_;
-  late Topic globalPathChannel_;
-  late Topic tracePathChannel_;
-  late Topic relocChannel_;
-  late Topic navGoalChannel_;
-  late Topic navGoalCancelChannel_;
-  late Topic speedCtrlChannel_;
-  late Topic odomChannel_;
-  late Topic batteryChannel_;
-  late Topic imageTopic_;
-  late Topic navToPoseStatusChannel_;
-  late Topic navThroughPosesStatusChannel_;
-  late Topic robotFootprintChannel_;
-  late Topic localCostmapChannel_;
-  late Topic globalCostmapChannel_;
-  late Topic pointCloud2Channel_;
-  late Topic diagnosticChannel_;
-  late Service topologyGoalService_;
-  late Topic topologyMapUpdateChannel_;
+  late RosBridgePlayer rosBridgePlayer;
 
   String rosUrl_ = "";
   Timer? cmdVelTimer;
@@ -98,6 +75,7 @@ class RosChannel {
   ValueNotifier<DiagnosticArray> diagnosticData = ValueNotifier(DiagnosticArray());
   late DiagnosticManager diagnosticManager;
 
+
   RosChannel() {
     diagnosticManager = DiagnosticManager();
     
@@ -105,48 +83,48 @@ class RosChannel {
     globalSetting.init().then((success) {
        //监听链接状态
 
-        //获取机器人实时坐标
-        Timer.periodic(const Duration(milliseconds: 50), (timer) {
-          if (rosConnectState_ != Status.connected) return;
-          try {
-            robotPoseMap.value = tf_.lookUpForTransform(
-                globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
-                            vm.Vector2 poseScene = map_.value
-            .xy2idx(vm.Vector2(robotPoseMap.value.x, robotPoseMap.value.y));
-        robotPoseScene.value = RobotPose(
-            poseScene.x, poseScene.y, robotPoseMap.value.theta);
-          } catch (e) {
-            print("get robot pose error:${e}");
-          }
-        });
+    //获取机器人实时坐标
+    Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (rosConnectState_ != Status.connected) return;
+      try {
+        robotPoseMap.value = tf_.lookUpForTransform(
+            globalSetting.mapFrameName, globalSetting.baseLinkFrameName);
+                        vm.Vector2 poseScene = map_.value
+        .xy2idx(vm.Vector2(robotPoseMap.value.x, robotPoseMap.value.y));
+    robotPoseScene.value = RobotPose(
+        poseScene.x, poseScene.y, robotPoseMap.value.theta);
+      } catch (e) {
+        print("get robot pose error:${e}");
+      }
+    });
 
-        //重连
-        Timer.periodic(const Duration(seconds: 5), (timer) async {
-          if (isReconnect_ && rosConnectState_ != Status.connected){
+    //重连
+    Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (isReconnect_ && rosConnectState_ != Status.connected){
+        showToast(
+          "lost connection to ${rosUrl_} try reconnect...",
+          position: ToastPosition.bottom,
+          backgroundColor: Colors.black.withOpacity(0.8),
+          textStyle: const TextStyle( color: Colors.white),
+        );
+        String error = await connect(rosUrl_);
+          if(error.isEmpty){
             showToast(
-              "lost connection to ${rosUrl_} try reconnect...",
+              "reconnect success to ${rosUrl_}!",
               position: ToastPosition.bottom,
-              backgroundColor: Colors.black.withOpacity(0.8),
+              backgroundColor: Colors.green.withOpacity(0.8),
+              textStyle: const TextStyle(color: Colors.white),
+            );
+          }else{
+            showToast(
+              "reconnect failed to ${rosUrl_} error: $error",
+              position: ToastPosition.bottom,
+              backgroundColor: Colors.red.withOpacity(0.8),
               textStyle: const TextStyle( color: Colors.white),
             );
-            String error = await connect(rosUrl_);
-                         if(error.isEmpty){
-               showToast(
-                 "reconnect success to ${rosUrl_}!",
-                 position: ToastPosition.bottom,
-                 backgroundColor: Colors.green.withOpacity(0.8),
-                 textStyle: const TextStyle(color: Colors.white),
-               );
-             }else{
-               showToast(
-                 "reconnect failed to ${rosUrl_} error: $error",
-                 position: ToastPosition.bottom,
-                 backgroundColor: Colors.red.withOpacity(0.8),
-                 textStyle: const TextStyle( color: Colors.white),
-               );
-            }
-          }
-        });
+        }
+      }
+    });
       
     });
   }
@@ -155,38 +133,40 @@ class RosChannel {
   Future<String> connect(String url) async {
     rosUrl_ = url;
     rosConnectState_ = Status.none;
-    ros = Ros(url: url);
-
-    // 设置状态监听器
-    ros.statusStream.listen(
-      (Status data) {
-        rosConnectState_ = data;
-      },
-      onError: (error) {
-        rosConnectState_ = Status.errored;
-      },
-      onDone: () {
-        rosConnectState_ = Status.closed;
-      },
-      cancelOnError: false, // 改为 false，让监听器继续工作
+    
+    // 创建RosBridgePlayer实例
+    rosBridgePlayer = RosBridgePlayer(
+      url: url,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
-      // 尝试连接
-      String error = await ros.connect();
-    
-      if (error != "") {
-        return error;
+    // 设置状态监听器
+    rosBridgePlayer.setListener((presence, topics, datatypes) {
+      switch (presence) {
+        case PlayerPresence.notPresent:
+          rosConnectState_ = Status.none;
+          break;
+        case PlayerPresence.initializing:
+          rosConnectState_ = Status.connecting;
+          break;
+        case PlayerPresence.present:
+          rosConnectState_ = Status.connected;
+          break;
+        case PlayerPresence.reconnecting:
+          rosConnectState_ = Status.errored;
+          break;
       }
+    });
 
       if(!isReconnect_){
         isReconnect_ = true;
       }
       
-      // 连接成功，初始化通道
-      Timer(const Duration(seconds: 1), () async {
-        await initChannel();
-      });
-      return "";
+    // 连接成功，初始化通道
+    Timer(const Duration(seconds: 1), () async {
+      await initChannel();
+    });
+    return "";
       
   }
 
@@ -214,211 +194,47 @@ class RosChannel {
     diagnosticData.value = DiagnosticArray();
     cmdVel_.vx = 0;
     cmdVel_.vy = 0;
-    ros.close();
+    
+    rosBridgePlayer.close();
   }
 
   ValueNotifier<OccupancyMap> get map => map_;
+  
+  // Topics相关getter
+  List<TopicWithSchemaName> get topics => rosBridgePlayer.topics;
+  Map<String, dynamic> get datatypes => rosBridgePlayer.datatypes;
+  int get currentRosVersion => rosBridgePlayer.currentRosVersion;
+  
+  // 手动触发topics请求
+  void refreshTopics() {
+    rosBridgePlayer.refreshTopics();
+  }
   Future<void> initChannel() async {
-    mapChannel_ = Topic(
-        ros: ros,
-        name: globalSetting.mapTopic,
-        type: "nav_msgs/OccupancyGrid",
-        reconnectOnClose: true,
-        queueLength: 10,
-        queueSize: 10);
-    mapChannel_.subscribe(mapCallback);
+    // 使用RosBridgePlayer的订阅接口
+    rosBridgePlayer.subscribe(globalSetting.topologyMapTopic, "topology_msgs/TopologyMap", topologyMapCallback);
+    rosBridgePlayer.subscribe(globalSetting.mapTopic, "nav_msgs/OccupancyGrid", mapCallback);
+    rosBridgePlayer.subscribe(globalSetting.navToPoseStatusTopic, "action_msgs/GoalStatusArray", navStatusCallback);
+    rosBridgePlayer.subscribe(globalSetting.navThroughPosesStatusTopic, "action_msgs/GoalStatusArray", navStatusCallback);
+    rosBridgePlayer.subscribe("/tf", "tf2_msgs/TFMessage", tfCallback);
+    rosBridgePlayer.subscribe("/tf_static", "tf2_msgs/TFMessage", tfStaticCallback);
+    rosBridgePlayer.subscribe(globalSetting.laserTopic, "sensor_msgs/LaserScan", laserCallback);
+    rosBridgePlayer.subscribe(globalSetting.localPathTopic, "nav_msgs/Path", localPathCallback);
+    rosBridgePlayer.subscribe(globalSetting.globalPathTopic, "nav_msgs/Path", globalPathCallback);
+    rosBridgePlayer.subscribe(globalSetting.tracePathTopic, "nav_msgs/Path", tracePathCallback);
+    rosBridgePlayer.subscribe(globalSetting.odomTopic, "nav_msgs/Odometry", odomCallback);
+    rosBridgePlayer.subscribe(globalSetting.batteryTopic, "sensor_msgs/BatteryState", batteryCallback);
+    rosBridgePlayer.subscribe(globalSetting.robotFootprintTopic, "geometry_msgs/PolygonStamped", robotFootprintCallback);
+    rosBridgePlayer.subscribe(globalSetting.localCostmapTopic, "nav_msgs/OccupancyGrid", localCostmapCallback);
+    rosBridgePlayer.subscribe(globalSetting.globalCostmapTopic, "nav_msgs/OccupancyGrid", globalCostmapCallback);
+    rosBridgePlayer.subscribe(globalSetting.pointCloud2Topic, "sensor_msgs/PointCloud2", pointCloud2Callback);
+    rosBridgePlayer.subscribe(globalSetting.diagnosticTopic, "diagnostic_msgs/DiagnosticArray", diagnosticCallback);
 
-    topologyMapChannel_ = Topic(
-        ros: ros,
-        name: globalSetting.topologyMapTopic,
-        type: "topology_msgs/TopologyMap",
-        reconnectOnClose: true,
-        queueLength: 10,
-        queueSize: 10);
-    topologyMapChannel_.subscribe(topologyMapCallback);
-
-    navToPoseStatusChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.navToPoseStatusTopic,
-      type: "action_msgs/GoalStatusArray",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    navToPoseStatusChannel_.subscribe(navStatusCallback);
-
-    navThroughPosesStatusChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.navThroughPosesStatusTopic,
-      type: "action_msgs/GoalStatusArray",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    navThroughPosesStatusChannel_.subscribe(navStatusCallback);
-
-    tfChannel_ = Topic(
-      ros: ros,
-      name: "/tf",
-      type: "tf2_msgs/TFMessage",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    tfChannel_.subscribe(tfCallback);
-
-    tfStaticChannel_ = Topic(
-      ros: ros,
-      name: "/tf_static",
-      type: "tf2_msgs/TFMessage",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    tfStaticChannel_.subscribe(tfStaticCallback);
-
-    laserChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.laserTopic,
-      type: "sensor_msgs/LaserScan",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-
-    laserChannel_.subscribe(laserCallback);
-
-    localPathChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.localPathTopic,
-      type: "nav_msgs/Path",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    localPathChannel_.subscribe(localPathCallback);
-
-    globalPathChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.globalPathTopic,
-      type: "nav_msgs/Path",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    globalPathChannel_.subscribe(globalPathCallback);
-
-    tracePathChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.tracePathTopic,
-      type: "nav_msgs/Path",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    tracePathChannel_.subscribe(tracePathCallback);
-
-    odomChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.odomTopic,
-      type: 'nav_msgs/Odometry',
-      queueSize: 10,
-      queueLength: 10,
-    );
-    odomChannel_.subscribe(odomCallback);
-
-    batteryChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.batteryTopic, // ROS 中的电池电量话题名称
-      type: 'sensor_msgs/BatteryState', // 消息类型
-      queueSize: 10,
-      queueLength: 10,
-    );
-
-    batteryChannel_.subscribe(batteryCallback);
-
-    robotFootprintChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.robotFootprintTopic,
-      type: "geometry_msgs/PolygonStamped",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    robotFootprintChannel_.subscribe(robotFootprintCallback);
-
-    localCostmapChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.localCostmapTopic,
-      type: "nav_msgs/OccupancyGrid",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    localCostmapChannel_.subscribe(localCostmapCallback);
-
-    globalCostmapChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.globalCostmapTopic,
-      type: "nav_msgs/OccupancyGrid",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    globalCostmapChannel_.subscribe(globalCostmapCallback);
-    
-    pointCloud2Channel_ = Topic(
-      ros: ros,
-      name: globalSetting.pointCloud2Topic,
-      type: "sensor_msgs/PointCloud2",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    pointCloud2Channel_.subscribe(pointCloud2Callback);
-
-    diagnosticChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.diagnosticTopic,
-      type: "diagnostic_msgs/DiagnosticArray",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    diagnosticChannel_.subscribe(diagnosticCallback);
-
-//发布者
-    relocChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.relocTopic,
-      type: "geometry_msgs/PoseWithCovarianceStamped",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    navGoalChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.navGoalTopic,
-      type: "geometry_msgs/PoseStamped",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-    navGoalCancelChannel_ = Topic(
-      ros: ros,
-      name: "${globalSetting.navGoalTopic}/cancel",
-      type: "std_msgs/Empty",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-
-    topologyMapUpdateChannel_ = Topic(
-        ros: ros,
-        name: "${globalSetting.topologyMapTopic}/update",
-        type: "topology_msgs/TopologyMap",
-        reconnectOnClose: true,
-        queueLength: 10,
-        queueSize: 10);
-
-    speedCtrlChannel_ = Topic(
-      ros: ros,
-      name: globalSetting.getConfig("SpeedCtrlTopic"),
-      type: "geometry_msgs/Twist",
-      queueSize: 1,
-      reconnectOnClose: true,
-    );
-
-    topologyGoalService_ = Service(
-      ros: ros,
-      name: "/nav_to_topology_point",
-      type: "topology_msgs/srv/NavToTopologyPoint"
-    );
-
+    // 注册发布者
+    rosBridgePlayer.advertise(globalSetting.relocTopic, "geometry_msgs/PoseWithCovarianceStamped");
+    rosBridgePlayer.advertise(globalSetting.navGoalTopic, "geometry_msgs/PoseStamped");
+    rosBridgePlayer.advertise("${globalSetting.navGoalTopic}/cancel", "std_msgs/Empty");
+    rosBridgePlayer.advertise("${globalSetting.topologyMapTopic}/update", "topology_msgs/TopologyMap");
+    rosBridgePlayer.advertise(globalSetting.getConfig("SpeedCtrlTopic"), "geometry_msgs/Twist");
   }
 
   Future<Map<String, dynamic>> sendTopologyGoal(String name) async {
@@ -427,7 +243,7 @@ class RosChannel {
     };
     
     try {
-      var result = await topologyGoalService_.call(msg);
+      var result = await rosBridgePlayer.callService("/nav_to_topology_point", msg);
       print("result: $result");
       
       // 检查result是否为字符串（错误信息）
@@ -438,7 +254,7 @@ class RosChannel {
         };
       }
       
-      Map<String, dynamic> resultMap =result;
+      Map<String, dynamic> resultMap = result;
       print("sendTopologyGoal result: $resultMap");
       return resultMap;
     } catch (e) {
@@ -472,9 +288,8 @@ class RosChannel {
       }
     };
 
-    // Assuming `channel` is a pre-configured MethodChannel connected to ROS
     try {
-      await navGoalChannel_.publish(msg);
+      rosBridgePlayer.publish(globalSetting.navGoalTopic, msg);
     } catch (e) {
       print("Failed to send navigation goal: $e");
     }
@@ -485,12 +300,11 @@ class RosChannel {
   }
 
   Future<void> sendCancelNav() async {
-    await navGoalCancelChannel_.publish({});
+    rosBridgePlayer.publish("${globalSetting.navGoalTopic}/cancel", {});
   }
 
   void destroyConnection() async {
-    await mapChannel_.unsubscribe();
-    await ros.close();
+    rosBridgePlayer.close();
   }
 
   void setVx(double vx) {
@@ -540,7 +354,7 @@ class RosChannel {
         "z": vw // 代表角速度z分量
       }
     };
-    await speedCtrlChannel_.publish(msg);
+    rosBridgePlayer.publish(globalSetting.getConfig("SpeedCtrlTopic"), msg);
   }
 
   Future<void> sendRelocPose(RobotPose pose) async {
@@ -605,7 +419,7 @@ class RosChannel {
       }
     };
     try {
-      await relocChannel_.publish(msg);
+      rosBridgePlayer.publish(globalSetting.relocTopic, msg);
     } catch (e) {
       print("send reloc pose error:$e");
     }
@@ -754,7 +568,11 @@ class RosChannel {
             int localY = y - mapOY.toInt();
             if (localX >= 0 && localX < costmap.mapConfig.height &&
                 localY >= 0 && localY < costmap.mapConfig.width) {
-              sizedCostMap.data[y][x] = costmap.data[localY][localX];
+              // 添加正确的边界检查
+              if (y < sizedCostMap.data.length && 
+                  x < sizedCostMap.data[y].length) {
+                sizedCostMap.data[y][x] = costmap.data[localY][localX];
+              } 
             }
           }
           // 不在范围内，保持原值
@@ -894,17 +712,7 @@ class RosChannel {
   DateTime? _lastMapCallbackTime;
 
   Future<void> mapCallback(Map<String, dynamic> msg) async {
-    DateTime currentTime = DateTime.now(); // 获取当前时间
-
-    if (_lastMapCallbackTime != null) {
-      Duration difference = currentTime.difference(_lastMapCallbackTime!);
-      if (difference.inSeconds < 5) {
-        return;
-      }
-    }
-
-    _lastMapCallbackTime = currentTime; // 更新上一次回调时间
-
+    
     OccupancyMap map = OccupancyMap();
     map.mapConfig.resolution = msg["info"]["resolution"];
     map.mapConfig.width = msg["info"]["width"];
@@ -928,20 +736,14 @@ class RosChannel {
     map_.value = map;
   }
 
-  String msgReceived = '';
-  Future<void> subscribeHandler(Map<String, dynamic> msg) async {
-    msgReceived = json.encode(msg);
-    print("recv ${msgReceived}");
-  }
-
   Future<void> topologyMapCallback(Map<String, dynamic> msg) async {
     // 延迟1秒执行 避免地图还未加载，点位就发过来了（只发送一次）
     await Future.delayed(Duration(seconds: 1));
     
-    print("收到拓扑地图数据: $msg");
+    // print("收到拓扑地图数据: $msg");
     
     final map = TopologyMap.fromJson(msg);
-    print("解析后的拓扑地图 - 点数量: ${map.points.length}, 路径数量: ${map.routes.length}");
+    // print("解析后的拓扑地图 - 点数量: ${map.points.length}, 路径数量: ${map.routes.length}");
 
     // 创建新的 points 列表
     final updatedPoints = map.points.map((point) {
@@ -973,7 +775,7 @@ class RosChannel {
     // 转换为JSON并通过ROS发布
     try {
       final jsonData = updatedMap.toJson();
-      await topologyMapUpdateChannel_.publish(jsonData);
+      rosBridgePlayer.publish("${globalSetting.topologyMapTopic}/update", jsonData);
       print("拓扑地图已发布到ROS: ${updatedMap.points.length}个点, ${updatedMap.routes.length}条路径");
     } catch (e) {
       print("发布拓扑地图失败: $e");
@@ -1082,4 +884,5 @@ class RosChannel {
       print("Error processing diagnostic data: $e");
     }
   }
+
 }

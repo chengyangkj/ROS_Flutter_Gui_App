@@ -19,7 +19,7 @@ class Topic {
     this.queueSize = 100,
     this.queueLength = 0,
     this.reconnectOnClose = true,
-  })  : assert(['png', 'cbor', 'none'].contains(compression)),
+  })  : assert(['png', 'cbor-raw','cbor', 'none'].contains(compression)),
         assert(throttleRate >= 0);
 
   /// The ROS connection.

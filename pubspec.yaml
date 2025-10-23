@@ -58,6 +58,7 @@ dependencies:
     sdk: flutter
   flutter_svg: ^2.0.9
   oktoast: ^3.4.0
+  cbor: ^6.3.7
 
 flutter_icons:
   android: true

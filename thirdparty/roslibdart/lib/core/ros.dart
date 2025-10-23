@@ -3,7 +3,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:cbor/cbor.dart';
+import 'service.dart';
+
 
 // ignore: uri_does_not_exist
 // ignore: unused_import
@@ -14,6 +18,41 @@ import 'ros_stub.dart'
     if (dart.library.io) 'ros_io.dart';
 
 import 'request.dart';
+
+/// Helper function to convert CBOR data to Map
+Map<String, dynamic> _cborToMap(dynamic cborValue) {
+  if (cborValue is Map) {
+    Map<String, dynamic> result = {};
+    cborValue.forEach((key, value) {
+      String stringKey = key.toString();
+      if (value is Map) {
+        result[stringKey] = _cborToMap(value);
+      } else if (value is List) {
+        result[stringKey] = _cborToList(value);
+      } else {
+        result[stringKey] = value.toString();
+      }
+    });
+    return result;
+  }
+  return {};
+}
+
+/// Helper function to convert CBOR list to List
+List<dynamic> _cborToList(dynamic cborValue) {
+  if (cborValue is List) {
+    return cborValue.map((item) {
+      if (item is Map) {
+        return _cborToMap(item);
+      } else if (item is List) {
+        return _cborToList(item);
+      } else {
+        return item.toString();
+      }
+    }).toList();
+  }
+  return [];
+}
 
 /// Status enums.
 enum Status { none, connecting, connected, closed, errored }
@@ -77,9 +116,18 @@ class Ros {
     try {
       // Initialize the connection to the ROS node with a Websocket channel.
       _channel = await initializeWebSocketChannel(url);
-      //过了这行肯定成功，否者就抛异常了，在异常中处理
+
       stream =
-          _channel.stream.asBroadcastStream().map((raw) => json.decode(raw));
+          _channel.stream.asBroadcastStream().map((raw) {
+            //judge is binary or json data
+             if(raw is Uint8List){
+                 //cbor uncompressed
+                Map<String, dynamic> jsonData = _cborToMap(cbor.decode(raw));
+               return jsonData;
+             }else{
+              return json.decode(raw);
+             }
+          });
       // Update the connection status.
       status = Status.connected;
       _statusController.add(status);
@@ -203,6 +251,14 @@ class Ros {
   @override
   bool operator ==(other) {
     return other.hashCode == hashCode;
+  }
+
+  Future<Map<String, dynamic>> getTopicsAndRawTypes() async {
+    var service = Service(ros: this, name: 'rosapi/topics_and_raw_types', type: 'rosapi/TopicsAndRawTypes');
+    Map<String, dynamic> json={};
+    Map<String, dynamic> result =await service.call(json);
+    return result;
+    
   }
 
   @override

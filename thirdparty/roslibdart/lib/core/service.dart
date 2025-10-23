@@ -42,7 +42,7 @@ class Service {
     final receiver = ros.stream.where((message) => message['id'] == callId).map(
         (Map<String, dynamic> message) => message['result'] == null
             ? Future.error(message['values']!)
-            : Future.value(message['values']));
+            : Future.value(Map<String, dynamic>.from(message['values'])));
     // Wait for the receiver to receive a single response and then return.
     final completer = Completer();
 

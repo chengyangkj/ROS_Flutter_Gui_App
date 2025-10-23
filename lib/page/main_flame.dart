@@ -429,10 +429,6 @@ class MainFlame extends FlameGame {
     }
     _wayPointComponents.clear();
     
- 
-
-    
-  
     // 创建新的路径点组件
     for (final point in navPoints) {
       final waypoint = PoseComponent(
@@ -448,7 +444,7 @@ class MainFlame extends FlameGame {
 
       // 设置路径点位置（使用地图索引坐标）
       waypoint.updatePose(RobotPose(point.x, point.y, point.theta));
-      print('waypoint: ${waypoint.position} point: $point');
+      // print('waypoint: ${waypoint.position} point: $point');
       _wayPointComponents.add(waypoint);
       
     }
@@ -502,20 +498,20 @@ class MainFlame extends FlameGame {
       final layerName = entry.key;
       final component = entry.value;
       
-      print('为图层 $layerName 设置监听器');
+      // print('为图层 $layerName 设置监听器');
       
       globalState.getLayerState(layerName).addListener(() {
         final isVisible = globalState.isLayerVisible(layerName);
-        print('图层 $layerName 状态变化: $isVisible');
+        // print('图层 $layerName 状态变化: $isVisible');
         
         if (isVisible) {
           if (!world.contains(component)) {
-            print('添加组件 $layerName 到world');
+            // print('添加组件 $layerName 到world');
             world.add(component);
           }
         } else {
           if (world.contains(component)) {
-            print('从world移除组件 $layerName');
+            // print('从world移除组件 $layerName');
             // 添加安全检查，确保组件仍然有效
             if (component.isMounted) {
               component.removeFromParent();

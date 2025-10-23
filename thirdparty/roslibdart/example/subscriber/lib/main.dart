@@ -28,9 +28,10 @@ class _HomePageState extends State<HomePage> {
   late Ros ros;
   late Topic chatter;
 
+
   @override
   void initState() {
-    ros = Ros(url: 'ws://127.0.0.1:9090');
+    ros = Ros(url: 'ws://192.168.111.29:9090');
     chatter = Topic(
         ros: ros,
         name: '/topic',
@@ -38,11 +39,19 @@ class _HomePageState extends State<HomePage> {
         reconnectOnClose: true,
         queueLength: 10,
         queueSize: 10);
+  
     super.initState();
     ros.connect();
+
     Timer(const Duration(seconds: 3), () async {
       await chatter.subscribe(subscribeHandler);
       // await chatter.subscribe();
+
+      var topicsAndRawTypes = await ros.getTopicsAndRawTypes();
+      print("topicsAndRawTypes:${topicsAndRawTypes}");
+      // for(var topic in topicsAndRawTypes['topics']){
+      //   print("topic:${topic['name']} type:${topic['type']}");
+      // }
     });
   }
 
