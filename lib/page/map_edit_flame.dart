@@ -6,12 +6,13 @@ import 'package:ros_flutter_gui_app/display/grid.dart';
 import 'package:ros_flutter_gui_app/display/pose.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
-import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
+import 'package:ros_flutter_gui_app/display/topology_line.dart';
+import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 
 
 // 专门的地图编辑Flame组件
@@ -44,10 +45,14 @@ class MapEditFlame extends FlameGame {
   // 回调函数，用于通知外部当前选中点位动态更新
   VoidCallback? currentSelectPointUpdate;
   
-  // 导航点组件列表
+  // 导航点组件列表（合并在线和离线导航点）
   final List<PoseComponent> wayPoints = [];
   
   PoseComponent? currentSelectedWayPoint;
+  
+  // 拓扑相关组件
+  late TopologyLine _topologyLineComponent;
+  List<NavPoint> offLineNavPoints = [];
   
   // 手势相关变量
   double _baseScale = 1.0;
@@ -62,6 +67,13 @@ class MapEditFlame extends FlameGame {
   }) {
     // 初始化主题模式
     isDarkMode = themeProvider?.themeMode == ThemeMode.dark;
+    
+    // 初始化拓扑线组件
+    _topologyLineComponent = TopologyLine(
+      points: [],
+      routes: [],
+      rosChannel: rosChannel,
+    );
   }
   
   @override
@@ -177,6 +189,9 @@ class MapEditFlame extends FlameGame {
     
     // 设置ROS监听器
     _setupRosListeners();
+    
+    // 初始化拓扑图层
+    _updateTopologyLayers();
   }
   
   void _setupRosListeners() {
@@ -190,6 +205,10 @@ class MapEditFlame extends FlameGame {
         currentRobotPose = rosChannel!.robotPoseMap.value;
       });
       
+          // 监听拓扑地图数据
+      rosChannel!.topologyMap_.addListener(() {
+        _updateTopologyLayers();
+      });
       // 立即更新地图数据
       _displayMap.updateMapData(rosChannel!.map_.value);
     }
@@ -290,6 +309,12 @@ class MapEditFlame extends FlameGame {
     return true;
   }
   
+  // 设置离线导航点
+  void setOfflineNavPoints(List<NavPoint> navPoints) {
+    offLineNavPoints = List<NavPoint>.from(navPoints);
+    _updateTopologyLayers();
+  }
+  
   // 创建导航点
   PoseComponent addWayPoint(NavPoint navPoint) {
     final wayPoint = PoseComponent(
@@ -367,5 +392,72 @@ class MapEditFlame extends FlameGame {
     
     // 通知外部当前选中点位动态更新
     currentSelectPointUpdate?.call();
+  }
+  
+  // 更新拓扑图层
+  void _updateTopologyLayers() {
+    // 清除现有的导航点组件
+    for (final waypoint in wayPoints) {
+      waypoint.removeFromParent();
+    }
+    wayPoints.clear();
+    
+    // 确定使用哪个导航点数据源
+    List<NavPoint> navPoints = offLineNavPoints;
+    List<TopologyRoute> routes = [];
+    
+    if (rosChannel?.topologyMap_.value != null) {
+      final topologyMap = rosChannel!.topologyMap_.value;
+      if (topologyMap.points.isNotEmpty) {
+        navPoints = List<NavPoint>.from(topologyMap.points);
+        routes = topologyMap.routes;
+        print('使用在线拓扑点位: ${navPoints.length} 个点, ${routes.length} 条路径');
+      } else {
+        print('在线拓扑点位为空，使用离线导航点: ${offLineNavPoints.length} 个');
+      }
+    } else {
+      print('拓扑地图数据为空，使用离线导航点: ${offLineNavPoints.length} 个');
+    }
+
+    // 更新拓扑线组件数据
+    _topologyLineComponent.removeFromParent();
+    _topologyLineComponent = TopologyLine(
+      points: navPoints,
+      routes: routes,
+      rosChannel: rosChannel,
+    );
+    
+    // 创建导航点组件并添加到wayPoints
+    for (final point in navPoints) {
+      final waypoint = PoseComponent(
+        PoseComponentSize: globalSetting.robotSize,
+        color: Colors.green,
+        count: 2,
+        isEditMode: false,
+        direction: point.theta,
+        navPoint: point,
+        rosChannel: rosChannel,
+        poseType: PoseType.waypoint,
+      );
+
+      // 设置路径点位置（使用地图索引坐标）
+      waypoint.updatePose(RobotPose(point.x, point.y, point.theta));
+      wayPoints.add(waypoint);
+    }
+    
+    // 地图编辑模式下，拓扑地图永远可见
+    // 添加拓扑线组件
+    if (!world.contains(_topologyLineComponent)) {
+      world.add(_topologyLineComponent);
+    }
+    
+    // 添加所有导航点组件到world
+    for (final waypoint in wayPoints) {
+      if (!world.contains(waypoint)) {
+        world.add(waypoint);
+      }
+    }
+    
+    print('拓扑图层已更新，显示 ${wayPoints.length} 个导航点');
   }
 }
