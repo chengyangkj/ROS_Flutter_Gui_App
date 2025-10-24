@@ -1,7 +1,5 @@
-import 'dart:math';
 import 'dart:ui';
 import 'package:flame/components.dart';
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
@@ -14,8 +12,6 @@ class TopologyLine extends Component with HasGameRef {
   final List<TopologyRoute> routes;
   final OccupancyMap? occMap;
   final RosChannel? rosChannel;
-  late Timer animationTimer;
-  double animationValue = 0.0;
 
   TopologyLine({
     required this.points,
@@ -26,32 +22,12 @@ class TopologyLine extends Component with HasGameRef {
 
   @override
   Future<void> onLoad() async {
-    animationTimer = Timer(
-      2.0,
-      onTick: () {
-        animationValue = 0.0;
-      },
-      repeat: true,
-    );
     add(TopologyLineRenderer(
       points: points,
       routes: routes,
       occMap: occMap,
       rosChannel: rosChannel,
-      animationValue: animationValue,
     ));
-  }
-
-  @override
-  void update(double dt) {
-    animationTimer.update(dt);
-    animationValue = (animationTimer.progress * 2.0) % 1.0;
-    super.update(dt);
-  }
-
-  @override
-  void onRemove() {
-    super.onRemove();
   }
 }
 
@@ -60,14 +36,12 @@ class TopologyLineRenderer extends Component with HasGameRef {
   final List<TopologyRoute> routes;
   final OccupancyMap? occMap;
   final RosChannel? rosChannel;
-  final double animationValue;
 
   TopologyLineRenderer({
     required this.points,
     required this.routes,
     this.occMap,
     this.rosChannel,
-    required this.animationValue,
   });
 
   // 获取当前地图数据
@@ -177,8 +151,8 @@ class TopologyLineRenderer extends Component with HasGameRef {
     paint.strokeWidth = 1.0;
     canvas.drawLine(adjustedFrom, adjustedTo, paint);
     
-    // 绘制箭头流动效果
-    _drawArrowFlow(canvas, adjustedFrom, adjustedTo, paint, Color(0xFF3B82F6), 0); // 现代蓝色
+    // 绘制静态箭头
+    _drawStaticArrowFlow(canvas, adjustedFrom, adjustedTo, paint, Color(0xFF6B7280));
   }
 
   void _drawBidirectionalPath(Canvas canvas, Offset from, Offset to, Paint paint) {
@@ -201,13 +175,13 @@ class TopologyLineRenderer extends Component with HasGameRef {
     paint.strokeWidth = 1.0;
     canvas.drawLine(line1Start, line1End, paint);
     canvas.drawLine(line2Start, line2End, paint);
-
-    // 绘制箭头流动效果
-    _drawArrowFlow(canvas, line1Start, line1End, paint, Color(0xFF10B981), 0); // 现代绿色
-    _drawArrowFlow(canvas, line2End, line2Start, paint, Color(0xFF10B981), 0.5);
+    
+    // 绘制双向箭头
+    _drawStaticArrowFlow(canvas, line1Start, line1End, paint, Color(0xFF6B7280));
+    _drawStaticArrowFlow(canvas, line2End, line2Start, paint, Color(0xFF6B7280));
   }
 
-  void _drawArrowFlow(Canvas canvas, Offset start, Offset end, Paint paint, Color color, double phaseOffset) {
+  void _drawStaticArrowFlow(Canvas canvas, Offset start, Offset end, Paint paint, Color color) {
     final direction = end - start;
     final distance = direction.distance;
     if (distance == 0) return;
@@ -219,11 +193,8 @@ class TopologyLineRenderer extends Component with HasGameRef {
     final arrowSpacing = 10.0;
     final triangleSize = 1.0; // 三角形大小，确保在路径内
     
-    // 动画偏移（修正方向）
-    double animationOffset = animationValue * arrowSpacing % arrowSpacing;
-    
-    // 绘制流动三角形
-    double currentDistance = animationOffset;
+    // 绘制静态三角形（无动画偏移）
+    double currentDistance = 0.0;
     
     while (currentDistance < distance) {
       if (currentDistance > triangleSize && currentDistance < distance - triangleSize) {
@@ -254,6 +225,7 @@ class TopologyLineRenderer extends Component with HasGameRef {
       currentDistance += arrowSpacing;
     }
   }
+
 }
 
 extension OffsetExtension on Offset {
