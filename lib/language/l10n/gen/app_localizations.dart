@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'连接机器人'**
   String get connect_robot;
 
+  /// No description provided for @connect_robot_subtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'连接 ROS 机器人系统'**
+  String get connect_robot_subtitle;
+
   /// No description provided for @ip_address.
   ///
   /// In zh, this message translates to:

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
@@ -11,12 +12,35 @@ class ConnectPage extends StatefulWidget {
   _ConnectPageState createState() => _ConnectPageState();
 }
 
-class _ConnectPageState extends State<ConnectPage> {
+class _ConnectPageState extends State<ConnectPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _ipController =
       TextEditingController(text: '127.0.0.1');
   final TextEditingController _portController =
       TextEditingController(text: '9090');
   bool _isConnecting = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,245 +57,464 @@ class _ConnectPageState extends State<ConnectPage> {
           _ipController.text = globalSetting.robotIp;
           _portController.text = globalSetting.robotPort;
 
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final primaryColor = Theme.of(context).colorScheme.primary;
+          final surfaceColor = Theme.of(context).colorScheme.surface;
+
           return Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                ],
+                colors: isDark
+                    ? [
+                        primaryColor.withOpacity(0.25),
+                        primaryColor.withOpacity(0.15),
+                        primaryColor.withOpacity(0.22),
+                      ]
+                    : [
+                        primaryColor.withOpacity(0.18),
+                        primaryColor.withOpacity(0.10),
+                        primaryColor.withOpacity(0.15),
+                      ],
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
             child: SafeArea(
               child: Stack(
                 children: [
-                  // 居中小窗口
-                  Center(
+                  // 背景装饰圆形
+                  Positioned(
+                    top: -100,
+                    right: -100,
                     child: Container(
-                      constraints: const BoxConstraints(
-                        maxWidth: 400,
-                        maxHeight: 500,
-                      ),
-                      margin: const EdgeInsets.all(24.0),
+                      width: 300,
+                      height: 300,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                          width: 1.5,
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            primaryColor.withOpacity(0.18),
+                            primaryColor.withOpacity(0.0),
+                          ],
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // 顶部图标和标题
-                            Icon(
-                              Icons.smart_toy_outlined,
-                              size: 50,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              AppLocalizations.of(context)!.connect_robot,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 32),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -150,
+                    left: -150,
+                    child: Container(
+                      width: 400,
+                      height: 400,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            primaryColor.withOpacity(0.15),
+                            primaryColor.withOpacity(0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
 
-                            // IP地址和端口输入框
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: TextField(
-                                    controller: _ipController,
-                                    decoration: InputDecoration(
-                                      labelText: AppLocalizations.of(context)!.ip_address,
-                                      labelStyle: TextStyle(
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.computer,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.primary,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          width: 2,
-                                        ),
-                                      ),
+                  // 居中小窗口
+                  Center(
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          maxWidth: 420,
+                          maxHeight: 600,
+                        ),
+                        margin: const EdgeInsets.all(24.0),
+                        decoration: BoxDecoration(
+                          color: surfaceColor.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.15),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
+                              spreadRadius: 0,
+                            ),
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: primaryColor.withOpacity(0.15),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Padding(
+                              padding: const EdgeInsets.all(32.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // 顶部图标和标题
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.smart_toy_rounded,
+                                      size: 56,
+                                      color: primaryColor,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  flex: 1,
-                                  child: TextField(
-                                    controller: _portController,
-                                    decoration: InputDecoration(
-                                      labelText: AppLocalizations.of(context)!.port,
-                                      labelStyle: TextStyle(
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.settings_ethernet,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.primary,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          width: 2,
-                                        ),
-                                      ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    AppLocalizations.of(context)!.connect_robot,
+                                    style: Theme.of(context)
+                                        .textTheme.headlineSmall
+                                        ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
                                     ),
-                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-
-                            // 连接按钮
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _isConnecting ? null : _handleConnect,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                                  elevation: 2,
-                                ),
-                                child: _isConnecting
-                                    ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      )
-                                    : Text(
-                                        AppLocalizations.of(context)!.connect_robot,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // 主题切换
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.palette_outlined,
-                                      size: 18,
-                                      color: Theme.of(context).colorScheme.primary,
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    AppLocalizations.of(context)!
+                                        .connect_robot_subtitle,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: SegmentedButton<ThemeMode>(
-                                        segments: [
-                                          ButtonSegment(
-                                            value: ThemeMode.system,
-                                            icon: Icon(Icons.brightness_auto, size: 18),
-                                            label: Text(
-                                              AppLocalizations.of(context)!.auto,
-                                              style: const TextStyle(fontSize: 12),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 40),
+
+                                  // IP地址和端口输入框
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(16),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                                .withOpacity(0.5),
+                                            border: Border.all(
+                                              color: primaryColor.withOpacity(0.2),
+                                              width: 1,
                                             ),
                                           ),
-                                          ButtonSegment(
-                                            value: ThemeMode.light,
-                                            icon: Icon(Icons.light_mode, size: 18),
-                                            label: Text(
-                                              AppLocalizations.of(context)!.light,
-                                              style: const TextStyle(fontSize: 12),
+                                          child: TextField(
+                                            controller: _ipController,
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
+                                              fontSize: 15,
+                                            ),
+                                            decoration: InputDecoration(
+                                              labelText: AppLocalizations.of(context)!
+                                                  .ip_address,
+                                              labelStyle: TextStyle(
+                                                color: primaryColor.withOpacity(0.7),
+                                                fontSize: 14,
+                                              ),
+                                              prefixIcon: Icon(
+                                                Icons.computer_rounded,
+                                                color: primaryColor,
+                                                size: 22,
+                                              ),
+                                              filled: false,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide(
+                                                  color: primaryColor,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 16,
+                                              ),
                                             ),
                                           ),
-                                          ButtonSegment(
-                                            value: ThemeMode.dark,
-                                            icon: Icon(Icons.dark_mode, size: 18),
-                                            label: Text(
-                                              AppLocalizations.of(context)!.dark,
-                                              style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(16),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                                .withOpacity(0.5),
+                                            border: Border.all(
+                                              color: primaryColor.withOpacity(0.2),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: TextField(
+                                            controller: _portController,
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
+                                              fontSize: 15,
+                                            ),
+                                            decoration: InputDecoration(
+                                              labelText: AppLocalizations.of(
+                                                      context)!
+                                                  .port,
+                                              labelStyle: TextStyle(
+                                                color: primaryColor.withOpacity(0.7),
+                                                fontSize: 14,
+                                              ),
+                                              prefixIcon: Icon(
+                                                Icons.settings_ethernet_rounded,
+                                                color: primaryColor,
+                                                size: 22,
+                                              ),
+                                              filled: false,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                borderSide: BorderSide(
+                                                  color: primaryColor,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                                vertical: 16,
+                                              ),
+                                            ),
+                                            keyboardType: TextInputType.number,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 32),
+
+                                  // 连接按钮
+                                  Container(
+                                    width: double.infinity,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          primaryColor,
+                                          primaryColor.withOpacity(0.8),
+                                        ],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: primaryColor.withOpacity(0.4),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 8),
+                                          spreadRadius: 0,
+                                        ),
+                                      ],
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          _isConnecting ? null : _handleConnect,
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        foregroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        elevation: 0,
+                                      ),
+                                      child: _isConnecting
+                                          ? SizedBox(
+                                              height: 24,
+                                              width: 24,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2.5,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                              ),
+                                            )
+                                          : Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.link_rounded,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  AppLocalizations.of(context)!
+                                                      .connect_robot,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 28),
+
+                                  // 主题切换
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withOpacity(0.4),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: primaryColor.withOpacity(0.15),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.palette_rounded,
+                                            size: 18,
+                                            color: primaryColor,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: SegmentedButton<ThemeMode>(
+                                              segments: [
+                                                ButtonSegment(
+                                                  value: ThemeMode.system,
+                                                  icon: Icon(
+                                                    Icons.brightness_auto,
+                                                    size: 16,
+                                                  ),
+                                                  label: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .auto,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                    ),
+                                                  ),
+                                                ),
+                                                ButtonSegment(
+                                                  value: ThemeMode.light,
+                                                  icon: Icon(
+                                                    Icons.light_mode,
+                                                    size: 16,
+                                                  ),
+                                                  label: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .light,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                    ),
+                                                  ),
+                                                ),
+                                                ButtonSegment(
+                                                  value: ThemeMode.dark,
+                                                  icon: Icon(
+                                                    Icons.dark_mode,
+                                                    size: 16,
+                                                  ),
+                                                  label: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .dark,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                              selected: {
+                                                Provider.of<ThemeProvider>(
+                                                        context)
+                                                    .themeMode
+                                              },
+                                              onSelectionChanged:
+                                                  (Set<ThemeMode> selection) {
+                                                Provider.of<ThemeProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .updateThemeMode(
+                                                        selection.first.index);
+                                              },
+                                              style: ButtonStyle(
+                                                side: MaterialStateProperty.all(
+                                                  BorderSide(
+                                                    color: primaryColor
+                                                        .withOpacity(0.3),
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ],
-                                        selected: {
-                                          Provider.of<ThemeProvider>(context).themeMode
-                                        },
-                                        onSelectionChanged: (Set<ThemeMode> selection) {
-                                          Provider.of<ThemeProvider>(context, listen: false)
-                                              .updateThemeMode(selection.first.index);
-                                        },
-                                        style: ButtonStyle(
-                                          side: MaterialStateProperty.all(BorderSide(
-                                            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                                          )),
-                                        ),
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -279,23 +522,40 @@ class _ConnectPageState extends State<ConnectPage> {
 
                   // 右上角设置按钮
                   Positioned(
-                    top: 8,
-                    right: 8,
-                    child: IconButton(
-                      onPressed: () => Navigator.pushNamed(context, "/setting"),
-                      icon: Icon(
-                        Icons.settings,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 24,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
-                        padding: const EdgeInsets.all(8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    top: 16,
+                    right: 16,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: surfaceColor.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(
+                                  isDark ? 0.3 : 0.1),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: primaryColor.withOpacity(0.15),
                             width: 1.5,
+                          ),
+                        ),
+                        child: IconButton(
+                          onPressed: () =>
+                              Navigator.pushNamed(context, "/setting"),
+                          icon: Icon(
+                            Icons.settings_rounded,
+                            color: primaryColor,
+                            size: 22,
+                          ),
+                          style: IconButton.styleFrom(
+                            padding: const EdgeInsets.all(12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                         ),
                       ),

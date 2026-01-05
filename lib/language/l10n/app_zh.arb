@@ -3,6 +3,7 @@
   "light": "浅色",
   "dark": "暗色",
   "connect_robot": "连接机器人",
+  "connect_robot_subtitle": "连接 ROS 机器人系统",
   "ip_address": "IP地址",
   "port": "端口",
   "robot_type": "机器人类型",

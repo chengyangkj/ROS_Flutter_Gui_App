@@ -21,6 +21,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_robot => '连接机器人';
 
   @override
+  String get connect_robot_subtitle => '连接 ROS 机器人系统';
+
+  @override
   String get ip_address => 'IP地址';
 
   @override
