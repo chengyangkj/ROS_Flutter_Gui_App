@@ -72,7 +72,7 @@ class MapEditFlame extends FlameGame {
   Vector2? _lastObstaclePosition;
   List<GridCellChange> _currentGridChanges = [];
   Map<String, int> _initialGridValues = {}; // 保存首次修改时的原始值
-  double _obstacleBrushSize = 0.05;
+  double _obstacleBrushSize = 0.15;
   
   // 移动工具相关
   PoseComponent? _draggedPoint;

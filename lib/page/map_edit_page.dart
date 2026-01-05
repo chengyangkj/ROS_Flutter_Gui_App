@@ -51,7 +51,7 @@ class _MapEditPageState extends State<MapEditPage> {
   TopologyRoute? selectedRoute;
   
   // 画笔大小
-  double brushSize = 0.2;
+  double brushSize = 0.15;
   
   // 画笔指示器位置
   Offset? brushIndicatorPosition;
@@ -97,6 +97,9 @@ class _MapEditPageState extends State<MapEditPage> {
         selectedWayPointInfo = info;
       });
     };
+    
+    // 同步画笔大小
+    game.setBrushSize(brushSize);
     
     // 加载导航点
     _loadNavPoints();
