@@ -38,6 +38,11 @@ ROS Flutter GUI App 是一个基于 Flutter Flame 游戏框架开发的跨平台
 - 📍 多点导航任务
 - 🛠️ 高度可配置
 
+### TODO:
+
+- 大地图无法显示问题: 需订阅解析rosbridge cbor-raw压缩数据,解析原始cdr数据
+- 大地图显示卡顿优化
+
 ### 演示
 
 ![主界面](./doc/image/main.gif)

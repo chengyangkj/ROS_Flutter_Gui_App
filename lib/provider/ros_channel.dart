@@ -234,6 +234,7 @@ class RosChannel {
     rosBridgePlayer.advertise(globalSetting.navGoalTopic, "geometry_msgs/PoseStamped");
     rosBridgePlayer.advertise("${globalSetting.navGoalTopic}/cancel", "std_msgs/Empty");
     rosBridgePlayer.advertise("${globalSetting.topologyMapTopic}/update", "topology_msgs/TopologyMap");
+    rosBridgePlayer.advertise("/map/update", "nav_msgs/OccupancyGrid");
     rosBridgePlayer.advertise(globalSetting.getConfig("SpeedCtrlTopic"), "geometry_msgs/Twist");
   }
 
@@ -779,6 +780,65 @@ class RosChannel {
       print("拓扑地图已发布到ROS: ${updatedMap.points.length}个点, ${updatedMap.routes.length}条路径");
     } catch (e) {
       print("发布拓扑地图失败: $e");
+    }
+  }
+
+  Future<void> publishOccupancyGrid() async {
+    final map = map_.value.copy();
+    if (map == null) {
+      print("栅格地图数据为空，无法发布");
+      return;
+    }
+    map.setFlip();
+    
+    try {
+      // 构建 nav_msgs/OccupancyGrid 消息
+      final now = DateTime.now();
+      final timestamp = {
+        "sec": now.millisecondsSinceEpoch ~/ 1000,
+        "nanosec": (now.millisecondsSinceEpoch % 1000) * 1000000,
+      };
+
+      // 将二维数组转换为一维数组（按行扫描）
+      List<int> mapData = [];
+      for (int row = 0; row < map.Rows(); row++) {
+        for (int col = 0; col < map.Cols(); col++) {
+          mapData.add(map.data[row][col]);
+        }
+      }
+
+      // 构建消息
+      final msg = {
+        "header": {
+          "stamp": timestamp,
+          "frame_id": "map",
+        },
+        "info": {
+          "map_load_time": timestamp,
+          "resolution": map.mapConfig.resolution,
+          "width": map.mapConfig.width,
+          "height": map.mapConfig.height,
+          "origin": {
+            "position": {
+              "x": map.mapConfig.originX,
+              "y": map.mapConfig.originY,
+              "z": 0.0,
+            },
+            "orientation": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0,
+              "w": 1.0,
+            },
+          },
+        },
+        "data": mapData,
+      };
+
+      rosBridgePlayer.publish("/map/update", msg);
+      print("栅格地图已发布到 /map/update: ${map.mapConfig.width}x${map.mapConfig.height}, ${mapData.length} 个数据点");
+    } catch (e) {
+      print("发布栅格地图失败: $e");
     }
   }
 

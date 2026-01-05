@@ -25,20 +25,28 @@ class MapProperty {
 
 class RouteInfo {
   String controller;
+  String goalChecker;
+  double speedLimit;
 
   RouteInfo({
     required this.controller,
+    this.goalChecker = 'general_goal_checker',
+    this.speedLimit = 1.0,
   });
 
   factory RouteInfo.fromJson(Map<String, dynamic> json) {
     return RouteInfo(
-      controller: json['controller'] as String,
+      controller: json['controller'] as String? ?? 'FollowPath',
+      goalChecker: json['goal_checker'] as String? ?? 'general_goal_checker',
+      speedLimit: (json['speed_limit'] as num?)?.toDouble() ?? 1.0,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'controller': controller,
+      'goal_checker': goalChecker,
+      'speed_limit': speedLimit,
     };
   }
 }
