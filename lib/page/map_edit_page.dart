@@ -198,13 +198,6 @@ class _MapEditPageState extends State<MapEditPage> {
                 game.onScroll(pointerSignal.scrollDelta.dy, position);
               }
             },
-            onPointerDown: (event) {
-              if (selectedTool == EditToolType.move && event.kind == PointerDeviceKind.mouse) {
-                final position = Vector2(event.localPosition.dx, event.localPosition.dy);
-                final buttons = event.buttons;
-                game.onPointerDown(position, buttons);
-              }
-            },
             onPointerMove: (event) {
               // 更新鼠标世界坐标
               final worldPoint = game.camera.globalToLocal(
@@ -226,20 +219,17 @@ class _MapEditPageState extends State<MapEditPage> {
                 });
               }
               
-              // 处理拖动
+              // 处理拖动（仅用于障碍物绘制/擦除）
               if (event.down) {
                 final position = Vector2(event.localPosition.dx, event.localPosition.dy);
-                if (selectedTool == EditToolType.move) {
-                  game.onPanUpdate(position);
-                } else if (selectedTool == EditToolType.drawObstacle || 
+                if (selectedTool == EditToolType.drawObstacle || 
                     selectedTool == EditToolType.eraseObstacle) {
                   game.onPanUpdate(position);
                 }
               }
             },
             onPointerUp: (event) {
-              if (selectedTool == EditToolType.move ||
-                  selectedTool == EditToolType.drawObstacle || 
+              if (selectedTool == EditToolType.drawObstacle || 
                   selectedTool == EditToolType.eraseObstacle) {
                 game.onPanEnd();
               }
@@ -270,10 +260,7 @@ class _MapEditPageState extends State<MapEditPage> {
                   game.onScaleEnd();
                 }
               },
-              child: MouseRegion(
-                cursor: _getCursorForTool(selectedTool),
-                child: GameWidget(game: game),
-              ),
+              child: GameWidget(game: game),
             ),
           ),
           
@@ -566,44 +553,54 @@ class _MapEditPageState extends State<MapEditPage> {
   }) {
     final isActive = selectedTool == toolName;
     
-    return Container(
-      width: 120,
-      child: Column(
-        children: [
-          IconButton(
-            icon: Icon(icon, size: 24),
-            color: isActive ? color : Colors.grey,
-            onPressed: () {
-               if (isActive) {
-                selectedTool = null; // 取消选择
-                game.setSelectedTool(null);
-                // 退出所有点位编辑模式
-                for (final wp in game.wayPoints) {
-                  wp.setEditMode(false);
-                }
-              } else {
-                selectedTool = toolName; // 选择工具
-                game.setSelectedTool(toolName);
-                // 切换到其他工具时退出所有点位编辑模式
-                if (toolName != EditToolType.addNavPoint) {
-                  for (final wp in game.wayPoints) {
-                    wp.setEditMode(false);
-                  }
-                }
-              }
-              setState(() {});
-            },
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
+    return GestureDetector(
+      onTap: () {
+        if (isActive) {
+          selectedTool = null; // 取消选择
+          game.setSelectedTool(null);
+          // 退出所有点位编辑模式
+          for (final wp in game.wayPoints) {
+            wp.setEditMode(false);
+          }
+        } else {
+          selectedTool = toolName; // 选择工具
+          game.setSelectedTool(toolName);
+          // 切换到其他工具时退出所有点位编辑模式
+          if (toolName != EditToolType.addNavPoint) {
+            for (final wp in game.wayPoints) {
+              wp.setEditMode(false);
+            }
+          }
+        }
+        setState(() {});
+      },
+      child: Container(
+        width: 120,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          color: isActive ? color.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: isActive ? Border.all(color: color, width: 2) : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 24,
               color: isActive ? color : Colors.grey,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isActive ? color : Colors.grey,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

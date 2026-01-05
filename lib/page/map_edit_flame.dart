@@ -1,5 +1,6 @@
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/display/map.dart';
 import 'package:ros_flutter_gui_app/display/grid.dart';
@@ -660,6 +661,12 @@ class MapEditFlame extends FlameGame {
   }
   
   bool canUndo() => commandManager.canUndo();
+  
+  // 检测屏幕位置是否在某个点位上
+  bool isPointAtScreenPosition(Vector2 screenPosition) {
+    final worldPoint = camera.globalToLocal(screenPosition);
+    return _findWayPointAtPosition(worldPoint) != null;
+  }
   
   // 地图拖拽改由 onScaleStart/Update/End 处理
   
