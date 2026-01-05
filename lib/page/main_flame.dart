@@ -1,7 +1,5 @@
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
-import 'package:flame_svg/flame_svg.dart';
-import 'package:flame_svg/svg_component.dart';
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/display/map.dart';
@@ -11,7 +9,6 @@ import 'package:ros_flutter_gui_app/display/path.dart';
 import 'package:ros_flutter_gui_app/display/laser.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/display/costmap.dart';
-import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/display/pose.dart';
 import 'package:ros_flutter_gui_app/display/topology_line.dart';
@@ -20,9 +17,7 @@ import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
-import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
-import 'dart:math';
-import 'package:ros_flutter_gui_app/display/pose.dart';
+import 'package:ros_flutter_gui_app/provider/map_manager.dart';
 
 class MainFlame extends FlameGame {
   late MapComponent _displayMap;
@@ -52,8 +47,7 @@ class MainFlame extends FlameGame {
   // 全局状态引用
   late GlobalState globalState;
   
-  // NavPointManager 实例
-  late NavPointManager navPointManager;
+  late MapManager mapManager;
   
   // 添加右侧信息面板相关变量
   PoseComponent? selectedWayPoint;
@@ -80,11 +74,10 @@ class MainFlame extends FlameGame {
     this.rosChannel, 
     this.themeProvider,
     required GlobalState globalState,
-    required NavPointManager navPointManager,
+    required MapManager mapManager,
   }) {
     this.globalState = globalState;
-    this.navPointManager = navPointManager;
-    // 初始化主题模式
+    this.mapManager = mapManager;
     isDarkMode = themeProvider?.themeMode == ThemeMode.dark;
   }
   
@@ -205,12 +198,9 @@ class MainFlame extends FlameGame {
     }
   }
 
-      // 加载导航点
   Future<void> _loadOfflineNavPoints() async {
-    // 使用传入的 NavPointManager 实例
-    offLineNavPoints = await navPointManager.loadNavPoints();
+    offLineNavPoints = List.from(mapManager.navPoints);
     
-    // 如果地图已经加载，立即更新拓扑图层
     if (rosChannel?.map_.value != null) {
       _updateTopologyLayers();
     }
@@ -248,7 +238,7 @@ class MainFlame extends FlameGame {
     
     // 监听激光雷达数据
     rosChannel!.laserPointData.addListener(() {
-      if(rosChannel!.map_.value == null || rosChannel!.map_.value.mapConfig.resolution <= 0 || rosChannel!.map_.value.height() <= 0) return;
+      if(rosChannel!.map_.value.mapConfig.resolution <= 0 || rosChannel!.map_.value.height() <= 0) return;
       final laserPoints = rosChannel!.laserPointData.value;
       var robotPose = laserPoints.robotPose;
       if(isRelocMode){
@@ -664,15 +654,15 @@ class MainFlame extends FlameGame {
     var direction = -wayPoint.direction;
     double mapx = 0;
     double mapy = 0;
-    if(rosChannel?.map_.value != null){
+    if(rosChannel != null){
       vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(x, y));
       mapx = mapPose.x;
       mapy = mapPose.y;
     }
     var pointInfo = wayPoint.getPointInfo();
-    pointInfo!.x = mapx;
-    pointInfo!.y = mapy;
-    pointInfo!.theta = direction;
+    pointInfo?.x = mapx;
+    pointInfo?.y = mapy;
+    pointInfo?.theta = direction;
     return pointInfo;
   }
 

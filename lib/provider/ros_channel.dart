@@ -23,6 +23,7 @@ import 'package:ros_flutter_gui_app/basic/polygon_stamped.dart';
 import 'package:ros_flutter_gui_app/basic/pointcloud2.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_array.dart';
 import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
+import 'package:ros_flutter_gui_app/provider/map_manager.dart';
 import 'package:oktoast/oktoast.dart';
 
 
@@ -41,6 +42,7 @@ class RobotSpeed {
 
 class RosChannel {
   late RosBridgePlayer rosBridgePlayer;
+  late MapManager mapManager;
 
   String rosUrl_ = "";
   Timer? cmdVelTimer;
@@ -54,11 +56,10 @@ class RosChannel {
       ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
   String url_ = "";
   TF2Dart tf_ = TF2Dart();
-  ValueNotifier<OccupancyMap> map_ =
-      ValueNotifier<OccupancyMap>(OccupancyMap());
-  ValueNotifier<TopologyMap> topologyMap_ =
-      ValueNotifier<TopologyMap>(TopologyMap(points: []));
   Status rosConnectState_ = Status.none;
+  
+  ValueNotifier<OccupancyMap> get map_ => mapManager.occupancyMap;
+  ValueNotifier<TopologyMap> get topologyMap_ => mapManager.topologyMap;
   ValueNotifier<RobotPose> robotPoseMap = ValueNotifier(RobotPose.zero());
   ValueNotifier<RobotPose> robotPoseScene = ValueNotifier(RobotPose.zero());
   ValueNotifier<List<vm.Vector2>> laserBasePoint_ = ValueNotifier([]);
@@ -78,6 +79,8 @@ class RosChannel {
 
   RosChannel() {
     diagnosticManager = DiagnosticManager();
+    mapManager = MapManager();
+    mapManager.init();
     
     //启动定时器 获取机器人实时坐标
     globalSetting.init().then((success) {
@@ -172,8 +175,6 @@ class RosChannel {
 
   void closeConnection() {
     robotFootprint.value.clear();
-    map_.value.data.clear();
-    topologyMap_.value.points.clear();
     laserBasePoint_.value.clear();
     localPath.value.clear();
     globalPath.value.clear();
@@ -713,7 +714,6 @@ class RosChannel {
   DateTime? _lastMapCallbackTime;
 
   Future<void> mapCallback(Map<String, dynamic> msg) async {
-    
     OccupancyMap map = OccupancyMap();
     map.mapConfig.resolution = msg["info"]["resolution"];
     map.mapConfig.width = msg["info"]["width"];
@@ -722,10 +722,10 @@ class RosChannel {
     map.mapConfig.originY = msg["info"]["origin"]["position"]["y"];
     List<int> dataList = List<int>.from(msg["data"]);
     map.data = List.generate(
-      map.mapConfig.height, // 外层列表的长度
+      map.mapConfig.height,
       (i) => List.generate(
-        map.mapConfig.width, // 内层列表的长度
-        (j) => 0, // 初始化值
+        map.mapConfig.width,
+        (j) => 0,
       ),
     );
     for (int i = 0; i < dataList.length; i++) {
@@ -734,21 +734,15 @@ class RosChannel {
       map.data[x][y] = dataList[i];
     }
     map.setFlip();
-    map_.value = map;
+    mapManager.updateOccupancyMapFromRos(map);
   }
 
   Future<void> topologyMapCallback(Map<String, dynamic> msg) async {
-    // 延迟1秒执行 避免地图还未加载，点位就发过来了（只发送一次）
     await Future.delayed(Duration(seconds: 1));
     
-    // print("收到拓扑地图数据: $msg");
-    
     final map = TopologyMap.fromJson(msg);
-    // print("解析后的拓扑地图 - 点数量: ${map.points.length}, 路径数量: ${map.routes.length}");
 
-    // 创建新的 points 列表
     final updatedPoints = map.points.map((point) {
-      // 创建新的 NavPoint 对象
       return NavPoint(
         x: point.x,
         y: point.y,
@@ -758,7 +752,6 @@ class RosChannel {
       );
     }).toList();
 
-    // 创建新的 TopologyMap 对象，包含转换后的点和原始路径信息
     final updatedMap = TopologyMap(
       points: updatedPoints, 
       routes: map.routes,
@@ -766,14 +759,13 @@ class RosChannel {
       mapProperty: map.mapProperty,
     );
 
-    print("更新后的拓扑地图 - 点数量: ${updatedMap.points.length}, 路径数量: ${updatedMap.routes.length}");
+    print("收到ROS拓扑地图 - 点数量: ${updatedMap.points.length}, 路径数量: ${updatedMap.routes.length}");
     
-    // 更新 ValueNotifier
-    topologyMap_.value = updatedMap;
+    mapManager.updateTopologyMapFromRos(updatedMap);
   }
 
   Future<void> updateTopologyMap(TopologyMap updatedMap) async {
-    // 转换为JSON并通过ROS发布
+    mapManager.updateTopologyMap(updatedMap);
     try {
       final jsonData = updatedMap.toJson();
       rosBridgePlayer.publish("${globalSetting.topologyMapTopic}/update", jsonData);
@@ -785,7 +777,7 @@ class RosChannel {
 
   Future<void> publishOccupancyGrid() async {
     final map = map_.value.copy();
-    if (map == null) {
+    if (map.data.isEmpty) {
       print("栅格地图数据为空，无法发布");
       return;
     }

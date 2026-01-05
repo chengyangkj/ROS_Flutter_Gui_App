@@ -7,7 +7,6 @@ import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
-import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
@@ -69,11 +68,7 @@ class _MapEditPageState extends State<MapEditPage> {
   // 直线绘制起始点
   Map<String, double>? lineStartPoint;
   
-  // 支持的控制器和目标检查器列表
   List<String> supportControllers = ['FollowPath'];
-  List<String> supportGoalCheckers = ['general_goal_checker'];
-
-
 
   @override
   void initState() {
@@ -89,8 +84,8 @@ class _MapEditPageState extends State<MapEditPage> {
     game = MapEditFlame(
       rosChannel: rosChannel,
       themeProvider: themeProvider,
-      onAddNavPoint: (x, y) async {
-        final wayPointInfo = await _addNavPoint(x, y);
+      onAddNavPoint: (x, y, {double theta = 0.0}) async {
+        final wayPointInfo = await _addNavPoint(x, y, theta);
         return wayPointInfo;
       },
       onWayPointSelectionChanged: _onWayPointSelectionChanged,
@@ -122,10 +117,9 @@ class _MapEditPageState extends State<MapEditPage> {
     });
   }
   
-  // 加载导航点
   Future<void> _loadNavPoints() async {
-    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
-    navPoints = await navPointManager.loadNavPoints();
+    final mapManager = rosChannel.mapManager;
+    navPoints = List.from(mapManager.navPoints);
     for(var navPoint in navPoints){
       game.addWayPoint(navPoint);
     }
@@ -133,25 +127,25 @@ class _MapEditPageState extends State<MapEditPage> {
     });
   }
   
-  // 添加导航点
-  Future<NavPoint?> _addNavPoint(double x, double y) async {
+  Future<NavPoint?> _addNavPoint(double x, double y, double theta) async {
     final name = await _showAddNavPointDialog(x, y);
     if (name != null && name.isNotEmpty) {
-      // 用户输入了名称并点击确定，创建导航点
-      final navPointManager = Provider.of<NavPointManager>(context, listen: false);
-      final navPoint = await navPointManager.addNavPoint(x, y, 0.0, name);
+      final navPoint = NavPoint(
+        x: x,
+        y: y,
+        theta: theta,
+        name: name,
+        type: NavPointType.navGoal,
+      );
       return navPoint;
-    } else {
-      // 用户点击取消或没有输入名称
-      return null;
     }
+    return null;
   }
   
-  // 显示添加导航点对话框
   Future<String?> _showAddNavPointDialog(double x, double y) async {
     final TextEditingController nameController = TextEditingController();
-    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
-    int id = await navPointManager.getNextId();
+    final mapManager = rosChannel.mapManager;
+    int id = await mapManager.getNextPointId();
     nameController.text = 'POINT_${id.toString()}';
     
     return showDialog<String>(
@@ -217,7 +211,7 @@ class _MapEditPageState extends State<MapEditPage> {
                 Vector2(event.localPosition.dx, event.localPosition.dy)
               );
               if (game.rosChannel?.map_.value != null) {
-                final map = game.rosChannel!.map_.value!;
+                final map = game.rosChannel!.map_.value;
                 final idx = map.xy2idx(vm.Vector2(worldPoint.x, worldPoint.y));
                 final mapPose = map.idx2xy(idx);
                 setState(() {
@@ -354,40 +348,25 @@ class _MapEditPageState extends State<MapEditPage> {
                 
                 const SizedBox(width: 16),
                 
-                // 保存按钮
                 IconButton(
                   icon: const Icon(Icons.save, color: Colors.white, size: 28),
                   onPressed: () async {
                     try {
-                      // 获取所有导航点
+                      final mapManager = rosChannel.mapManager;
                       List<NavPoint> navPoints = game.getAllWayPoint();
-                      final navPointManager = Provider.of<NavPointManager>(context, listen: false);
-                      await navPointManager.saveNavPoints(navPoints);
                       
-                      // 获取拓扑地图（包含routes）
-                      TopologyMap topologyMap;
-                      if (rosChannel.topologyMap_.value != null) {
-                        final currentTopologyMap = rosChannel.topologyMap_.value!;
-                        topologyMap = TopologyMap(
-                          mapName: currentTopologyMap.mapName,
-                          mapProperty: currentTopologyMap.mapProperty,
-                          points: navPoints,
-                          routes: currentTopologyMap.routes, // 包含routes
-                        );
-                      } else {
-                        topologyMap = TopologyMap(
-                          points: navPoints,
-                          routes: [], // 如果没有现有拓扑地图，routes为空
-                        );
-                      }
+                      final currentTopologyMap = mapManager.topologyMap.value;
+                      TopologyMap topologyMap = TopologyMap(
+                        mapName: currentTopologyMap.mapName,
+                        mapProperty: currentTopologyMap.mapProperty,
+                        points: navPoints,
+                        routes: currentTopologyMap.routes,
+                      );
                       
-                      // 发布拓扑地图到ROS
                       await rosChannel.updateTopologyMap(topologyMap);
-                      
-                      // 发布栅格地图到 /map/update
+                      await mapManager.saveLocalTopologyMap();
                       await rosChannel.publishOccupancyGrid();
 
-                      // 显示保存成功提示
                       if (mounted) {
                         toastification.show(
                           context: context,
@@ -426,18 +405,6 @@ class _MapEditPageState extends State<MapEditPage> {
                   } : null,
                   tooltip: '撤销',
                 ),
-                
-                const SizedBox(width: 16),
-                
-                // 重做按钮
-                IconButton(
-                  icon: const Icon(Icons.redo, color: Colors.white, size: 28),
-                  onPressed: game.canRedo() ? () {
-                    game.redo();
-                    setState(() {});
-                  } : null,
-                  tooltip: '重做',
-                ),
               ],
             ),
           ),
@@ -465,15 +432,12 @@ class _MapEditPageState extends State<MapEditPage> {
                 child: IconButton(
                   icon: const Icon(Icons.close, color: Colors.white, size: 28),
                   onPressed: () async {
-                    // 退出前保存当前状态
+                    final mapManager = rosChannel.mapManager;
                     List<NavPoint> navPoints = game.getAllWayPoint();
-                    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
-                    await navPointManager.saveNavPoints(navPoints);
+                    mapManager.setNavPoints(navPoints);
+                    await mapManager.saveLocalTopologyMap();
                     
-                    // 调用退出回调
                     widget.onExit?.call();
-                    
-                    // 退出地图编辑模式
                     Navigator.pop(context);
                   },
                   tooltip: '退出地图编辑模式',
@@ -926,8 +890,8 @@ class _MapEditPageState extends State<MapEditPage> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     String name = game.deleteSelectedWayPoint();
-                    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
-                    navPointManager.removeNavPoint(name);
+                    final mapManager = rosChannel.mapManager;
+                    mapManager.removeNavPoint(name);
                     setState(() {
                       selectedWayPointInfo = null;
                       editingPoint = null;
@@ -983,7 +947,6 @@ class _MapEditPageState extends State<MapEditPage> {
           
           const SizedBox(height: 8),
           
-          // 控制器选择
           DropdownButtonFormField<String>(
             value: selectedRoute!.routeInfo.controller,
             decoration: const InputDecoration(
@@ -1003,77 +966,11 @@ class _MapEditPageState extends State<MapEditPage> {
                   selectedRoute = TopologyRoute(
                     fromPoint: selectedRoute!.fromPoint,
                     toPoint: selectedRoute!.toPoint,
-                    routeInfo: RouteInfo(
-                      controller: value,
-                      goalChecker: selectedRoute!.routeInfo.goalChecker,
-                      speedLimit: selectedRoute!.routeInfo.speedLimit,
-                    ),
+                    routeInfo: RouteInfo(controller: value),
                   );
                   _updateRoute();
                 });
               }
-            },
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // 目标检查器选择
-          DropdownButtonFormField<String>(
-            value: selectedRoute!.routeInfo.goalChecker,
-            decoration: const InputDecoration(
-              labelText: '目标检查器',
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-            items: supportGoalCheckers.map((checker) {
-              return DropdownMenuItem(
-                value: checker,
-                child: Text(checker),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  selectedRoute = TopologyRoute(
-                    fromPoint: selectedRoute!.fromPoint,
-                    toPoint: selectedRoute!.toPoint,
-                    routeInfo: RouteInfo(
-                      controller: selectedRoute!.routeInfo.controller,
-                      goalChecker: value,
-                      speedLimit: selectedRoute!.routeInfo.speedLimit,
-                    ),
-                  );
-                  _updateRoute();
-                });
-              }
-            },
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // 速度限制编辑
-          TextField(
-            controller: TextEditingController(text: selectedRoute!.routeInfo.speedLimit.toStringAsFixed(2)),
-            decoration: const InputDecoration(
-              labelText: '速度限制 (m/s)',
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (value) {
-              final speedLimit = double.tryParse(value) ?? selectedRoute!.routeInfo.speedLimit;
-              setState(() {
-                selectedRoute = TopologyRoute(
-                  fromPoint: selectedRoute!.fromPoint,
-                  toPoint: selectedRoute!.toPoint,
-                  routeInfo: RouteInfo(
-                    controller: selectedRoute!.routeInfo.controller,
-                    goalChecker: selectedRoute!.routeInfo.goalChecker,
-                    speedLimit: speedLimit,
-                  ),
-                );
-                _updateRoute();
-              });
             },
           ),
           
@@ -1098,29 +995,24 @@ class _MapEditPageState extends State<MapEditPage> {
   }
   
   void _updateRoute() {
-    if (selectedRoute == null || rosChannel.topologyMap_.value == null) return;
+    if (selectedRoute == null) return;
     
-    final topologyMap = rosChannel.topologyMap_.value!;
-    final index = topologyMap.routes.indexWhere(
-      (r) => r.fromPoint == selectedRoute!.fromPoint && r.toPoint == selectedRoute!.toPoint
+    final mapManager = rosChannel.mapManager;
+    mapManager.updateRoute(
+      selectedRoute!.fromPoint,
+      selectedRoute!.toPoint,
+      selectedRoute!,
     );
-    
-    if (index != -1) {
-      topologyMap.routes[index] = selectedRoute!;
-      rosChannel.updateTopologyMap(topologyMap);
-      // 触发拓扑图层更新
-      setState(() {});
-    }
+    rosChannel.updateTopologyMap(mapManager.topologyMap.value);
+    setState(() {});
   }
   
   void _deleteRoute() {
-    if (selectedRoute == null || rosChannel.topologyMap_.value == null) return;
+    if (selectedRoute == null) return;
     
-    final topologyMap = rosChannel.topologyMap_.value!;
-    topologyMap.routes.removeWhere(
-      (r) => r.fromPoint == selectedRoute!.fromPoint && r.toPoint == selectedRoute!.toPoint
-    );
-    rosChannel.updateTopologyMap(topologyMap);
+    final mapManager = rosChannel.mapManager;
+    mapManager.removeRoute(selectedRoute!.fromPoint, selectedRoute!.toPoint);
+    rosChannel.updateTopologyMap(mapManager.topologyMap.value);
     
     setState(() {
       selectedRoute = null;
@@ -1283,32 +1175,5 @@ class _MapEditPageState extends State<MapEditPage> {
       case null:
         return SystemMouseCursors.basic;
     }
-  }
-  
-  Widget _buildBrushIndicator(BuildContext context) {
-    if (game.rosChannel?.map_.value == null) return SizedBox.shrink();
-    
-    final map = game.rosChannel!.map_.value!;
-    final resolution = map.mapConfig.resolution;
-    final brushSizeInMeters = brushSize;
-    final brushSizeInPixels = brushSizeInMeters / resolution * game.camera.viewfinder.zoom;
-    
-    final isEraser = selectedTool == EditToolType.eraseObstacle;
-    final color = isEraser ? Colors.red : Colors.blue;
-    
-    return Transform.translate(
-      offset: Offset(-brushSizeInPixels / 2, -brushSizeInPixels / 2),
-      child: Container(
-        width: brushSizeInPixels,
-        height: brushSizeInPixels,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: color.withOpacity(0.8),
-            width: 2,
-          ),
-          color: Colors.transparent,
-        ),
-      ),
-    );
   }
 }

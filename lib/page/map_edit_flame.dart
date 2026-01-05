@@ -44,7 +44,7 @@ class MapEditFlame extends FlameGame {
   EditToolType? selectedTool;
   
   // 回调函数，用于通知外部添加导航点
-  Future<NavPoint?> Function(double x, double y)? onAddNavPoint;
+  Future<NavPoint?> Function(double x, double y, {double theta})? onAddNavPoint;
   
   // 回调函数，用于通知外部导航点选择状态变化
   VoidCallback? onWayPointSelectionChanged;
@@ -69,7 +69,8 @@ class MapEditFlame extends FlameGame {
   CommandManager commandManager = CommandManager();
   EditOperationState _operationState = EditOperationState.none;
   Vector2? _lastObstaclePosition;
-  List<MapEntry<int, int>> _currentEditCells = [];
+  List<GridCellChange> _currentGridChanges = [];
+  Map<String, int> _initialGridValues = {}; // 保存首次修改时的原始值
   double _obstacleBrushSize = 0.05;
   
   // 移动工具相关
@@ -115,25 +116,17 @@ class MapEditFlame extends FlameGame {
     selectedTool = tool;
   }
   
-  // 使用当前机器人位置添加导航点
   Future<void> addNavPointAtRobotPosition() async {
     if (selectedTool != EditToolType.addNavPoint) return;
     
-    // 使用当前机器人位置添加导航点
-    final result = await onAddNavPoint!(currentRobotPose.x, currentRobotPose.y);
-    if (result != null) {
-      print('使用机器人位置添加导航点: $result x: ${currentRobotPose.x} y: ${currentRobotPose.y}');
-      // 创建新的导航点，使用机器人当前朝向
-      final navPointWithRobotPose = NavPoint(
-        name: result.name,
-        x: currentRobotPose.x,
-        y: currentRobotPose.y,
-        theta: currentRobotPose.theta,
-        type: result.type,
-      );
-      addWayPoint(navPointWithRobotPose);
-    } else {
-      print('用户取消了使用机器人位置添加导航点');
+    final navPoint = await onAddNavPoint!(currentRobotPose.x, currentRobotPose.y, theta: currentRobotPose.theta);
+    if (navPoint != null && rosChannel != null) {
+      final topologyMap = rosChannel!.mapManager.topologyMap.value;
+      final command = AddPointCommand(topologyMap, navPoint, () {
+        _updateTopologyLayers();
+        rosChannel!.updateTopologyMap(topologyMap);
+      });
+      commandManager.executeCommand(command);
     }
   }
   
@@ -151,7 +144,7 @@ class MapEditFlame extends FlameGame {
     var direction = -wayPoint.direction;
     double mapx = 0;
     double mapy = 0;
-    if(rosChannel != null && rosChannel!.map_.value != null){
+    if(rosChannel != null) {
       vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(x, y));
       mapx = mapPose.x;
       mapy = mapPose.y;
@@ -167,7 +160,6 @@ class MapEditFlame extends FlameGame {
     return pointInfo;
   }
   
-  // 获取所有导航点的信息
   List<NavPoint> getAllWayPoint() {
     List<NavPoint> allWayPoints = [];
     
@@ -179,7 +171,7 @@ class MapEditFlame extends FlameGame {
       double mapx = 0;
       double mapy = 0;
       
-      if (rosChannel != null && rosChannel!.map_.value != null) {
+      if (rosChannel != null) {
         vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(x, y));
         mapx = mapPose.x;
         mapy = mapPose.y;
@@ -262,19 +254,22 @@ class MapEditFlame extends FlameGame {
       
       double mapX = 0;
       double mapY = 0;
-      if (rosChannel != null && rosChannel!.map_.value != null) {
+      if (rosChannel != null) {
         vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
         mapX = mapPose.x;
         mapY = mapPose.y;
       }
 
-      final result = await onAddNavPoint!(mapX, mapY);
-      if (result != null) {
-        addWayPoint(result);
+      final navPoint = await onAddNavPoint!(mapX, mapY);
+      if (navPoint != null && rosChannel != null) {
+        final topologyMap = rosChannel!.mapManager.topologyMap.value;
+        final command = AddPointCommand(topologyMap, navPoint, () {
+          _updateTopologyLayers();
+        });
+        commandManager.executeCommand(command);
       }
       return true;
     } else if (selectedTool == EditToolType.addRoute) {
-      // 拓扑连线工具：点击点位进行连线
       final clickedWayPoint = _findWayPointAtPosition(worldPoint);
       if (clickedWayPoint != null && clickedWayPoint.navPoint != null) {
         if (_routeStartPoint == null) {
@@ -282,21 +277,18 @@ class MapEditFlame extends FlameGame {
           _selectWayPoint(clickedWayPoint);
           currentSelectPointUpdate?.call();
         } else if (_routeStartPoint != clickedWayPoint.navPoint!.name) {
-          // 创建路线
           _createRoute(_routeStartPoint!, clickedWayPoint.navPoint!.name);
           _routeStartPoint = null;
         }
         return true;
       } else {
-        // 点击空白区域，取消连线
         _routeStartPoint = null;
         return false;
       }
     } else if (selectedTool == EditToolType.drawLine) {
-      // 直线绘制工具：点击设置起始点和结束点
       double mapX = 0;
       double mapY = 0;
-      if (rosChannel != null && rosChannel!.map_.value != null) {
+      if (rosChannel != null) {
         vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
         mapX = mapPose.x;
         mapY = mapPose.y;
@@ -313,13 +305,15 @@ class MapEditFlame extends FlameGame {
       }
     } else if (selectedTool == EditToolType.drawObstacle) {
       _operationState = EditOperationState.drawingObstacle;
-      _currentEditCells.clear();
+      _currentGridChanges.clear();
+      _initialGridValues.clear();
       _lastObstaclePosition = worldPoint;
       _drawObstacleAtPosition(worldPoint);
       return true;
     } else if (selectedTool == EditToolType.eraseObstacle) {
       _operationState = EditOperationState.erasingObstacle;
-      _currentEditCells.clear();
+      _currentGridChanges.clear();
+      _initialGridValues.clear();
       _lastObstaclePosition = worldPoint;
       _eraseObstacleAtPosition(worldPoint);
       return true;
@@ -377,10 +371,9 @@ class MapEditFlame extends FlameGame {
     switch (_operationState) {
       case EditOperationState.draggingPoint:
         if (_draggedPoint != null && _dragStartPos != null) {
-          // 移动点位
           double mapX = 0;
           double mapY = 0;
-          if (rosChannel != null && rosChannel!.map_.value != null) {
+          if (rosChannel != null) {
             vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
             mapX = mapPose.x;
             mapY = mapPose.y;
@@ -404,10 +397,9 @@ class MapEditFlame extends FlameGame {
         
       case EditOperationState.rotatingPoint:
         if (_draggedPoint != null && _dragStartPos != null) {
-          // 旋转点位方向
           double mapX = 0;
           double mapY = 0;
-          if (rosChannel != null && rosChannel!.map_.value != null) {
+          if (rosChannel != null) {
             vm.Vector2 mapPose = rosChannel!.map_.value.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
             mapX = mapPose.x;
             mapY = mapPose.y;
@@ -437,7 +429,7 @@ class MapEditFlame extends FlameGame {
         
       case EditOperationState.drawingObstacle:
       case EditOperationState.erasingObstacle:
-        if (_lastObstaclePosition != null) {
+        if (_lastObstaclePosition != null && rosChannel != null) {
           final distance = (worldPoint - _lastObstaclePosition!).length;
           // 计算两点之间的插值步数，确保连续绘制
           final stepSize = _obstacleBrushSize / 4.0;
@@ -453,16 +445,11 @@ class MapEditFlame extends FlameGame {
               _lastObstaclePosition!.y + (worldPoint.y - _lastObstaclePosition!.y) * t,
             );
             
-            if (_operationState == EditOperationState.drawingObstacle) {
-              final cells = _getCellsForPosition(interpolatedPoint);
-              allCells.addAll(cells);
-            } else {
-              final cells = _getCellsForPosition(interpolatedPoint);
-              allCells.addAll(cells);
-            }
+            final cells = _getCellsForPosition(interpolatedPoint);
+            allCells.addAll(cells);
           }
           
-          // 去重并批量更新
+          // 去重
           final uniqueCells = <MapEntry<int, int>>{};
           for (var cell in allCells) {
             uniqueCells.add(cell);
@@ -470,7 +457,27 @@ class MapEditFlame extends FlameGame {
           
           final value = _operationState == EditOperationState.drawingObstacle ? 100 : 0;
           if (uniqueCells.isNotEmpty) {
-            _displayMap.modifyCells(uniqueCells.toList(), value);
+            final changes = _displayMap.modifyCells(uniqueCells.toList(), value, initialValues: _initialGridValues);
+            // 收集变化并更新初始值映射
+            for (var change in changes) {
+              final key = '${change.row},${change.col}';
+              if (!_initialGridValues.containsKey(key)) {
+                _initialGridValues[key] = change.oldValue;
+              }
+              // 更新或添加到当前变化列表
+              final existingIndex = _currentGridChanges.indexWhere((c) => c.row == change.row && c.col == change.col);
+              if (existingIndex == -1) {
+                _currentGridChanges.add(change);
+              } else {
+                // 更新 newValue，保留原始的 oldValue
+                _currentGridChanges[existingIndex] = GridCellChange(
+                  row: change.row,
+                  col: change.col,
+                  oldValue: _currentGridChanges[existingIndex].oldValue,
+                  newValue: change.newValue,
+                );
+              }
+            }
           }
           
           _lastObstaclePosition = worldPoint;
@@ -488,13 +495,15 @@ class MapEditFlame extends FlameGame {
     switch (_operationState) {
       case EditOperationState.draggingPoint:
       case EditOperationState.rotatingPoint:
-        // 完成点位移动/旋转操作，创建命令
-        if (_draggedPoint != null && _dragStartPointData != null && _draggedPoint!.navPoint != null) {
+        if (_draggedPoint != null && _dragStartPointData != null && _draggedPoint!.navPoint != null && rosChannel != null) {
           final currentPoint = _draggedPoint!.navPoint!;
           if (currentPoint.name == _dragStartPointData!.name) {
-            // 创建修改点位命令
-            // 注意：这里需要实现 ModifyPointCommand
-            // 暂时直接更新，后续可以添加到命令系统
+            final topologyMap = rosChannel!.mapManager.topologyMap.value;
+            final command = ModifyPointCommand(topologyMap, _dragStartPointData!, currentPoint, () {
+              _updateTopologyLayers();
+              rosChannel!.updateTopologyMap(topologyMap);
+            });
+            commandManager.executeCommand(command);
           }
         }
         _operationState = EditOperationState.none;
@@ -505,25 +514,16 @@ class MapEditFlame extends FlameGame {
         
       case EditOperationState.drawingObstacle:
       case EditOperationState.erasingObstacle:
-        if (rosChannel != null && rosChannel!.map_.value != null) {
-          if (_currentEditCells.isNotEmpty) {
-            final map = rosChannel!.map_.value!;
-            if (_operationState == EditOperationState.drawingObstacle) {
-              final command = DrawObstacleCommand(
-                map,
-                List.from(_currentEditCells),
-              );
-              commandManager.executeCommand(command);
-            } else {
-              final command = EraseObstacleCommand(
-                map,
-                List.from(_currentEditCells),
-              );
-              commandManager.executeCommand(command);
-            }
-            _currentEditCells.clear();
-            _displayMap.updateMapData(map);
-          }
+        if (_currentGridChanges.isNotEmpty) {
+          final command = ModifyGridCommand(
+            _displayMap,
+            List.from(_currentGridChanges),
+            () {},
+          );
+          // 使用 recordCommand 因为数据已经在拖动过程中被修改了
+          commandManager.recordCommand(command);
+          _currentGridChanges.clear();
+          _initialGridValues.clear();
         }
         _operationState = EditOperationState.none;
         _lastObstaclePosition = null;
@@ -535,49 +535,31 @@ class MapEditFlame extends FlameGame {
     return false;
   }
   
-  // 创建路线
   void _createRoute(String fromPoint, String toPoint) {
-    if (rosChannel == null || rosChannel!.topologyMap_.value == null) return;
+    if (rosChannel == null) return;
     
-    final topologyMap = rosChannel!.topologyMap_.value!;
+    final mapManager = rosChannel!.mapManager;
     
-    // 检查路线是否已存在
-    final exists = topologyMap.routes.any(
-      (r) => r.fromPoint == fromPoint && r.toPoint == toPoint
-    );
-    
-    if (exists) {
-      print('路线已存在: $fromPoint -> $toPoint');
-      return;
-    }
-    
-    // 创建新路线
     final newRoute = TopologyRoute(
       fromPoint: fromPoint,
       toPoint: toPoint,
-      routeInfo: RouteInfo(
-        controller: 'FollowPath',
-        goalChecker: 'general_goal_checker',
-        speedLimit: 1.0,
-      ),
+      routeInfo: RouteInfo(controller: 'FollowPath'),
     );
     
+    final topologyMap = mapManager.topologyMap.value;
     final command = AddRouteCommand(topologyMap, newRoute, () {
       _updateTopologyLayers();
-      if (rosChannel != null) {
-        rosChannel!.updateTopologyMap(topologyMap);
-      }
+      rosChannel!.updateTopologyMap(topologyMap);
     });
     
     commandManager.executeCommand(command);
     print('已创建路线: $fromPoint -> $toPoint');
   }
   
-  // 绘制直线
   void _drawLine(Vector2 start, Vector2 end) {
-    if (rosChannel == null || rosChannel!.map_.value == null) return;
+    if (rosChannel == null) return;
     
-    final map = rosChannel!.map_.value!;
+    final map = rosChannel!.map_.value;
     final startIdx = map.xy2idx(vm.Vector2(start.x, start.y));
     final endIdx = map.xy2idx(vm.Vector2(end.x, end.y));
     
@@ -585,7 +567,7 @@ class MapEditFlame extends FlameGame {
     final dy = endIdx.y - startIdx.y;
     final steps = math.max(dx.abs().round(), dy.abs().round());
     
-    _currentEditCells.clear();
+    final lineCells = <MapEntry<int, int>>[];
     
     for (int i = 0; i <= steps; i++) {
       final t = i / steps;
@@ -595,42 +577,27 @@ class MapEditFlame extends FlameGame {
       final col = x.round();
       
       if (row >= 0 && row < map.Rows() && col >= 0 && col < map.Cols()) {
-        final cellKey = MapEntry(row, col);
-        bool exists = false;
-        for (var existing in _currentEditCells) {
-          if (existing.key == row && existing.value == col) {
-            exists = true;
-            break;
-          }
-        }
+        bool exists = lineCells.any((c) => c.key == row && c.value == col);
         if (!exists) {
-          _currentEditCells.add(cellKey);
+          lineCells.add(MapEntry(row, col));
         }
       }
     }
     
-    // 应用绘制
-    for (var cell in _currentEditCells) {
-      if (cell.key >= 0 && cell.key < map.Rows() && 
-          cell.value >= 0 && cell.value < map.Cols()) {
-        map.data[cell.key][cell.value] = 100;
+    // 应用绘制并获取变化
+    if (lineCells.isNotEmpty) {
+      final changes = _displayMap.modifyCells(lineCells, OBSTACLE_COLOR);
+      if (changes.isNotEmpty) {
+        final command = ModifyGridCommand(_displayMap, changes, () {});
+        commandManager.recordCommand(command);
       }
-    }
-    
-    // 创建命令
-    if (_currentEditCells.isNotEmpty) {
-      final command = DrawObstacleCommand(map, List.from(_currentEditCells));
-      commandManager.executeCommand(command);
-      _currentEditCells.clear();
-      _displayMap.updateMapData(map);
     }
   }
   
-  // 获取指定位置的所有单元格（用于批量处理）
   List<MapEntry<int, int>> _getCellsForPosition(Vector2 worldPoint) {
-    if (rosChannel == null || rosChannel!.map_.value == null) return [];
+    if (rosChannel == null) return [];
     
-    final map = rosChannel!.map_.value!;
+    final map = rosChannel!.map_.value;
     // 参考 AddPoint 工具：worldPoint 是 Flame 世界坐标（像素），需要先转换为地图世界坐标（米）
     vm.Vector2 mapPose = map.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
     final idx = map.xy2idx(mapPose);
@@ -662,7 +629,14 @@ class MapEditFlame extends FlameGame {
   void _drawObstacleAtPosition(Vector2 worldPoint) {
     final cells = _getCellsForPosition(worldPoint);
     if (cells.isNotEmpty) {
-      _displayMap.modifyCells(cells, OBSTACLE_COLOR);
+      final changes = _displayMap.modifyCells(cells, OBSTACLE_COLOR, initialValues: _initialGridValues);
+      for (var change in changes) {
+        final key = '${change.row},${change.col}';
+        if (!_initialGridValues.containsKey(key)) {
+          _initialGridValues[key] = change.oldValue;
+        }
+        _currentGridChanges.add(change);
+      }
     }
   }
   
@@ -670,31 +644,22 @@ class MapEditFlame extends FlameGame {
   void _eraseObstacleAtPosition(Vector2 worldPoint) {
     final cells = _getCellsForPosition(worldPoint);
     if (cells.isNotEmpty) {
-      _displayMap.modifyCells(cells, FREE_COLOR);
+      final changes = _displayMap.modifyCells(cells, FREE_COLOR, initialValues: _initialGridValues);
+      for (var change in changes) {
+        final key = '${change.row},${change.col}';
+        if (!_initialGridValues.containsKey(key)) {
+          _initialGridValues[key] = change.oldValue;
+        }
+        _currentGridChanges.add(change);
+      }
     }
   }
   
-  // 撤销操作
   void undo() {
     commandManager.undo();
-    if (rosChannel != null && rosChannel!.map_.value != null) {
-      _displayMap.updateMapData(rosChannel!.map_.value);
-    }
   }
   
-  // 重做操作
-  void redo() {
-    commandManager.redo();
-    if (rosChannel != null && rosChannel!.map_.value != null) {
-      _displayMap.updateMapData(rosChannel!.map_.value);
-    }
-  }
-  
-  // 检查是否可以撤销
   bool canUndo() => commandManager.canUndo();
-  
-  // 检查是否可以重做
-  bool canRedo() => commandManager.canRedo();
   
   // 地图拖拽改由 onScaleStart/Update/End 处理
   
@@ -841,24 +806,13 @@ class MapEditFlame extends FlameGame {
     
     final oldPoint = currentSelectedWayPoint!.navPoint!;
     
-    // 更新点位数据
     currentSelectedWayPoint!.navPoint = updatedPoint;
     
-    // 更新位置
-    if (rosChannel != null && rosChannel!.map_.value != null) {
-      final map = rosChannel!.map_.value!;
-      final idx = map.xy2idx(vm.Vector2(updatedPoint.x, updatedPoint.y));
+    if (rosChannel != null) {
       currentSelectedWayPoint!.updatePose(RobotPose(updatedPoint.x, updatedPoint.y, updatedPoint.theta));
-    }
-    
-    // 更新拓扑地图
-    if (rosChannel != null && rosChannel!.topologyMap_.value != null) {
-      final topologyMap = rosChannel!.topologyMap_.value!;
-      final index = topologyMap.points.indexWhere((p) => p.name == oldPoint.name);
-      if (index != -1) {
-        topologyMap.points[index] = updatedPoint;
-        rosChannel!.updateTopologyMap(topologyMap);
-      }
+      final mapManager = rosChannel!.mapManager;
+      mapManager.updateNavPoint(oldPoint.name, updatedPoint);
+      rosChannel!.updateTopologyMap(mapManager.topologyMap.value);
     }
     
     _updateTopologyLayers();
@@ -932,4 +886,6 @@ class MapEditFlame extends FlameGame {
     print('拓扑图层已更新，显示 ${wayPoints.length} 个导航点');
   }
 }
+
+
 

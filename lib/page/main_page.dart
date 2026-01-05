@@ -9,7 +9,6 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
-import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
@@ -45,13 +44,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
     super.initState();
     final rosChannel = Provider.of<RosChannel>(context, listen: false);
     final globalState = Provider.of<GlobalState>(context, listen: false);
-    final navPointManager = Provider.of<NavPointManager>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     game = MainFlame(
       rosChannel: rosChannel, 
       themeProvider: themeProvider,
       globalState: globalState,
-      navPointManager: navPointManager,
+      mapManager: rosChannel.mapManager,
     );
     game.onNavPointTap = (NavPoint? point) {
       setState(() {

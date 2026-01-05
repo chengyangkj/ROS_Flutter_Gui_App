@@ -12,6 +12,20 @@ const int OBSTACLE_COLOR = 100;
 const int FREE_COLOR = 0;
 const int UNKNOWN_COLOR = -1;
 
+class GridCellChange {
+  final int row;
+  final int col;
+  final int oldValue;
+  final int newValue;
+  
+  GridCellChange({
+    required this.row,
+    required this.col,
+    required this.oldValue,
+    required this.newValue,
+  });
+}
+
 class MapComponent extends SpriteComponent {
   OccupancyMap? _currentMap;
   RosChannel? _rosChannel;
@@ -89,17 +103,44 @@ class MapComponent extends SpriteComponent {
     }
   }
   
-  void modifyCells(List<MapEntry<int, int>> cells, int value) {
+  // 返回变化列表，用于撤销
+  List<GridCellChange> modifyCells(List<MapEntry<int, int>> cells, int value, {Map<String, int>? initialValues}) {
     if (_currentMap == null || _pixelBuffer == null) {
-      return;
+      return [];
     }
+    
+    final List<GridCellChange> changes = [];
     
     for (var cell in cells) {
       final row = cell.key;
       final col = cell.value;
       if (row >= 0 && row < _currentMap!.Rows() && col >= 0 && col < _currentMap!.Cols()) {
+        final key = '$row,$col';
+        // 如果 initialValues 中有这个单元格，使用它作为原始值，否则使用当前值
+        final oldValue = initialValues?.containsKey(key) == true 
+            ? initialValues![key]! 
+            : _currentMap!.data[row][col];
+        
+        changes.add(GridCellChange(row: row, col: col, oldValue: oldValue, newValue: value));
         _currentMap!.data[row][col] = value;
         _updatePixel(row, col, value);
+      }
+    }
+    
+    _rebuildSpriteFromBuffer();
+    return changes;
+  }
+  
+  // 应用变化（用于撤销/重做）
+  void applyChanges(List<GridCellChange> changes, bool useNewValue) {
+    if (_currentMap == null || _pixelBuffer == null) return;
+    
+    for (var change in changes) {
+      final value = useNewValue ? change.newValue : change.oldValue;
+      if (change.row >= 0 && change.row < _currentMap!.Rows() && 
+          change.col >= 0 && change.col < _currentMap!.Cols()) {
+        _currentMap!.data[change.row][change.col] = value;
+        _updatePixel(change.row, change.col, value);
       }
     }
     

@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
-import 'package:ros_flutter_gui_app/provider/nav_point_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter/material.dart';
@@ -40,7 +39,6 @@ void main() async {
     Provider<RosChannel>(create: (_) => RosChannel()),
     ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
     ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState()),
-    ChangeNotifierProvider<NavPointManager>(create: (_) => NavPointManager())
   ], child: MyApp()));
 }
 
