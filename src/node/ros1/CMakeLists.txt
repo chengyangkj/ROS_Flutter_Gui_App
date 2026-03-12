@@ -1,0 +1,5 @@
+add_library(map_server_node STATIC map_server_node.cpp)
+find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs tf2 tf2_geometry_msgs)
+target_compile_definitions(map_server_node PRIVATE ROS_VERSION=1)
+target_include_directories(map_server_node PUBLIC ${CMAKE_SOURCE_DIR}/src ${catkin_INCLUDE_DIRS})
+target_link_libraries(map_server_node PUBLIC map_io ${catkin_LIBRARIES})

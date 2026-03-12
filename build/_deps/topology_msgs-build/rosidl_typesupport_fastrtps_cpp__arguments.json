@@ -1,0 +1,29 @@
+{
+  "package_name": "topology_msgs",
+  "output_dir": "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_typesupport_fastrtps_cpp/topology_msgs",
+  "template_dir": "/opt/ros/humble/share/rosidl_typesupport_fastrtps_cpp/resource",
+  "idl_tuples": [
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/TopologyMapPointInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/TopologyMap.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/RouteInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/RouteConnection.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/MapProperty.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:srv/NavToTopologyPoint.idl"
+  ],
+  "target_dependencies": [
+    "/opt/ros/humble/lib/rosidl_typesupport_fastrtps_cpp/rosidl_typesupport_fastrtps_cpp",
+    "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_typesupport_fastrtps_cpp/__init__.py",
+    "/opt/ros/humble/share/rosidl_typesupport_fastrtps_cpp/resource/idl__rosidl_typesupport_fastrtps_cpp.hpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_fastrtps_cpp/resource/idl__type_support.cpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_fastrtps_cpp/resource/msg__rosidl_typesupport_fastrtps_cpp.hpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_fastrtps_cpp/resource/msg__type_support.cpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_fastrtps_cpp/resource/srv__rosidl_typesupport_fastrtps_cpp.hpp.em",
+    "/opt/ros/humble/share/rosidl_typesupport_fastrtps_cpp/resource/srv__type_support.cpp.em",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/TopologyMapPointInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/TopologyMap.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/RouteInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/RouteConnection.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/MapProperty.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/srv/NavToTopologyPoint.idl"
+  ]
+}

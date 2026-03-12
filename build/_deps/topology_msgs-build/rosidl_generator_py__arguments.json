@@ -1,0 +1,34 @@
+{
+  "package_name": "topology_msgs",
+  "output_dir": "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_generator_py/topology_msgs",
+  "template_dir": "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource",
+  "idl_tuples": [
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/TopologyMapPointInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/TopologyMap.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/RouteInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/RouteConnection.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:msg/MapProperty.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs:srv/NavToTopologyPoint.idl"
+  ],
+  "target_dependencies": [
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../../../lib/rosidl_generator_py/rosidl_generator_py",
+    "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_generator_py/__init__.py",
+    "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_generator_py/generate_py_impl.py",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_action_pkg_typesupport_entry_point.c.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_action.py.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_idl_pkg_typesupport_entry_point.c.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_idl_support.c.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_idl.py.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_msg_pkg_typesupport_entry_point.c.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_msg_support.c.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_msg.py.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_srv_pkg_typesupport_entry_point.c.em",
+    "/opt/ros/humble/share/rosidl_generator_py/cmake/../resource/_srv.py.em",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/TopologyMapPointInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/TopologyMap.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/RouteInfo.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/RouteConnection.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/msg/MapProperty.idl",
+    "/home/chengyangkj/workspace/nav2_map_server/build/_deps/topology_msgs-build/rosidl_adapter/topology_msgs/srv/NavToTopologyPoint.idl"
+  ]
+}

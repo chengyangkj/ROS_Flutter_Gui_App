@@ -1,0 +1,19 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from topology_msgs/srv/NavToTopologyPoint.srv
+// generated code does not contain a copyright notice
+
+
+module topology_msgs {
+  module srv {
+    struct NavToTopologyPoint_Request {
+      string point_name;
+    };
+    struct NavToTopologyPoint_Response {
+      boolean is_success;
+
+      string task_id;
+
+      string msg;
+    };
+  };
+};

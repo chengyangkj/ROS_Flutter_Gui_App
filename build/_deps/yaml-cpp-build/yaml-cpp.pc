@@ -1,0 +1,11 @@
+prefix=/home/chengyangkj/workspace/nav2_map_server/build/install
+exec_prefix=${prefix}
+includedir=/home/chengyangkj/workspace/nav2_map_server/build/install/include
+libdir=/home/chengyangkj/workspace/nav2_map_server/build/install/lib
+
+Name: Yaml-cpp
+Description: A YAML parser and emitter for C++
+Version: 0.8.0
+Requires:
+Libs: -L${libdir} -lyaml-cpp
+Cflags: -I${includedir}

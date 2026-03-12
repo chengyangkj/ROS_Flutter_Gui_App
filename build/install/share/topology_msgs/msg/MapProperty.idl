@@ -1,0 +1,14 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from topology_msgs/msg/MapProperty.msg
+// generated code does not contain a copyright notice
+
+
+module topology_msgs {
+  module msg {
+    struct MapProperty {
+      sequence<string> support_controllers;
+
+      sequence<string> support_goal_checkers;
+    };
+  };
+};

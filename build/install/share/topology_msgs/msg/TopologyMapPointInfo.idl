@@ -1,0 +1,24 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from topology_msgs/msg/TopologyMapPointInfo.msg
+// generated code does not contain a copyright notice
+
+
+module topology_msgs {
+  module msg {
+    module TopologyMapPointInfo_Constants {
+      const uint8 NAV_GOAL = 0;
+      const uint8 CHARGE_STATION = 1;
+    };
+    struct TopologyMapPointInfo {
+      string name;
+
+      double x;
+
+      double y;
+
+      double theta;
+
+      uint8 type;
+    };
+  };
+};

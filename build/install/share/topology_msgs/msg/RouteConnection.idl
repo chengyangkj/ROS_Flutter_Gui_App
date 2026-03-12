@@ -1,0 +1,17 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from topology_msgs/msg/RouteConnection.msg
+// generated code does not contain a copyright notice
+
+#include "topology_msgs/msg/RouteInfo.idl"
+
+module topology_msgs {
+  module msg {
+    struct RouteConnection {
+      string from_point;
+
+      string to_point;
+
+      topology_msgs::msg::RouteInfo route_info;
+    };
+  };
+};

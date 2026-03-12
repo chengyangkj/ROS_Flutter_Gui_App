@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/CMakeFiles/httplib-populate"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/CMakeFiles/httplib-populate.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/CMakeFiles/httplib-populate-complete.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-build.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-configure.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-download.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-install.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-patch.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-test.rule"
+		},
+		{
+			"file" : "/home/chengyangkj/workspace/nav2_map_server/build/_deps/httplib-subbuild/httplib-populate-prefix/src/httplib-populate-stamp/httplib-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"httplib-populate"
+		],
+		"name" : "httplib-populate"
+	}
+}
