@@ -1,5 +1,7 @@
 #include "core/tiles_map_generator.h"
 
+#include "common/logger/logger.h"
+
 #include <opencv2/opencv.hpp>
 
 #include <algorithm>
@@ -39,6 +41,17 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
   uint32_t padded_w = kTileSize << max_z;
   uint32_t padded_h = kTileSize << max_z;
 
+  double world_min_x = map.origin_x;
+  double world_min_y = map.origin_y;
+  double world_max_x = map.origin_x + map.width * map.resolution;
+  double world_max_y = map.origin_y + map.height * map.resolution;
+
+  LOG_INFO("TilesGen: map " << map.width << "x" << map.height
+      << " res=" << map.resolution << " origin=(" << map.origin_x << "," << map.origin_y << ")");
+  LOG_INFO("TilesGen: world bounds x=[" << world_min_x << "," << world_max_x
+      << "] y=[" << world_min_y << "," << world_max_y << "]");
+  LOG_INFO("TilesGen: max_zoom=" << max_z << " padded=" << padded_w << "x" << padded_h);
+
   std::vector<int8_t> padded(padded_w * padded_h, -1);
   for (uint32_t row = 0; row < map.height; ++row) {
     for (uint32_t col = 0; col < map.width; ++col) {
@@ -56,6 +69,7 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
     int tiles_per_axis = 1 << z;
     int tile_src_size = kTileSize << (max_z - z);
 
+    std::string tile_list;
     for (int x = 0; x < tiles_per_axis; ++x) {
       for (int y = 0; y < tiles_per_axis; ++y) {
         int src_x0 = x * tile_src_size;
@@ -79,9 +93,16 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
         std::string path = (dir / (std::to_string(y) + ".png")).string();
         if (!cv::imwrite(path, tile)) return false;
         ++total;
+
+        if (!tile_list.empty()) tile_list += " ";
+        tile_list += std::to_string(z) + "/" + std::to_string(x) + "/" + std::to_string(y);
       }
     }
+    LOG_INFO("TilesGen: z=" << z << " tiles_per_axis=" << tiles_per_axis
+        << " x=[0," << (tiles_per_axis - 1) << "] y=[0," << (tiles_per_axis - 1) << "] "
+        << tile_list);
   }
+  LOG_INFO("TilesGen: total " << total << " tiles written to " << output_dir);
   return total > 0;
 }
 

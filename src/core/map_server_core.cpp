@@ -4,6 +4,7 @@
 #include "common/logger/logger.h"
 
 #include <httplib.h>
+#include "core/json.hpp"
 
 #include <fstream>
 
@@ -52,6 +53,16 @@ void MapServerCore::RegenerateTiles() {
 void MapServerCore::RunHttpServer() {
   httplib::Server svr;
 
+  svr.set_post_routing_handler([](const httplib::Request&, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+  });
+
+  svr.Options(".*", [](const httplib::Request&, httplib::Response& res) {
+    res.status = 204;
+    res.set_header("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.set_header("Access-Control-Max-Age", "86400");
+  });
+
   svr.Get("/tiles/:z/:x/:y.png", [this](const httplib::Request& req, httplib::Response& res) {
     std::string z = req.path_params.at("z");
     std::string x = req.path_params.at("x");
@@ -62,7 +73,7 @@ void MapServerCore::RunHttpServer() {
     std::string path = tiles_output_dir_ + "/" + z + "/" + x + "/" + y + ".png";
     std::ifstream ifs(path, std::ios::binary);
     if (!ifs) {
-      LOG_WARN("Tile not found: " << path);
+      LOG_WARN("Tile not found req z=" << z << " x=" << x << " y=" << y << " path=" << path);
       res.status = 404;
       return;
     }
@@ -75,16 +86,33 @@ void MapServerCore::RunHttpServer() {
       return;
     }
     res.set_header("Content-Type", "image/png");
-    res.set_header("Access-Control-Allow-Origin", "*");
     res.set_content(content, "image/png");
   });
 
   svr.Get("/tiles/", [this](const httplib::Request&, httplib::Response& res) {
-    res.set_header("Access-Control-Allow-Origin", "*");
     res.set_content(
         "Tiles server for flutter_map.\n"
         "URL template: http://localhost:" + std::to_string(tiles_http_port_) + "/tiles/{z}/{x}/{y}.png",
         "text/plain");
+  });
+
+  svr.Get("/tiles/meta", [this](const httplib::Request&, httplib::Response& res) {
+    res.set_header("Content-Type", "application/json");
+    if (!map_available_) {
+      res.status = 503;
+      res.set_content("{\"error\":\"map not available\"}", "application/json");
+      return;
+    }
+    TilesMapGenerator gen;
+    int max_zoom = gen.GetMaxZoom(map_data_.width, map_data_.height);
+    nlohmann::json j;
+    j["resolution"] = map_data_.resolution;
+    j["origin_x"] = map_data_.origin_x;
+    j["origin_y"] = map_data_.origin_y;
+    j["width"] = map_data_.width;
+    j["height"] = map_data_.height;
+    j["max_zoom"] = max_zoom;
+    res.set_content(j.dump(), "application/json");
   });
 
   int max_retries = 100;
