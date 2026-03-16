@@ -27,17 +27,18 @@ uint8_t MapCellToGray(int8_t cell) {
 
 }  // namespace
 
-int TilesMapGenerator::GetMaxZoom(uint32_t width, uint32_t height) const {
+int TilesMapGenerator::GetMaxZoom(uint32_t width, uint32_t height, int extra_zoom_levels) const {
   uint32_t max_dim = std::max(width, height);
-  if (max_dim <= kTileSize) return 0;
-  return static_cast<int>(std::ceil(std::log2(static_cast<double>(max_dim) / kTileSize)));
+  if (max_dim <= kTileSize) return std::max(0, extra_zoom_levels);
+  int base = static_cast<int>(std::ceil(std::log2(static_cast<double>(max_dim) / kTileSize)));
+  return base + extra_zoom_levels;
 }
 
 bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
-    const std::string& output_dir) {
+    const std::string& output_dir, int extra_zoom_levels) {
   if (map.width == 0 || map.height == 0 || map.data.empty()) return false;
 
-  int max_z = GetMaxZoom(map.width, map.height);
+  int max_z = GetMaxZoom(map.width, map.height, extra_zoom_levels);
   uint32_t padded_w = kTileSize << max_z;
   uint32_t padded_h = kTileSize << max_z;
 
@@ -52,13 +53,16 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
       << "] y=[" << world_min_y << "," << world_max_y << "]");
   LOG_INFO("TilesGen: max_zoom=" << max_z << " padded=" << padded_w << "x" << padded_h);
 
-  std::vector<int8_t> padded(padded_w * padded_h, -1);
-  for (uint32_t row = 0; row < map.height; ++row) {
-    for (uint32_t col = 0; col < map.width; ++col) {
-      uint32_t pad_row = map.height - 1 - row;
-      padded[pad_row * padded_w + col] = map.data[row * map.width + col];
-    }
-  }
+  int scale = 1 << extra_zoom_levels;
+
+  auto SamplePadded = [&](uint32_t pc, uint32_t pr) -> int8_t {
+    if (pc >= padded_w || pr >= padded_h) return -1;
+    uint32_t col = pc / scale;
+    uint32_t row_inv = pr / scale;
+    if (col >= map.width || row_inv >= map.height) return -1;
+    uint32_t row = map.height - 1 - row_inv;
+    return map.data[row * map.width + col];
+  };
 
   namespace fs = boost::filesystem;
   fs::remove_all(output_dir);
@@ -82,7 +86,7 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
             int sy = src_y0 + ty * tile_src_size / kTileSize;
             sx = std::max(0, std::min(sx, static_cast<int>(padded_w) - 1));
             sy = std::max(0, std::min(sy, static_cast<int>(padded_h) - 1));
-            int8_t cell = padded[sy * padded_w + sx];
+            int8_t cell = SamplePadded(static_cast<uint32_t>(sx), static_cast<uint32_t>(sy));
             uint8_t v = MapCellToGray(cell);
             tile.at<cv::Vec3b>(ty, tx) = cv::Vec3b(v, v, v);
           }

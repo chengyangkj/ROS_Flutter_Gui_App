@@ -45,7 +45,7 @@ void MapServerCore::Shutdown() {
 void MapServerCore::RegenerateTiles() {
   if (!map_available_) return;
   TilesMapGenerator gen;
-  if (gen.GenerateAllTilesToDir(map_data_, tiles_output_dir_)) {
+  if (gen.GenerateAllTilesToDir(map_data_, tiles_output_dir_, extra_zoom_levels_)) {
     LOG_INFO("Tiles regenerated to " << tiles_output_dir_);
   }
 }
@@ -59,7 +59,8 @@ void MapServerCore::RunHttpServer() {
 
   svr.Options(".*", [](const httplib::Request&, httplib::Response& res) {
     res.status = 204;
-    res.set_header("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
     res.set_header("Access-Control-Max-Age", "86400");
   });
 
@@ -104,7 +105,7 @@ void MapServerCore::RunHttpServer() {
       return;
     }
     TilesMapGenerator gen;
-    int max_zoom = gen.GetMaxZoom(map_data_.width, map_data_.height);
+    int max_zoom = gen.GetMaxZoom(map_data_.width, map_data_.height, extra_zoom_levels_);
     nlohmann::json j;
     j["resolution"] = map_data_.resolution;
     j["origin_x"] = map_data_.origin_x;
@@ -112,7 +113,33 @@ void MapServerCore::RunHttpServer() {
     j["width"] = map_data_.width;
     j["height"] = map_data_.height;
     j["max_zoom"] = max_zoom;
+    j["extra_zoom_levels"] = extra_zoom_levels_;
     res.set_content(j.dump(), "application/json");
+  });
+
+  svr.Post("/tiles/config", [this](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Content-Type", "application/json");
+    if (!map_available_) {
+      res.status = 503;
+      res.set_content("{\"error\":\"map not available\"}", "application/json");
+      return;
+    }
+    try {
+      auto j = nlohmann::json::parse(req.body);
+      int v = j.value("extra_zoom_levels", extra_zoom_levels_);
+      if (v < 0 || v > 8) {
+        res.status = 400;
+        res.set_content("{\"error\":\"extra_zoom_levels must be 0-8\"}", "application/json");
+        return;
+      }
+      extra_zoom_levels_ = v;
+      RegenerateTiles();
+      res.set_content("{\"extra_zoom_levels\":" + std::to_string(extra_zoom_levels_) + "}",
+          "application/json");
+    } catch (const std::exception& e) {
+      res.status = 400;
+      res.set_content("{\"error\":\"invalid json\"}", "application/json");
+    }
   });
 
   int max_retries = 100;

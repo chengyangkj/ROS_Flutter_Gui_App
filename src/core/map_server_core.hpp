@@ -31,6 +31,8 @@ public:
   std::string GetTopoMapFileName() const { return topo_map_file_name_; }
   bool IsMapAvailable() const { return map_available_; }
   void SetMapAvailable(bool v) { map_available_ = v; }
+  void SetExtraZoomLevels(int v) { extra_zoom_levels_ = v; }
+  int GetExtraZoomLevels() const { return extra_zoom_levels_; }
 
   const OccupancyGridData& GetMapData() const { return map_data_; }
   const TopologyMap& GetTopoMap() const { return topo_map_; }
@@ -46,6 +48,7 @@ private:
   bool map_available_;
   int tiles_http_port_{8080};
   std::string tiles_output_dir_;
+  int extra_zoom_levels_{1};
   std::unique_ptr<std::thread> http_thread_;
   std::atomic<bool> http_running_{false};
   std::atomic<httplib::Server*> http_svr_{nullptr};
