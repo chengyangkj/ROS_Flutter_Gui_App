@@ -113,18 +113,16 @@ class TileMapWidgetState extends State<TileMapWidget> {
         minZoom: 0,
         maxZoom: meta.maxZoom.toDouble(),
         cameraConstraint: const CameraConstraint.unconstrained(),
-        // onMapEvent: (event) {
-        //   if (event is MapEventWithMove) {
-        //     _currentZoom = event.camera.zoom;
-        //   }
-        // },
-        // onTap: (tapPosition, latLng) {
-        //   widget.onTap?.call();
-        //   _handleTap(latLng);
-        // },
-        // interactionOptions: InteractionOptions(
-        //   flags: InteractiveFlag.all,
-        // ),
+        onMapEvent: (event) {
+          if (event is MapEventWithMove) {
+            _currentZoom = event.camera.zoom;
+          }
+        },
+        onTap: (tapPosition, latLng) {
+          widget.onTap?.call();
+          _handleTap(latLng);
+        },
+        interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
       ),
       children: [
         TileLayer(
