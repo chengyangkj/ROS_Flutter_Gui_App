@@ -1,3 +1,0 @@
-repository='https://gitee.com/dragonet_220/yaml-cpp.git'
-module=''
-tag='origin'

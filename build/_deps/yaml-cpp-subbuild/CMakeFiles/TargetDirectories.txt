@@ -1,3 +1,0 @@
-/home/chengyangkj/workspace/nav2_map_server/build/_deps/yaml-cpp-subbuild/CMakeFiles/yaml-cpp-populate.dir
-/home/chengyangkj/workspace/nav2_map_server/build/_deps/yaml-cpp-subbuild/CMakeFiles/edit_cache.dir
-/home/chengyangkj/workspace/nav2_map_server/build/_deps/yaml-cpp-subbuild/CMakeFiles/rebuild_cache.dir

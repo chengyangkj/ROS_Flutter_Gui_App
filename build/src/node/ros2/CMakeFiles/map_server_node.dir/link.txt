@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmap_server_node.a CMakeFiles/map_server_node.dir/map_server_node.cpp.o
-/usr/bin/ranlib libmap_server_node.a

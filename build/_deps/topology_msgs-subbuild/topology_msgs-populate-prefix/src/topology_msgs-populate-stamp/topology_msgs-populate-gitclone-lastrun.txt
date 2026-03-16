@@ -1,3 +1,0 @@
-repository='https://gitee.com/chengyangkj/topology_msgs.git'
-module=''
-tag='origin'

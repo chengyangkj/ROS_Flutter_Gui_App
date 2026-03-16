@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcommon.a CMakeFiles/common.dir/logger/logger.cc.o CMakeFiles/common.dir/logger/easylogging++.cc.o
-/usr/bin/ranlib libcommon.a

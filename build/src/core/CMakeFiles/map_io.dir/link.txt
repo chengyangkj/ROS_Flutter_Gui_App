@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmap_io.a CMakeFiles/map_io.dir/map_mode.cpp.o CMakeFiles/map_io.dir/map_io.cpp.o CMakeFiles/map_io.dir/map_server_core.cpp.o CMakeFiles/map_io.dir/tiles_map_generator.cc.o
-/usr/bin/ranlib libmap_io.a
