@@ -98,8 +98,9 @@ LatLngBounds getTileBounds() => LatLngBounds(
 Crs createLocalMapCrs(MapMeta meta) {
   final mapSize = 256.0 * pow(2, meta.maxZoom);
   final bounds = Rect.fromLTRB(-180, -90, 180, 90);
+  const maxScaleZoom = 24;
   final scales = List.generate(
-    meta.maxZoom + 1,
+    maxScaleZoom + 1,
     (z) => 256.0 * pow(2, z) / mapSize,
   );
   return Proj4Crs.fromFactory(

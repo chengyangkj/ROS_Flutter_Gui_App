@@ -296,13 +296,17 @@ class _MainFlamePageState extends State<MainFlamePage> {
     return Positioned(
       left: 5,
       top: 60,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 280),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // 图层开关控制
           Card(
             elevation: 10,
-            child: Container(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   IconButton(
@@ -525,6 +529,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -1116,15 +1121,17 @@ class _MainFlamePageState extends State<MainFlamePage> {
     );
   }
   
-  // 构建游戏手柄组件
   Widget _buildGamepadWidget(BuildContext context, ThemeData theme) {
     return Positioned(
       left: 0,
       right: 0,
       bottom: 0,
-      child: Container(
-        height: 150, // 给GamepadWidget一个明确的高度
-        child: GamepadWidget(),
+      child: Center(
+        child: SizedBox(
+          width: 360,
+          height: 150,
+          child: GamepadWidget(),
+        ),
       ),
     );
   }

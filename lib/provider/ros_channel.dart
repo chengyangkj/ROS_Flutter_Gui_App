@@ -616,11 +616,8 @@ class RosChannel {
           translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
-      vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
-      newPath.add(vm.Vector2(poseScene.x, poseScene.y));
+      newPath.add(vm.Vector2(poseMap.x, poseMap.y));
     }
-    
-    // 使用新的列表赋值来触发监听器
     localPath.value = newPath;
   }
 
@@ -641,11 +638,8 @@ class RosChannel {
           translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
-      vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
-      newPath.add(vm.Vector2(poseScene.x, poseScene.y));
+      newPath.add(vm.Vector2(poseMap.x, poseMap.y));
     }
-    
-    // 使用新的列表赋值来触发监听器
     globalPath.value = newPath;
   }
 
@@ -666,11 +660,8 @@ class RosChannel {
           translation: pose.pose!.position!, rotation: pose.pose!.orientation!);
       var poseFrame = tran.getRobotPose();
       var poseMap = absoluteSum(transPose, poseFrame);
-      vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
-      newPath.add(vm.Vector2(poseScene.x, poseScene.y));
+      newPath.add(vm.Vector2(poseMap.x, poseMap.y));
     }
-    
-    // 使用新的列表赋值来触发监听器
     tracePath.value = newPath;
   }
 

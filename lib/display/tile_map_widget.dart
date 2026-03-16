@@ -17,7 +17,6 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
-import 'package:vector_math/vector_math_64.dart' as vm;
 
 class TileMapWidget extends StatefulWidget {
   final Function(NavPoint?)? onNavPointTap;
@@ -67,21 +66,6 @@ class TileMapWidgetState extends State<TileMapWidget> {
     }
   }
 
-  List<LatLng> _pathToLatLngs(List<vm.Vector2> path, MapMeta meta) {
-    final occMap = context.read<RosChannel>().map_.value;
-    final List<LatLng> result = [];
-    for (final p in path) {
-      vm.Vector2 world;
-      if (occMap.mapConfig.resolution > 0 && occMap.width() > 0) {
-        world = occMap.idx2xy(vm.Vector2(p.x, p.y));
-      } else {
-        world = meta.idx2xy(vm.Vector2(p.x, p.y));
-      }
-      result.add(worldToLatLng(meta, world.x, world.y));
-    }
-    return result;
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
@@ -105,28 +89,42 @@ class TileMapWidgetState extends State<TileMapWidget> {
 
     final meta = _meta!;
     final crs = createLocalMapCrs(meta);
+    final sw = worldToLatLng(
+      meta,
+      meta.originX,
+      meta.originY + meta.height * meta.resolution,
+    );
+    final ne = worldToLatLng(
+      meta,
+      meta.originX + meta.width * meta.resolution,
+      meta.originY,
+    );
+    final mapBounds = LatLngBounds(sw, ne);
 
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
         crs: crs,
-        initialCenter: const LatLng(0, 0),
-        initialZoom: _currentZoom.clamp(0.0, meta.maxZoom.toDouble()),
+        initialCameraFit: CameraFit.bounds(
+          bounds: mapBounds,
+          padding: const EdgeInsets.all(24),
+          maxZoom: meta.maxZoom.toDouble(),
+        ),
         minZoom: 0,
         maxZoom: meta.maxZoom.toDouble(),
-        cameraConstraint: CameraConstraint.unconstrained(),
-        onMapEvent: (event) {
-          if (event is MapEventWithMove) {
-            _currentZoom = event.camera.zoom;
-          }
-        },
-        onTap: (tapPosition, latLng) {
-          widget.onTap?.call();
-          _handleTap(latLng);
-        },
-        interactionOptions: InteractionOptions(
-          flags: InteractiveFlag.all,
-        ),
+        cameraConstraint: const CameraConstraint.unconstrained(),
+        // onMapEvent: (event) {
+        //   if (event is MapEventWithMove) {
+        //     _currentZoom = event.camera.zoom;
+        //   }
+        // },
+        // onTap: (tapPosition, latLng) {
+        //   widget.onTap?.call();
+        //   _handleTap(latLng);
+        // },
+        // interactionOptions: InteractionOptions(
+        //   flags: InteractiveFlag.all,
+        // ),
       ),
       children: [
         TileLayer(
@@ -192,13 +190,22 @@ class TileMapWidgetState extends State<TileMapWidget> {
           ));
         }
         if (globalState.isLayerVisible('showGlobalPath')) {
-          layers.add(buildPathLayer(_pathToLatLngs(rosChannel.globalPath.value, meta), Colors.blue));
+          layers.add(buildPathLayer(
+            rosChannel.globalPath.value.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
+            Colors.blue,
+          ));
         }
         if (globalState.isLayerVisible('showLocalPath')) {
-          layers.add(buildPathLayer(_pathToLatLngs(rosChannel.localPath.value, meta), Colors.green));
+          layers.add(buildPathLayer(
+            rosChannel.localPath.value.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
+            Colors.green,
+          ));
         }
         if (globalState.isLayerVisible('showTracePath')) {
-          layers.add(buildPathLayer(_pathToLatLngs(rosChannel.tracePath.value, meta), Colors.yellow));
+          layers.add(buildPathLayer(
+            rosChannel.tracePath.value.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
+            Colors.yellow,
+          ));
         }
         if (globalState.isLayerVisible('showLaser')) {
           layers.add(buildLaserLayer(rosChannel, toLatLng));
