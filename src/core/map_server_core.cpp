@@ -65,25 +65,42 @@ void MapServerCore::RunHttpServer() {
   });
 
   svr.Get("/tiles/:z/:x/:y.png", [this](const httplib::Request& req, httplib::Response& res) {
-    std::string z = req.path_params.at("z");
-    std::string x = req.path_params.at("x");
-    std::string y = req.path_params.at("y.png");
+    auto it_z = req.path_params.find("z");
+    auto it_x = req.path_params.find("x");
+    auto it_y = req.path_params.find("y.png");
+    if (it_z == req.path_params.end() || it_x == req.path_params.end() ||
+        it_y == req.path_params.end()) {
+      res.status = 400;
+      res.set_content("Bad request", "text/plain");
+      return;
+    }
+    std::string z = it_z->second;
+    std::string x = it_x->second;
+    std::string y = it_y->second;
     if (y.size() >= 4 && y.compare(y.size() - 4, 4, ".png") == 0) {
       y.resize(y.size() - 4);
     }
     std::string path = tiles_output_dir_ + "/" + z + "/" + x + "/" + y + ".png";
     std::ifstream ifs(path, std::ios::binary);
     if (!ifs) {
-      LOG_WARN("Tile not found req z=" << z << " x=" << x << " y=" << y << " path=" << path);
+      LOG_WARN("Tile not found z=" << z << " x=" << x << " y=" << y << " path=" << path);
       res.status = 404;
+      res.set_content("Not found", "text/plain");
       return;
     }
     ifs.seekg(0, std::ios::end);
-    size_t size = ifs.tellg();
-    ifs.seekg(0);
+    auto pos = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+    if (pos < 0 || static_cast<size_t>(pos) > 512 * 1024) {
+      res.status = 500;
+      res.set_content("Invalid tile", "text/plain");
+      return;
+    }
+    size_t size = static_cast<size_t>(pos);
     std::string content(size, '\0');
     if (!ifs.read(&content[0], size)) {
       res.status = 500;
+      res.set_content("Read error", "text/plain");
       return;
     }
     res.set_header("Content-Type", "image/png");

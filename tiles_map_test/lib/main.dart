@@ -69,7 +69,7 @@ LatLng WorldToLatLng(MapMeta meta, double worldX, double worldY) {
   double py = meta.height - (worldY - meta.originY) / meta.resolution;
   px*=scale;
   py*=scale;
-  print('worldX: $worldX, worldY: $worldY,meta.originX: ${meta.originX}, meta.originY: ${meta.originY}, resolution: ${meta.resolution}, px: $px, py: $py');
+  print('worldX: $worldX, worldY: $worldY,meta.originX: ${meta.originX}, meta.originY: ${meta.originY}, resolution: ${meta.resolution}, px: $px, py: $py mapSize: $mapSize');
   return LatLng(
     py * 180 / mapSize - 90,
     px * 360 / mapSize - 180,
@@ -130,7 +130,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const String kTileServerUrl = 'http://192.168.35.105:8080';
+  static const String kTileServerUrl = 'http://192.168.35.105:7684';
 
   MapMeta? _meta;
   String? _error;

@@ -17,7 +17,7 @@ public:
   MapServerCore();
   ~MapServerCore();
 
-  bool Initialize(int tiles_http_port = 8080,
+  bool Initialize(int tiles_http_port = 7684,
       const std::string& tiles_output_dir = "./tiles");
   void Start();
   void Shutdown();
@@ -46,9 +46,9 @@ private:
   OccupancyGridData map_data_;
   TopologyMap topo_map_;
   bool map_available_;
-  int tiles_http_port_{8080};
+  int tiles_http_port_{7684};
   std::string tiles_output_dir_;
-  int extra_zoom_levels_{1};
+  int extra_zoom_levels_{5};
   std::unique_ptr<std::thread> http_thread_;
   std::atomic<bool> http_running_{false};
   std::atomic<httplib::Server*> http_svr_{nullptr};

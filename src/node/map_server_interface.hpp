@@ -9,7 +9,7 @@ struct MapServerConfig {
   std::string pub_map_topic{"map"};
   std::string sub_map_topic{"map"};
   std::string frame_id{"map"};
-  int tiles_http_port{8080};
+  int tiles_http_port{7684};
   std::string tiles_output_dir{"./tiles"};
   double save_map_timeout{2.0};
   double free_thresh_default{0.25};

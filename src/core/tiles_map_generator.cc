@@ -48,7 +48,7 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
   double world_max_y = map.origin_y + map.height * map.resolution;
 
   LOG_INFO("TilesGen: map " << map.width << "x" << map.height
-      << " res=" << map.resolution << " origin=(" << map.origin_x << "," << map.origin_y << ")");
+      << " res=" << map.resolution << " origin=(" << map.origin_x << "," << map.origin_y << ") extra_zoom_levels=" << extra_zoom_levels);
   LOG_INFO("TilesGen: world bounds x=[" << world_min_x << "," << world_max_x
       << "] y=[" << world_min_y << "," << world_max_y << "]");
   LOG_INFO("TilesGen: max_zoom=" << max_z << " padded=" << padded_w << "x" << padded_h);

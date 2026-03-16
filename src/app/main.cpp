@@ -26,7 +26,7 @@ nav2_map_server::MapServerConfig ParseOptions(int argc, char** argv) {
        "map subscribe topic name,which is used to subscribe map from other nodes,will transform this topic top tile map")
       ("frame_id,f", po::value<std::string>()->default_value("map"),
        "frame id")
-      ("tiles_http_port", po::value<int>()->default_value(8080),
+      ("tiles_http_port", po::value<int>()->default_value(7684),
        "HTTP port for serving tiles to flutter_map")
       ("tiles_output_dir", po::value<std::string>()->default_value("./tiles"),
        "local directory for tile cache, served via HTTP")
