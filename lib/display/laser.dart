@@ -16,13 +16,12 @@ Widget buildLaserLayer(RosChannel rosChannel, WorldToLatLngFn worldToLatLng) {
     points.add(worldToLatLng(poseMap.x, poseMap.y));
   }
   if (points.isEmpty) return const SizedBox.shrink();
-  return PolylineLayer(
-    polylines: [
-      Polyline(
-        points: points,
-        color: Colors.red.withOpacity(0.8),
-        strokeWidth: 1,
-      ),
-    ],
-  );
+  final circles = points
+      .map((p) => CircleMarker(
+            point: p,
+            radius: 2,
+            color: Colors.red.withValues(alpha: 0.8),
+          ))
+      .toList();
+  return CircleLayer(circles: circles);
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/tile_map_meta.dart';
@@ -188,52 +189,78 @@ class TileMapWidgetState extends State<TileMapWidget> {
           ));
         }
         if (globalState.isLayerVisible('showGlobalPath')) {
-          layers.add(buildPathLayer(
-            rosChannel.globalPath.value.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
-            Colors.blue,
+          layers.add(ValueListenableBuilder<List<vm.Vector2>>(
+            valueListenable: rosChannel.globalPath,
+            builder: (_, path, __) => buildPathLayer(
+              path.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
+              Colors.blue,
+            ),
           ));
         }
         if (globalState.isLayerVisible('showLocalPath')) {
-          layers.add(buildPathLayer(
-            rosChannel.localPath.value.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
-            Colors.green,
+          layers.add(ValueListenableBuilder<List<vm.Vector2>>(
+            valueListenable: rosChannel.localPath,
+            builder: (_, path, __) => buildPathLayer(
+              path.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
+              Colors.green,
+            ),
           ));
         }
         if (globalState.isLayerVisible('showTracePath')) {
-          layers.add(buildPathLayer(
-            rosChannel.tracePath.value.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
-            Colors.yellow,
+          layers.add(ValueListenableBuilder<List<vm.Vector2>>(
+            valueListenable: rosChannel.tracePath,
+            builder: (_, path, __) => buildPathLayer(
+              path.map((p) => worldToLatLng(meta, p.x, p.y)).toList(),
+              Colors.yellow,
+            ),
           ));
         }
         if (globalState.isLayerVisible('showLaser')) {
-          layers.add(buildLaserLayer(rosChannel, toLatLng));
+          layers.add(ValueListenableBuilder(
+            valueListenable: rosChannel.laserPointData,
+            builder: (_, __, ___) => buildLaserLayer(rosChannel, toLatLng),
+          ));
         }
         if (globalState.isLayerVisible('showPointCloud')) {
-          layers.add(buildPointCloudLayer(rosChannel, toLatLng));
+          layers.add(ValueListenableBuilder(
+            valueListenable: rosChannel.pointCloud2Data,
+            builder: (_, __, ___) => buildPointCloudLayer(rosChannel, toLatLng),
+          ));
         }
         if (globalState.isLayerVisible('showRobotFootprint')) {
-          layers.add(buildRobotFootprintLayer(rosChannel, toLatLng));
+          layers.add(ValueListenableBuilder<List<vm.Vector2>>(
+            valueListenable: rosChannel.robotFootprint,
+            builder: (_, __, ___) => buildRobotFootprintLayer(rosChannel, toLatLng),
+          ));
         }
         if (globalState.isLayerVisible('showTopology')) {
-          final topologyMap = rosChannel.topologyMap_.value;
-          final navPoints = topologyMap.points.isNotEmpty
-              ? topologyMap.points
-              : rosChannel.mapManager.navPoints;
-          layers.add(buildTopologyLineLayer(
-            navPoints,
-            topologyMap.routes,
-            toLatLng,
-            onNavPointTap: widget.onNavPointTap,
+          layers.add(ValueListenableBuilder(
+            valueListenable: rosChannel.topologyMap_,
+            builder: (_, topologyMap, ___) {
+              final navPoints = topologyMap.points.isNotEmpty
+                  ? topologyMap.points
+                  : rosChannel.mapManager.navPoints;
+              return buildTopologyLineLayer(
+                navPoints,
+                topologyMap.routes,
+                toLatLng,
+                onNavPointTap: widget.onNavPointTap,
+              );
+            },
           ));
         }
         if (globalState.isLayerVisible('showLocalCostmap')) {
-          layers.add(buildLocalCostMapOverlayLayer(
-            rosChannel.localCostmap.value,
-            0.5,
+          layers.add(ValueListenableBuilder(
+            valueListenable: rosChannel.localCostmap,
+            builder: (_, cm, ___) =>
+                buildLocalCostMapOverlayLayer(cm, 0.5),
           ));
         }
 
-        layers.add(buildRobotMarkerLayer(rosChannel, toLatLng));
+        layers.add(ValueListenableBuilder(
+          valueListenable: rosChannel.robotPoseMap,
+          builder: (_, __, ___) => buildRobotMarkerLayer(rosChannel, toLatLng),
+        ));
 
         return Stack(children: layers);
       },
