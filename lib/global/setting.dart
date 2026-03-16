@@ -381,6 +381,15 @@ class Setting {
     return prefs.getString("robotIp") ?? "127.0.0.1";
   }
 
+  String get tileServerUrl {
+    return prefs.getString("tileServerUrl") ??
+        "http://${prefs.getString("robotIp") ?? "127.0.0.1"}:${prefs.getString("imagePort") ?? "8080"}";
+  }
+
+  void setTileServerUrl(String url) {
+    prefs.setString("tileServerUrl", url);
+  }
+
   String get imagePort {
     return prefs.getString("imagePort") ?? "8080";
   }

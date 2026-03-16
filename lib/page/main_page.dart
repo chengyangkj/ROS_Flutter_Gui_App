@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flame/game.dart';
-import 'package:flame/components.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/page/main_flame.dart';
+import 'package:ros_flutter_gui_app/display/tile_map_widget.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/action_status.dart';
@@ -12,7 +10,6 @@ import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
-import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_status.dart';
@@ -27,7 +24,7 @@ class MainFlamePage extends StatefulWidget {
 }
 
 class _MainFlamePageState extends State<MainFlamePage> {
-  late MainFlame game;
+  final GlobalKey<TileMapWidgetState> _tileMapKey = GlobalKey<TileMapWidgetState>();
   bool showLayerControl = false;
   bool showCamera = false;
   NavPoint? selectedNavPoint;
@@ -42,22 +39,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
   @override
   void initState() {
     super.initState();
-    final rosChannel = Provider.of<RosChannel>(context, listen: false);
-    final globalState = Provider.of<GlobalState>(context, listen: false);
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    game = MainFlame(
-      rosChannel: rosChannel, 
-      themeProvider: themeProvider,
-      globalState: globalState,
-      mapManager: rosChannel.mapManager,
-    );
-    game.onNavPointTap = (NavPoint? point) {
-      setState(() {
-        selectedNavPoint = point;
-      });
-    };
-    
-    // 加载图层设置
     Provider.of<GlobalState>(context, listen: false).loadLayerSettings();
     
     // 初始化相机尺寸
@@ -73,9 +54,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
     _setupDiagnosticListener();
   }
   
-  // 重新加载导航点和地图数据
   Future<void> _reloadData() async {
-    await game.reloadNavPointsAndMap();
+    _tileMapKey.currentState?.loadMeta();
   }
 
   // 设置诊断数据监听器
@@ -155,32 +135,14 @@ class _MainFlamePageState extends State<MainFlamePage> {
     return Scaffold(
           body: Stack(
             children: [
-              // 游戏画布
-              Listener(
-                onPointerSignal: (pointerSignal) {
-                  if (pointerSignal is PointerScrollEvent) {
-                    final position = Vector2(pointerSignal.position.dx, pointerSignal.position.dy);
-                    game.onScroll(pointerSignal.scrollDelta.dy, position);
-                  }
+              TileMapWidget(
+                key: _tileMapKey,
+                onNavPointTap: (NavPoint? point) {
+                  setState(() {
+                    selectedNavPoint = point;
+                  });
                 },
-                child: GestureDetector(
-                  onScaleStart: (details) {
-                    final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-                    game.onScaleStart(position);
-                  },
-                  onScaleUpdate: (details) {
-                    final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-                    game.onScaleUpdate(details.scale, position);
-                  },
-                  onScaleEnd: (details) {
-                    game.onScaleEnd();
-                  },
-                  onTapDown: (details) {
-                    // 处理点击事件，检测waypoint
-                    game.onTap(details.localPosition);
-                  },
-                  child: GameWidget(game: game),
-                ),
+                followRobot: Provider.of<GlobalState>(context, listen: true).mode.value == Mode.robotFixedCenter,
               ),
               _buildTopMenuBar(context, theme),
               _buildLeftToolbar(context, theme),
@@ -463,7 +425,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       } else {
                         globalState.mode.value = Mode.reloc;
                       }
-                      game.setRelocMode(globalState.mode.value == Mode.reloc);
+                      _tileMapKey.currentState?.setRelocMode(globalState.mode.value == Mode.reloc);
                       setState(() {});
                     },
                     icon: Icon(
@@ -486,8 +448,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         Provider.of<GlobalState>(context, listen: false)
                             .mode
                             .value = Mode.normal;
-                        game.setRelocMode(false);
-                        Provider.of<RosChannel>(context, listen: false).sendRelocPose(game.getRelocRobotPose());
+                        _tileMapKey.currentState?.setRelocMode(false);
+                        Provider.of<RosChannel>(context, listen: false).sendRelocPose(_tileMapKey.currentState?.getRelocRobotPose() ?? RobotPose.zero());
                         setState(() {});
                       },
                       icon: Icon(Icons.check, color: Colors.green),
@@ -498,7 +460,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         Provider.of<GlobalState>(context, listen: false)
                             .mode
                             .value = Mode.normal;
-                        game.setRelocMode(false);
+                        _tileMapKey.currentState?.setRelocMode(false);
                         setState(() {});
                       },
                       icon: Icon(Icons.close, color: Colors.red),
@@ -573,7 +535,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
       child: Row(
         children: [
           // 右侧信息面板
-          if (game.showInfoPanel && selectedNavPoint != null)
+          if (selectedNavPoint != null)
             Container(
               width: 300, // 固定宽度，不占满右侧
               child: Card(
@@ -637,7 +599,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
                               child: IconButton(
                                 icon: const Icon(Icons.close, size: 18),
                                 onPressed: () {
-                                  game.hideInfoPanel();
                                   setState(() {
                                     selectedNavPoint = null;
                                   });
@@ -780,7 +741,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
                               );
                               
                               // 发送导航目标后自动关闭信息面板
-                              game.hideInfoPanel();
                               setState(() {
                                 selectedNavPoint = null;
                               });
@@ -825,17 +785,17 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         : theme.iconTheme.color,
                   ),
                   onPressed: () {
-                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MapEditPage(
-                            onExit: () {
-                              // 地图编辑界面退出时，重新加载数据
-                              _reloadData();
-                            },
-                          ),
-                        ),
-                      );
+                    //  Navigator.push(
+                    //     context,
+                    //     MaterialPageRoute(
+                    //       builder: (context) => MapEditPage(
+                    //         onExit: () {
+                    //           // 地图编辑界面退出时，重新加载数据
+                    //           _reloadData();
+                    //         },
+                    //       ),
+                    //     ),
+                    //   );
                     setState(() {});
                   },
                   tooltip: '地图编辑',
@@ -849,7 +809,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                 elevation: 10,
                 child: IconButton(
                   onPressed: () {
-                    game.zoomIn();
+                    _tileMapKey.currentState?.zoomIn();
                   },
                   icon: Icon(
                     Icons.zoom_in,
@@ -863,7 +823,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                 elevation: 10,
                 child: IconButton(
                   onPressed: () {
-                    game.zoomOut();
+                    _tileMapKey.currentState?.zoomOut();
                   },
                   icon: Icon(
                     Icons.zoom_out,
@@ -881,10 +841,9 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         Provider.of<GlobalState>(context, listen: false);
                     if (globalState.mode.value == Mode.robotFixedCenter) {
                       globalState.mode.value = Mode.normal;
-                      game.centerOnRobot(false);
                     } else {
                       globalState.mode.value = Mode.robotFixedCenter;
-                      game.centerOnRobot(true);
+                      _tileMapKey.currentState?.moveToRobot();
                     }
                     setState(() {});
                   },
@@ -1110,12 +1069,17 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       ? screenSize.height
                       : camWidgetHeight;
 
-                  return Mjpeg(
-                    stream: 'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
-                    isLive: true,
+                  return Image.network(
+                    'http://${globalSetting.robotIp}:${globalSetting.imagePort}/stream?topic=${globalSetting.imageTopic}',
                     width: containerWidth,
                     height: containerHeight,
                     fit: BoxFit.fill,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: containerWidth,
+                      height: containerHeight,
+                      color: Colors.grey[300],
+                      child: Icon(Icons.videocam_off, size: 48, color: Colors.grey[600]),
+                    ),
                   );
                 },
               ),

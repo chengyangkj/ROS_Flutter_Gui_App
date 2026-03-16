@@ -1,32 +1,28 @@
-import 'dart:ui';
-import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
+import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 
-class LaserComponent extends Component {
-  List<Vector2> pointList = [];
-  
-  LaserComponent({required this.pointList});
+typedef WorldToLatLngFn = LatLng Function(double worldX, double worldY);
 
-  void updateLaser(List<Vector2> newPoints) {
-    pointList = newPoints.where((point) => 
-        point.x.isFinite && point.y.isFinite).toList();
+Widget buildLaserLayer(RosChannel rosChannel, WorldToLatLngFn worldToLatLng) {
+  final laserData = rosChannel.laserPointData.value;
+  if (laserData.laserPoseBaseLink.isEmpty) return const SizedBox.shrink();
+  final robotPose = laserData.robotPose;
+  final points = <LatLng>[];
+  for (final lp in laserData.laserPoseBaseLink) {
+    final poseMap = absoluteSum(robotPose, RobotPose(lp.x, lp.y, 0));
+    points.add(worldToLatLng(poseMap.x, poseMap.y));
   }
-
-  bool get hasLayout => true;
-
-  @override
-  void render(Canvas canvas) {
-    if (pointList.isEmpty) return;
-
-    Paint paint = Paint()
-      ..color = Colors.redAccent
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 1;
-
-    List<Offset> offsetPoints = pointList
-        .map((v) => Offset(v.x, v.y))
-        .toList();
-
-    canvas.drawPoints(PointMode.points, offsetPoints, paint);
-  }
+  if (points.isEmpty) return const SizedBox.shrink();
+  return PolylineLayer(
+    polylines: [
+      Polyline(
+        points: points,
+        color: Colors.red.withOpacity(0.8),
+        strokeWidth: 1,
+      ),
+    ],
+  );
 }
