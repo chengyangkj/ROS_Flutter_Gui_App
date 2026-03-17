@@ -224,9 +224,16 @@ class TileMapState extends State<TileMap> {
           ));
         }
         if (globalState.isLayerVisible('showLaser')) {
-          layers.add(ValueListenableBuilder(
-            valueListenable: rosChannel.laserPointData,
-            builder: (_, __, ___) => buildLaserLayer(rosChannel, toLatLng),
+          layers.add(ValueListenableBuilder<Mode>(
+            valueListenable: globalState.mode,
+            builder: (_, mode, __) => ValueListenableBuilder(
+              valueListenable: rosChannel.laserPointData,
+              builder: (_, ___, ____) => buildLaserLayer(
+                rosChannel,
+                toLatLng,
+                robotPoseOverride: mode == Mode.reloc ? _relocPose : null,
+              ),
+            ),
           ));
         }
         if (globalState.isLayerVisible('showPointCloud')) {
