@@ -20,6 +20,12 @@ import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 
+enum ObstacleEditTool {
+  None,
+  Brush,
+  Eraser,
+}
+
 class TileMap extends StatefulWidget {
   final Function(NavPoint?)? onNavPointTap;
   final ValueChanged<TopologyRoute>? onRouteTap;
@@ -28,6 +34,8 @@ class TileMap extends StatefulWidget {
   final void Function(double worldX, double worldY)? onTapWorld;
   final bool enableMapInteraction;
   final bool enableTopologyEdit;
+  final ObstacleEditTool obstacleEditTool;
+  final double obstacleBrushSizeMeters;
   final String? selectedNavPointName;
   final bool followRobot;
 
@@ -40,6 +48,8 @@ class TileMap extends StatefulWidget {
     this.onTapWorld,
     this.enableMapInteraction = true,
     this.enableTopologyEdit = false,
+    this.obstacleEditTool = ObstacleEditTool.None,
+    this.obstacleBrushSizeMeters = 0.25,
     this.selectedNavPointName,
     this.followRobot = false,
   });
@@ -56,6 +66,7 @@ class TileMapState extends State<TileMap> {
   bool _isDarkMode = true;
   RobotPose? _relocPose;
   final Map<String, NavPoint> _draggingNavPoints = {};
+  final Map<int, int> _obstacleEdits = {};
 
   @override
   void initState() {
@@ -120,54 +131,66 @@ class TileMapState extends State<TileMap> {
     return ValueListenableBuilder<Mode>(
       valueListenable: context.read<GlobalState>().mode,
       builder: (context, mode, _) {
-        return FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            crs: crs,
-            initialCameraFit: CameraFit.bounds(
-              bounds: mapBounds,
-              padding: const EdgeInsets.all(24),
+        final enableObstacleEdit = widget.obstacleEditTool != ObstacleEditTool.None;
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (e) {
+            if (!enableObstacleEdit) return;
+            _paintObstacleAtLocal(e.localPosition);
+          },
+          onPointerMove: (e) {
+            if (!enableObstacleEdit) return;
+            _paintObstacleAtLocal(e.localPosition);
+          },
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              crs: crs,
+              initialCameraFit: CameraFit.bounds(
+                bounds: mapBounds,
+                padding: const EdgeInsets.all(24),
+                maxZoom: meta.maxZoom.toDouble(),
+              ),
+              minZoom: 0,
               maxZoom: meta.maxZoom.toDouble(),
-            ),
-            minZoom: 0,
-            maxZoom: meta.maxZoom.toDouble(),
-            cameraConstraint: const CameraConstraint.unconstrained(),
-            onMapEvent: (event) {
-              if (event is MapEventWithMove) {
-                _currentZoom = event.camera.zoom;
-              }
-            },
-            onTap: (tapPosition, latLng) {
-              widget.onTap?.call();
-              _handleTap(latLng);
-            },
-            interactionOptions: InteractionOptions(
-              flags: !widget.enableMapInteraction
-                  ? InteractiveFlag.none
-                  : InteractiveFlag.all,
-            ),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: '${globalSetting.tileServerUrl}/tiles/{z}/{x}/{y}.png',
-              userAgentPackageName: 'ros_flutter_gui_app',
-              tileBounds: getTileBounds(),
-              tileBuilder: (context, child, tileImage) {
-                if (tileImage.imageInfo?.image != null && !tileImage.loadError) {
-                  return RawImage(
-                    image: tileImage.imageInfo!.image,
-                    fit: BoxFit.fill,
-                    filterQuality: FilterQuality.none,
-                    opacity: tileImage.opacity == 1
-                        ? null
-                        : AlwaysStoppedAnimation(tileImage.opacity),
-                  );
+              cameraConstraint: const CameraConstraint.unconstrained(),
+              onMapEvent: (event) {
+                if (event is MapEventWithMove) {
+                  _currentZoom = event.camera.zoom;
                 }
-                return child;
               },
+              onTap: (tapPosition, latLng) {
+                widget.onTap?.call();
+                _handleTap(latLng);
+              },
+              interactionOptions: InteractionOptions(
+                flags: !widget.enableMapInteraction
+                    ? InteractiveFlag.none
+                    : InteractiveFlag.all,
+              ),
             ),
-            _buildOverlayLayers(meta),
-          ],
+            children: [
+              TileLayer(
+                urlTemplate: '${globalSetting.tileServerUrl}/tiles/{z}/{x}/{y}.png',
+                userAgentPackageName: 'ros_flutter_gui_app',
+                tileBounds: getTileBounds(),
+                tileBuilder: (context, child, tileImage) {
+                  if (tileImage.imageInfo?.image != null && !tileImage.loadError) {
+                    return RawImage(
+                      image: tileImage.imageInfo!.image,
+                      fit: BoxFit.fill,
+                      filterQuality: FilterQuality.none,
+                      opacity: tileImage.opacity == 1
+                          ? null
+                          : AlwaysStoppedAnimation(tileImage.opacity),
+                    );
+                  }
+                  return child;
+                },
+              ),
+              _buildOverlayLayers(meta),
+            ],
+          ),
         );
       },
     );
@@ -195,6 +218,63 @@ class TileMapState extends State<TileMap> {
   }
 
   WorldToLatLngFn _worldToLatLng(MapMeta meta) => (x, y) => worldToLatLng(meta, x, y);
+
+  Map<int, int> getObstacleEdits() => Map.unmodifiable(_obstacleEdits);
+
+  void clearObstacleEdits() {
+    if (_obstacleEdits.isEmpty) return;
+    setState(() {
+      _obstacleEdits.clear();
+    });
+  }
+
+  void _paintObstacleAtLocal(Offset localPosition) {
+    final meta = _meta;
+    if (meta == null) return;
+    final tool = widget.obstacleEditTool;
+    if (tool == ObstacleEditTool.None) return;
+    final camera = _mapController.camera;
+
+    final latLng = camera.unprojectAtZoom(localPosition + camera.pixelOrigin);
+    final world = latLngToWorld(meta, latLng);
+    _applyObstacleBrush(world.x, world.y);
+  }
+
+  void _applyObstacleBrush(double worldX, double worldY) {
+    final meta = _meta;
+    if (meta == null) return;
+
+    final tool = widget.obstacleEditTool;
+    if (tool == ObstacleEditTool.None) return;
+    final value = tool == ObstacleEditTool.Brush ? 1 : -1;
+
+    final res = meta.resolution;
+    final radius = widget.obstacleBrushSizeMeters;
+    final rCells = (radius / res).ceil();
+    final centerCol = ((worldX - meta.originX) / res).floor();
+    final centerRow = ((worldY - meta.originY) / res).floor();
+
+    bool changed = false;
+    for (var dy = -rCells; dy <= rCells; dy++) {
+      for (var dx = -rCells; dx <= rCells; dx++) {
+        final col = centerCol + dx;
+        final row = centerRow + dy;
+        if (col < 0 || col >= meta.width || row < 0 || row >= meta.height) continue;
+        final cx = meta.originX + (col + 0.5) * res;
+        final cy = meta.originY + (row + 0.5) * res;
+        final ddx = cx - worldX;
+        final ddy = cy - worldY;
+        if (ddx * ddx + ddy * ddy > radius * radius) continue;
+
+        final key = row * meta.width + col;
+        final prev = _obstacleEdits[key] ?? 0;
+        if (prev == value) continue;
+        _obstacleEdits[key] = value;
+        changed = true;
+      }
+    }
+    if (changed && mounted) setState(() {});
+  }
 
   Widget _buildOverlayLayers(MapMeta meta) {
     final toLatLng = _worldToLatLng(meta);
@@ -328,6 +408,10 @@ class TileMapState extends State<TileMap> {
             },
           ));
         }
+
+        if (_obstacleEdits.isNotEmpty) {
+          layers.add(_buildObstacleEditLayer(meta, toLatLng));
+        }
         if (globalState.isLayerVisible('showLocalCostmap')) {
           layers.add(ValueListenableBuilder(
             valueListenable: rosChannel.localCostmap,
@@ -382,6 +466,42 @@ class TileMapState extends State<TileMap> {
         return Stack(children: layers);
       },
     );
+  }
+
+  Widget _buildObstacleEditLayer(MapMeta meta, WorldToLatLngFn toLatLng) {
+    final camera = _mapController.camera;
+    final res = meta.resolution;
+    final px0 = camera.getOffsetFromOrigin(toLatLng(meta.originX, meta.originY));
+    final px1 = camera.getOffsetFromOrigin(toLatLng(meta.originX + res, meta.originY));
+    final cellSizePx = (px1 - px0).distance.abs().clamp(2.0, 80.0);
+
+    final markers = <Marker>[];
+    _obstacleEdits.forEach((key, value) {
+      if (value == 0) return;
+      final col = key % meta.width;
+      final row = key ~/ meta.width;
+      final cx = meta.originX + col * res;
+      final cy = meta.originY + row * res;
+      final color = value > 0
+          ? const Color(0xFF000000)
+          : const Color(0xFFFFFFFF);
+      markers.add(Marker(
+        point: toLatLng(cx, cy),
+        width: cellSizePx,
+        height: cellSizePx,
+        alignment: Alignment.center,
+        child: IgnorePointer(
+          child: Container(
+            decoration: BoxDecoration(
+              color: color,
+            ),
+          ),
+        ),
+      ));
+    });
+
+    if (markers.isEmpty) return const SizedBox.shrink();
+    return MarkerLayer(markers: markers);
   }
 
   void moveToRobot() {
