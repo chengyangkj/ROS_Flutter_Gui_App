@@ -8,6 +8,7 @@ import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
+import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:toastification/toastification.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
@@ -27,6 +28,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
   bool showLayerControl = false;
   bool showCamera = false;
   NavPoint? selectedNavPoint;
+  TopologyRoute? _selectedRoute;
+  RouteInfo? _editingRouteInfo;
   
   // 相机相关变量
   Offset camPosition = Offset(30, 10); // 初始位置
@@ -136,9 +139,28 @@ class _MainFlamePageState extends State<MainFlamePage> {
             children: [
               TileMap(
                 key: _tileMapKey,
+                onTap: () {
+                  setState(() {
+                    selectedNavPoint = null;
+                    _selectedRoute = null;
+                    _editingRouteInfo = null;
+                  });
+                },
                 onNavPointTap: (NavPoint? point) {
                   setState(() {
                     selectedNavPoint = point;
+                    if (point != null) {
+                      _selectedRoute = null;
+                      _editingRouteInfo = null;
+                    }
+                  });
+                },
+                selectedRoute: _selectedRoute,
+                onRouteTap: (route) {
+                  setState(() {
+                    _selectedRoute = route;
+                    _editingRouteInfo = RouteInfo(controller: route.routeInfo.controller);
+                    selectedNavPoint = null;
                   });
                 },
                 selectedNavPointName: selectedNavPoint?.name,
@@ -148,6 +170,11 @@ class _MainFlamePageState extends State<MainFlamePage> {
               _buildTopMenuBar(context, theme),
               _buildLeftToolbar(context, theme),
               _buildRightToolbar(context, theme),
+              Positioned(
+                top: 60,
+                right: 5,
+                child: _buildSelectionPanel(theme),
+              ),
               _buildBottomControls(context, theme),
               _buildCameraWidget(context, theme),
               _buildGamepadWidget(context, theme),
@@ -155,6 +182,65 @@ class _MainFlamePageState extends State<MainFlamePage> {
             ],
           ),
         );
+  }
+
+  Widget _buildSelectionPanel(ThemeData theme) {
+    final route = _selectedRoute;
+    if (route != null) {
+      final info = _editingRouteInfo ?? route.routeInfo;
+
+      return Card(
+        elevation: 10,
+        child: SizedBox(
+          width: 320,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '拓扑线属性',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: () {
+                        setState(() {
+                          _selectedRoute = null;
+                          _editingRouteInfo = null;
+                        });
+                      },
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('方向: ${route.fromPoint} -> ${route.toPoint}'),
+                const SizedBox(height: 12),
+                TextFormField(
+                  initialValue: info.controller,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: '控制器（只读）',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildTopMenuBar(BuildContext context, ThemeData theme) {

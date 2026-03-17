@@ -6,6 +6,7 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/basic/tile_map_meta.dart';
+import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/display/costmap.dart';
 import 'package:ros_flutter_gui_app/display/grid.dart' show WorldToLatLngFn, buildGridLayer;
 import 'package:ros_flutter_gui_app/display/laser.dart' hide WorldToLatLngFn;
@@ -21,6 +22,8 @@ import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 
 class TileMap extends StatefulWidget {
   final Function(NavPoint?)? onNavPointTap;
+  final ValueChanged<TopologyRoute>? onRouteTap;
+  final TopologyRoute? selectedRoute;
   final VoidCallback? onTap;
   final void Function(double worldX, double worldY)? onTapWorld;
   final bool enableMapInteraction;
@@ -31,6 +34,8 @@ class TileMap extends StatefulWidget {
   const TileMap({
     super.key,
     this.onNavPointTap,
+    this.onRouteTap,
+    this.selectedRoute,
     this.onTap,
     this.onTapWorld,
     this.enableMapInteraction = true,
@@ -279,8 +284,10 @@ class TileMapState extends State<TileMap> {
                     topologyMap.routes,
                     toLatLng,
                     onNavPointTap: widget.onNavPointTap,
+                    onRouteTap: widget.onRouteTap,
                     isEditMode: isEdit,
                     selectedNavPointName: widget.selectedNavPointName,
+                    selectedRoute: widget.selectedRoute,
                     onNavPointChanged: isEdit
                         ? (updated) {
                             rosChannel.mapManager.updateNavPoint(updated.name, updated);

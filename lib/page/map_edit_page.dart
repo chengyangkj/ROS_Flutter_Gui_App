@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
+import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/display/tile_map.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
@@ -9,6 +10,7 @@ import 'package:toastification/toastification.dart';
 enum EditToolType {
   Move,
   AddNavPoint,
+  AddRoute,
 }
 
 class MapEditPage extends StatefulWidget {
@@ -24,6 +26,9 @@ class _MapEditPageState extends State<MapEditPage> {
   EditToolType? selectedTool;
   NavPoint? selectedNavPoint;
   final GlobalKey<TileMapState> _tileMapKey = GlobalKey<TileMapState>();
+  String? _routeStartPointName;
+  TopologyRoute? _selectedRoute;
+  RouteInfo? _editingRouteInfo;
 
   @override
   void initState() {
@@ -126,10 +131,24 @@ class _MapEditPageState extends State<MapEditPage> {
             enableMapInteraction: selectedTool == EditToolType.Move,
             enableTopologyEdit: true,
             selectedNavPointName: selectedNavPoint?.name,
+            selectedRoute: _selectedRoute,
+            onRouteTap: (route) {
+              setState(() {
+                _selectedRoute = route;
+                _editingRouteInfo = RouteInfo(controller: route.routeInfo.controller);
+              });
+            },
             onNavPointTap: (p) {
               setState(() {
                 selectedNavPoint = p;
               });
+              if (selectedTool == EditToolType.AddRoute) {
+                _handleAddRouteTap(rosChannel, p);
+              } else {
+                setState(() {
+                  _routeStartPointName = null;
+                });
+              }
             },
             onTapWorld: (worldX, worldY) async {
               if (selectedTool != EditToolType.AddNavPoint) return;
@@ -167,6 +186,19 @@ class _MapEditPageState extends State<MapEditPage> {
             left: 10,
             top: 80,
             child: _buildEditToolbar(theme),
+          ),
+          Positioned(
+            top: 80,
+            right: 10,
+            child: _buildRoutePanel(theme, rosChannel),
+          ),
+          Positioned(
+            top: 80,
+            right: 10,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 220),
+              child: _buildNavPointPanel(theme),
+            ),
           ),
         
         ],
@@ -276,6 +308,13 @@ class _MapEditPageState extends State<MapEditPage> {
               tool: EditToolType.AddNavPoint,
               activeColor: Colors.blue,
             ),
+            const SizedBox(height: 8),
+            _buildToolButton(
+              icon: Icons.link,
+              label: '拓扑连线',
+              tool: EditToolType.AddRoute,
+              activeColor: Colors.deepPurple,
+            ),
           ],
         ),
       ),
@@ -293,6 +332,13 @@ class _MapEditPageState extends State<MapEditPage> {
       onTap: () {
         setState(() {
           selectedTool = isActive ? null : tool;
+          if (selectedTool != EditToolType.AddRoute) {
+            _routeStartPointName = null;
+          }
+          if (selectedTool != EditToolType.AddRoute) {
+            _selectedRoute = null;
+            _editingRouteInfo = null;
+          }
         });
       },
       child: Container(
@@ -316,6 +362,216 @@ class _MapEditPageState extends State<MapEditPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _handleAddRouteTap(RosChannel rosChannel, NavPoint? p) {
+    if (p == null) {
+      setState(() {
+        _routeStartPointName = null;
+      });
+      return;
+    }
+    final mapManager = rosChannel.mapManager;
+    if (_routeStartPointName == null) {
+      setState(() {
+        _routeStartPointName = p.name;
+      });
+      toastification.show(
+        context: context,
+        title: Text('已选择起点: ${p.name}'),
+        autoCloseDuration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
+    if (_routeStartPointName == p.name) {
+      setState(() {
+        _routeStartPointName = null;
+      });
+      return;
+    }
+
+    final route = TopologyRoute(
+      fromPoint: _routeStartPointName!,
+      toPoint: p.name,
+      routeInfo: RouteInfo(controller: 'FollowPath'),
+    );
+    mapManager.addRoute(route);
+    setState(() {
+      _routeStartPointName = null;
+    });
+
+    toastification.show(
+      context: context,
+      title: Text('已创建连线: ${route.fromPoint} -> ${route.toPoint}'),
+      autoCloseDuration: const Duration(seconds: 2),
+    );
+  }
+
+  Widget _buildNavPointPanel(ThemeData theme) {
+    final p = selectedNavPoint;
+    if (p == null) return const SizedBox.shrink();
+    return Card(
+      elevation: 10,
+      child: SizedBox(
+        width: 320,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '点位属性',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: () {
+                      setState(() {
+                        selectedNavPoint = null;
+                      });
+                    },
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildKv('名称', p.name),
+              _buildKv('X', p.x.toStringAsFixed(3)),
+              _buildKv('Y', p.y.toStringAsFixed(3)),
+              _buildKv('Theta', p.theta.toStringAsFixed(3)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKv(String k, String v) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(
+              k,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          Expanded(child: Text(v)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoutePanel(ThemeData theme, RosChannel rosChannel) {
+    final route = _selectedRoute;
+    if (route == null) return const SizedBox.shrink();
+
+    final mapManager = rosChannel.mapManager;
+    final topologyMap = mapManager.topologyMap.value;
+    final supportControllers = topologyMap.mapProperty.supportControllers;
+    final controllerOptions = supportControllers.isNotEmpty
+        ? supportControllers
+        : <String>{route.routeInfo.controller, 'FollowPath'}.toList();
+
+    final info = _editingRouteInfo ?? route.routeInfo;
+    return Card(
+      elevation: 10,
+      child: SizedBox(
+        width: 320,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '拓扑线属性',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: () {
+                      setState(() {
+                        _selectedRoute = null;
+                        _editingRouteInfo = null;
+                      });
+                    },
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('方向: ${route.fromPoint} -> ${route.toPoint}'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: info.controller,
+                decoration: const InputDecoration(
+                  labelText: '控制器',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: controllerOptions
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _editingRouteInfo = RouteInfo(controller: value);
+                  });
+                  mapManager.updateRoute(
+                    route.fromPoint,
+                    route.toPoint,
+                    TopologyRoute(
+                      fromPoint: route.fromPoint,
+                      toPoint: route.toPoint,
+                      routeInfo: RouteInfo(controller: value),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        mapManager.removeRoute(route.fromPoint, route.toPoint);
+                        setState(() {
+                          _selectedRoute = null;
+                          _editingRouteInfo = null;
+                        });
+                      },
+                      icon: const Icon(Icons.delete, size: 18),
+                      label: const Text('删除该方向'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
