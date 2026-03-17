@@ -1,116 +1,42 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/gestures.dart';
-// import 'package:flame/game.dart';
-// import 'package:flame/components.dart';
-// import 'package:provider/provider.dart';
-// import 'package:ros_flutter_gui_app/provider/global_state.dart';
-// import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
-// import 'package:ros_flutter_gui_app/provider/them_provider.dart';
-// import 'package:ros_flutter_gui_app/page/map_edit_flame.dart';
-// import 'package:ros_flutter_gui_app/basic/nav_point.dart';
-// import 'package:toastification/toastification.dart';
-// import 'package:ros_flutter_gui_app/basic/topology_map.dart';
-// import 'package:vector_math/vector_math_64.dart' as vm;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ros_flutter_gui_app/basic/nav_point.dart';
+import 'package:ros_flutter_gui_app/display/tile_map.dart';
+import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+import 'package:toastification/toastification.dart';
 
-// enum EditToolType {
-//   move,
-//   addNavPoint,
-//   addRoute,
-//   drawObstacle,
-//   eraseObstacle,
-//   drawLine,
-// }
+enum EditToolType {
+  Move,
+  AddNavPoint,
+}
 
-// class MapEditPage extends StatefulWidget {
-//   final VoidCallback? onExit;
-  
-//   const MapEditPage({super.key, this.onExit});
+class MapEditPage extends StatefulWidget {
+  final VoidCallback? onExit;
 
-//   @override
-//   State<MapEditPage> createState() => _MapEditPageState();
-// }
+  const MapEditPage({super.key, this.onExit});
 
-// class _MapEditPageState extends State<MapEditPage> {
-//   late MapEditFlame game;
-//   late GlobalState globalState;
-//   late RosChannel rosChannel;
+  @override
+  State<MapEditPage> createState() => _MapEditPageState();
+}
 
-//   // 当前选中的编辑工具
-//   EditToolType? selectedTool;
-  
-//   // 导航点列表
-//   List<NavPoint> navPoints = [];
-  
-//   // 当前选中的点位信息
-//   NavPoint? selectedWayPointInfo;
-  
-//   // 正在编辑的点位（用于属性编辑）
-//   NavPoint? editingPoint;
-  
-//   // 当前选中的路线
-//   TopologyRoute? selectedRoute;
-  
-//   // 画笔大小
-//   double brushSize = 0.15;
-  
-//   // 画笔指示器位置
-//   Offset? brushIndicatorPosition;
-  
-//   // 鼠标世界坐标
-//   Map<String, double>? mouseWorldPos;
-  
-//   // 机器人位置
-//   Map<String, double>? robotPos;
-  
-//   // 拓扑连线起始点
-//   String? routeStartPoint;
-  
-//   // 直线绘制起始点
-//   Map<String, double>? lineStartPoint;
-  
-//   List<String> supportControllers = ['FollowPath'];
+class _MapEditPageState extends State<MapEditPage> {
+  EditToolType? selectedTool;
+  NavPoint? selectedNavPoint;
+  final GlobalKey<TileMapState> _tileMapKey = GlobalKey<TileMapState>();
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     globalState = Provider.of<GlobalState>(context, listen: false);
-//     rosChannel = Provider.of<RosChannel>(context, listen: false);
-//     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    
-//     // 设置地图编辑模式
-//     globalState.mode.value = Mode.mapEdit;
- 
-//     // 创建专门的地图编辑Flame组件，传入回调函数
-//     game = MapEditFlame(
-//       rosChannel: rosChannel,
-//       themeProvider: themeProvider,
-//       onAddNavPoint: (x, y, {double theta = 0.0}) async {
-//         final wayPointInfo = await _addNavPoint(x, y, theta);
-//         return wayPointInfo;
-//       },
-//       onWayPointSelectionChanged: _onWayPointSelectionChanged,
-//     );
-//     // 拖拽/旋转实时回调，刷新右侧信息
-//     game.currentSelectPointUpdate = () {
-//       setState(() {
-//         final info = game.getSelectedWayPointInfo();
-//         selectedWayPointInfo = info;
-//       });
-//     };
-    
-//     // 同步画笔大小
-//     game.setBrushSize(brushSize);
-    
-//     // 加载导航点
-//     _loadNavPoints();
-//   }
+  @override
+  void initState() {
+    super.initState();
+    selectedTool = EditToolType.Move;
+    context.read<GlobalState>().mode.value = Mode.mapEdit;
+  }
   
-//   @override
-//   void dispose() {
-//     // 退出地图编辑模式时，重置为正常模式
-//     globalState.mode.value = Mode.normal;
-//     super.dispose();
-//   }
+  @override
+  void dispose() {
+    context.read<GlobalState>().mode.value = Mode.normal;
+    super.dispose();
+  }
 
 //   // 导航点选择状态变化回调
 //   void _onWayPointSelectionChanged() {
@@ -186,126 +112,261 @@
 //     );
 //   }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-    
-//     return Scaffold(
-//       body: Stack(
-//         children: [
-//           // 游戏画布
-//           Listener(
-//             onPointerSignal: (pointerSignal) {
-//               if (pointerSignal is PointerScrollEvent) {
-//                 final position = Vector2(pointerSignal.position.dx, pointerSignal.position.dy);
-//                 game.onScroll(pointerSignal.scrollDelta.dy, position);
-//               }
-//             },
-//             onPointerMove: (event) {
-//               // 更新鼠标世界坐标
-//               final worldPoint = game.camera.globalToLocal(
-//                 Vector2(event.localPosition.dx, event.localPosition.dy)
-//               );
-//               if (game.rosChannel?.map_.value != null) {
-//                 final map = game.rosChannel!.map_.value;
-//                 final idx = map.xy2idx(vm.Vector2(worldPoint.x, worldPoint.y));
-//                 final mapPose = map.idx2xy(idx);
-//                 setState(() {
-//                   mouseWorldPos = {'x': mapPose.x, 'y': mapPose.y};
-//                   // 更新画笔指示器位置
-//                   if (selectedTool == EditToolType.drawObstacle || 
-//                       selectedTool == EditToolType.eraseObstacle) {
-//                     brushIndicatorPosition = Offset(event.localPosition.dx, event.localPosition.dy);
-//                   } else {
-//                     brushIndicatorPosition = null;
-//                   }
-//                 });
-//               }
-              
-//               // 处理拖动（仅用于障碍物绘制/擦除）
-//               if (event.down) {
-//                 final position = Vector2(event.localPosition.dx, event.localPosition.dy);
-//                 if (selectedTool == EditToolType.drawObstacle || 
-//                     selectedTool == EditToolType.eraseObstacle) {
-//                   game.onPanUpdate(position);
-//                 }
-//               }
-//             },
-//             onPointerUp: (event) {
-//               if (selectedTool == EditToolType.drawObstacle || 
-//                   selectedTool == EditToolType.eraseObstacle) {
-//                 game.onPanEnd();
-//               }
-//             },
-//             child: GestureDetector(
-//               onTapDown: (details) async {
-//                 // 使用局部坐标，避免受栈内其他控件偏移影响
-//                 final position = Vector2(details.localPosition.dx, details.localPosition.dy);
-//                 await game.onTapDown(position);
-//               },
-//               onScaleStart: (details) {
-//                 if (selectedTool != EditToolType.drawObstacle && 
-//                     selectedTool != EditToolType.eraseObstacle) {
-//                   final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-//                   game.onScaleStart(position);
-//                 }
-//               },
-//               onScaleUpdate: (details) {
-//                 if (selectedTool != EditToolType.drawObstacle && 
-//                     selectedTool != EditToolType.eraseObstacle) {
-//                   final position = Vector2(details.localFocalPoint.dx, details.localFocalPoint.dy);
-//                   game.onScaleUpdate(details.scale, position);
-//                 }
-//               },
-//               onScaleEnd: (details) {
-//                 if (selectedTool != EditToolType.drawObstacle && 
-//                     selectedTool != EditToolType.eraseObstacle) {
-//                   game.onScaleEnd();
-//                 }
-//               },
-//               child: GameWidget(game: game),
-//             ),
-//           ),
-          
-//           // 顶部工具栏
-//           Positioned(
-//             top: 0,
-//             left: 0,
-//             right: 0,
-//             child: _buildTopToolbar(context, theme),
-//           ),
-          
-//           // 左侧编辑工具栏
-//           Positioned(
-//             left: 10,
-//             top: 100,
-//             child: _buildEditToolbar(context, theme),
-//           ),
-          
-//           // 右侧信息面板
-//           Positioned(
-//             right: 10,
-//             top: 100,
-//             child: _buildInfoPanel(context, theme),
-//           ),
-          
-//           // 底部坐标显示
-//           Positioned(
-//             bottom: 10,
-//             left: 10,
-//             child: _buildCoordinateDisplay(context, theme),
-//           ),
-          
-//           // 右下角按钮
-//           Positioned(
-//             right: 20,
-//             bottom: 20,
-//             child: _buildAddRobotPositionButton(context, theme),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rosChannel = context.read<RosChannel>();
+    final mapManager = rosChannel.mapManager;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          TileMap(
+            key: _tileMapKey,
+            enableMapInteraction: selectedTool == EditToolType.Move,
+            enableTopologyEdit: true,
+            selectedNavPointName: selectedNavPoint?.name,
+            onNavPointTap: (p) {
+              setState(() {
+                selectedNavPoint = p;
+              });
+            },
+            onTapWorld: (worldX, worldY) async {
+              if (selectedTool != EditToolType.AddNavPoint) return;
+
+              final name = await _showAddNavPointDialog(
+                context,
+                mapManager,
+                worldX,
+                worldY,
+              );
+              if (!mounted) return;
+              if (name == null || name.trim().isEmpty) return;
+
+              final navPoint = NavPoint(
+                name: name.trim(),
+                x: worldX,
+                y: worldY,
+                theta: 0.0,
+                type: NavPointType.navGoal,
+              );
+              mapManager.addNavPoint(navPoint);
+              setState(() {
+                selectedNavPoint = navPoint;
+              });
+            },
+            followRobot: false,
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildTopToolbar(context, theme),
+          ),
+          Positioned(
+            left: 10,
+            top: 80,
+            child: _buildEditToolbar(theme),
+          ),
+        
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopToolbar(BuildContext context, ThemeData theme) {
+    final rosChannel = context.read<RosChannel>();
+    final mapManager = rosChannel.mapManager;
+
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.orange,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.white, size: 26),
+            tooltip: '保存并发布到ROS',
+            onPressed: () async {
+              try {
+                _tileMapKey.currentState?.flushDraggingNavPoints();
+                final topologyMap = mapManager.topologyMap.value;
+                await rosChannel.updateTopologyMap(topologyMap);
+                await mapManager.saveLocalTopologyMap();
+                await rosChannel.publishOccupancyGrid();
+
+                if (!mounted) return;
+                toastification.show(
+                  context: context,
+                  type: ToastificationType.success,
+                  style: ToastificationStyle.flatColored,
+                  title: const Text('保存成功'),
+                  description: const Text('已发布拓扑地图与栅格地图'),
+                  autoCloseDuration: const Duration(seconds: 3),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                toastification.show(
+                  context: context,
+                  type: ToastificationType.error,
+                  style: ToastificationStyle.flatColored,
+                  title: const Text('保存失败'),
+                  description: Text('$e'),
+                  autoCloseDuration: const Duration(seconds: 3),
+                );
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Center(
+              child: Text(
+                '地图编辑',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white, size: 26),
+            tooltip: '退出',
+            onPressed: () async {
+              _tileMapKey.currentState?.flushDraggingNavPoints();
+              await mapManager.saveLocalTopologyMap();
+              widget.onExit?.call();
+              if (mounted) Navigator.pop(context);
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditToolbar(ThemeData theme) {
+    return Card(
+      elevation: 8,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildToolButton(
+              icon: Icons.open_with,
+              label: '移动/选择',
+              tool: EditToolType.Move,
+              activeColor: Colors.grey,
+            ),
+            const SizedBox(height: 8),
+            _buildToolButton(
+              icon: Icons.add_location,
+              label: '添加点位',
+              tool: EditToolType.AddNavPoint,
+              activeColor: Colors.blue,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolButton({
+    required IconData icon,
+    required String label,
+    required EditToolType tool,
+    required Color activeColor,
+  }) {
+    final isActive = selectedTool == tool;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          selectedTool = isActive ? null : tool;
+        });
+      },
+      child: Container(
+        width: 120,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        decoration: BoxDecoration(
+          color: isActive ? activeColor.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: isActive ? Border.all(color: activeColor, width: 2) : null,
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 22, color: isActive ? activeColor : Colors.grey),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? activeColor : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Future<String?> _showAddNavPointDialog(
+    BuildContext context,
+    dynamic mapManager,
+    double x,
+    double y,
+  ) async {
+    final controller = TextEditingController();
+    final id = await mapManager.getNextPointId();
+    controller.text = 'NAV_POINT_$id';
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('添加导航点'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('位置: (${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: '名称',
+                  border: OutlineInputBorder(),
+                ),
+                autofocus: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('确定'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
 
 //   Widget _buildTopToolbar(BuildContext context, ThemeData theme) {
 //     return Container(

@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -13,7 +12,7 @@ import 'package:ros_flutter_gui_app/display/laser.dart' hide WorldToLatLngFn;
 import 'package:ros_flutter_gui_app/display/path.dart';
 import 'package:ros_flutter_gui_app/display/pointcloud.dart' hide WorldToLatLngFn;
 import 'package:ros_flutter_gui_app/display/polygon.dart' hide WorldToLatLngFn;
-import 'package:ros_flutter_gui_app/display/robot_marker.dart' hide WorldToLatLngFn;
+import 'package:ros_flutter_gui_app/display/robot.dart' hide WorldToLatLngFn;
 import 'package:ros_flutter_gui_app/display/topology_line.dart' hide WorldToLatLngFn;
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
@@ -23,12 +22,20 @@ import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 class TileMap extends StatefulWidget {
   final Function(NavPoint?)? onNavPointTap;
   final VoidCallback? onTap;
+  final void Function(double worldX, double worldY)? onTapWorld;
+  final bool enableMapInteraction;
+  final bool enableTopologyEdit;
+  final String? selectedNavPointName;
   final bool followRobot;
 
   const TileMap({
     super.key,
     this.onNavPointTap,
     this.onTap,
+    this.onTapWorld,
+    this.enableMapInteraction = true,
+    this.enableTopologyEdit = false,
+    this.selectedNavPointName,
     this.followRobot = false,
   });
 
@@ -43,6 +50,7 @@ class TileMapState extends State<TileMap> {
   double _currentZoom = 2.0;
   bool _isDarkMode = true;
   RobotPose? _relocPose;
+  final Map<String, NavPoint> _draggingNavPoints = {};
 
   @override
   void initState() {
@@ -129,7 +137,9 @@ class TileMapState extends State<TileMap> {
               _handleTap(latLng);
             },
             interactionOptions: InteractionOptions(
-              flags: mode == Mode.reloc ? InteractiveFlag.none : InteractiveFlag.all,
+              flags: !widget.enableMapInteraction
+                  ? InteractiveFlag.none
+                  : InteractiveFlag.all,
             ),
           ),
           children: [
@@ -163,6 +173,7 @@ class TileMapState extends State<TileMap> {
     final world = latLngToWorld(_meta!, latLng);
     final worldX = world.x;
     final worldY = world.y;
+    widget.onTapWorld?.call(worldX, worldY);
 
     final rosChannel = context.read<RosChannel>();
     final navPoints = rosChannel.topologyMap_.value.points.isNotEmpty
@@ -253,14 +264,59 @@ class TileMapState extends State<TileMap> {
           layers.add(ValueListenableBuilder(
             valueListenable: rosChannel.topologyMap_,
             builder: (_, topologyMap, ___) {
-              final navPoints = topologyMap.points.isNotEmpty
+              final rawNavPoints = topologyMap.points.isNotEmpty
                   ? topologyMap.points
                   : rosChannel.mapManager.navPoints;
-              return buildTopologyLineLayer(
-                navPoints,
-                topologyMap.routes,
-                toLatLng,
-                onNavPointTap: widget.onNavPointTap,
+              final navPoints = rawNavPoints
+                  .map((p) => _draggingNavPoints[p.name] ?? p)
+                  .toList();
+              return ValueListenableBuilder<Mode>(
+                valueListenable: globalState.mode,
+                builder: (_, mode, __) {
+                  final isEdit = mode == Mode.mapEdit && widget.enableTopologyEdit;
+                  return buildTopologyLineLayer(
+                    navPoints,
+                    topologyMap.routes,
+                    toLatLng,
+                    onNavPointTap: widget.onNavPointTap,
+                    isEditMode: isEdit,
+                    selectedNavPointName: widget.selectedNavPointName,
+                    onNavPointChanged: isEdit
+                        ? (updated) {
+                            rosChannel.mapManager.updateNavPoint(updated.name, updated);
+                            _draggingNavPoints.remove(updated.name);
+                            setState(() {});
+                          }
+                        : null,
+                    onNavPointMoveDelta: isEdit
+                        ? (point, delta) {
+                            final meta = _meta;
+                            if (meta == null) return;
+                            final camera = _mapController.camera;
+                            final base = _draggingNavPoints[point.name] ?? point;
+                            final currentLatLng = toLatLng(base.x, base.y);
+                            final currentOffset =
+                                camera.getOffsetFromOrigin(currentLatLng);
+                            final newLatLng = camera.unprojectAtZoom(
+                              currentOffset + delta + camera.pixelOrigin,
+                            );
+                            final world = latLngToWorld(meta, newLatLng);
+                            final newX = world.x;
+                            final newY = world.y;
+                            final dragging = NavPoint(
+                              name: point.name,
+                              x: newX,
+                              y: newY,
+                              theta: base.theta,
+                              type: base.type,
+                            );
+                            _draggingNavPoints[point.name] = dragging;
+                            widget.onNavPointTap?.call(dragging);
+                            setState(() {});
+                          }
+                        : null,
+                  );
+                },
               );
             },
           ));
@@ -302,13 +358,12 @@ class TileMapState extends State<TileMap> {
                         final meta = _meta;
                         if (meta == null) return;
                         final current = _relocPose ?? rosChannel.robotPoseMap.value;
-                        final cameraZoom = _mapController.camera.zoom;
-                        final scale = math.pow(2, meta.extraZoomLevels).toDouble();
-                        final zoomScale = math.pow(2, meta.maxZoom - cameraZoom).toDouble();
-                        final worldPerPixel = meta.resolution / scale * zoomScale;
-                        final newX = current.x + delta.dx * worldPerPixel;
-                        final newY = current.y - delta.dy * worldPerPixel;
-                        _relocPose = RobotPose(newX, newY, current.theta);
+                        final camera = _mapController.camera;
+                        final currentLatLng = toLatLng(current.x, current.y);
+                        final currentPx = camera.projectAtZoom(currentLatLng);
+                        final newLatLng = camera.unprojectAtZoom(currentPx + delta);
+                        final world = latLngToWorld(meta, newLatLng);
+                        _relocPose = RobotPose(world.x, world.y, current.theta);
                         setState(() {});
                       }
                     : null,
@@ -344,6 +399,16 @@ class TileMapState extends State<TileMap> {
 
   RobotPose getRelocRobotPose() {
     return _relocPose ?? context.read<RosChannel>().robotPoseMap.value;
+  }
+
+  void flushDraggingNavPoints() {
+    if (_draggingNavPoints.isEmpty) return;
+    final rosChannel = context.read<RosChannel>();
+    final mapManager = rosChannel.mapManager;
+    _draggingNavPoints.forEach((name, navPoint) {
+      mapManager.updateNavPoint(name, navPoint);
+    });
+    _draggingNavPoints.clear();
   }
 }
 

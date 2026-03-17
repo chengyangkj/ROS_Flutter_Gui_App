@@ -7,7 +7,6 @@ import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_page.dart';
-import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
@@ -142,6 +141,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     selectedNavPoint = point;
                   });
                 },
+                selectedNavPointName: selectedNavPoint?.name,
+                enableMapInteraction: Provider.of<GlobalState>(context, listen: true).mode.value != Mode.reloc,
                 followRobot: Provider.of<GlobalState>(context, listen: true).mode.value == Mode.robotFixedCenter,
               ),
               _buildTopMenuBar(context, theme),
@@ -780,18 +781,16 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         : theme.iconTheme.color,
                   ),
                   onPressed: () {
-                    //  Navigator.push(
-                    //     context,
-                    //     MaterialPageRoute(
-                    //       builder: (context) => MapEditPage(
-                    //         onExit: () {
-                    //           // 地图编辑界面退出时，重新加载数据
-                    //           _reloadData();
-                    //         },
-                    //       ),
-                    //     ),
-                    //   );
-                    setState(() {});
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MapEditPage(
+                          onExit: () {
+                            _reloadData();
+                          },
+                        ),
+                      ),
+                    );
                   },
                   tooltip: '地图编辑',
                 ),
