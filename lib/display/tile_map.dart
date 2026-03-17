@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -293,6 +294,21 @@ class TileMapState extends State<TileMap> {
                         final current = _relocPose ?? rosChannel.robotPoseMap.value;
                         _relocPose = RobotPose(current.x, current.y, theta);
                         print('TileMapState _relocPose=$_relocPose');
+                        setState(() {});
+                      }
+                    : null,
+                onMoveDelta: isReloc
+                    ? (delta) {
+                        final meta = _meta;
+                        if (meta == null) return;
+                        final current = _relocPose ?? rosChannel.robotPoseMap.value;
+                        final cameraZoom = _mapController.camera.zoom;
+                        final scale = math.pow(2, meta.extraZoomLevels).toDouble();
+                        final zoomScale = math.pow(2, meta.maxZoom - cameraZoom).toDouble();
+                        final worldPerPixel = meta.resolution / scale * zoomScale;
+                        final newX = current.x + delta.dx * worldPerPixel;
+                        final newY = current.y - delta.dy * worldPerPixel;
+                        _relocPose = RobotPose(newX, newY, current.theta);
                         setState(() {});
                       }
                     : null,

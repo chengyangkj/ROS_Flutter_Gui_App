@@ -86,6 +86,7 @@ class RobotMarkerWidget extends StatefulWidget {
     required this.size,
     required this.theta,
     this.onThetaChanged,
+    this.onMoveDelta,
     this.color = const Color(0xFF0080ff),
     this.isEditMode = false,
   });
@@ -93,6 +94,7 @@ class RobotMarkerWidget extends StatefulWidget {
   final double size;
   final double theta;
   final ValueChanged<double>? onThetaChanged;
+  final ValueChanged<Offset>? onMoveDelta;
   final Color color;
   final bool isEditMode;
 
@@ -105,6 +107,14 @@ class _RobotMarkerWidgetState extends State<RobotMarkerWidget>
   late AnimationController _controller;
   late double _theta;
   bool _isRotating = false;
+  bool _isMoving = false;
+  Offset? _lastGlobalPos;
+
+  bool _hitTestMoveArea(Offset localPosition) {
+    final center = Offset(widget.size / 2, widget.size / 2);
+    final dist = (localPosition - center).distance;
+    return dist <= widget.size * 0.18;
+  }
 
   @override
   void initState() {
@@ -139,10 +149,6 @@ class _RobotMarkerWidgetState extends State<RobotMarkerWidget>
     setState(() {
       _theta = newTheta;
     });
-    final radius = widget.size / 2;
-    final projected =
-        center + Offset(radius * cos(_theta), radius * sin(_theta));
-
     widget.onThetaChanged?.call(_theta);
   }
 
@@ -158,17 +164,32 @@ class _RobotMarkerWidgetState extends State<RobotMarkerWidget>
                 final box = context.findRenderObject() as RenderBox?;
                 if (box == null) return;
                 final local = box.globalToLocal(event.position);
-                _isRotating = true;
-                _updateThetaFromPosition(local);
+                _lastGlobalPos = event.position;
+                if (_hitTestMoveArea(local)) {
+                  _isMoving = true;
+                  _isRotating = false;
+                } else {
+                  _isRotating = true;
+                  _isMoving = false;
+                  _updateThetaFromPosition(local);
+                }
               }
             : null,
         onPointerMove: widget.isEditMode
             ? (event) {
-                if (!_isRotating) return;
                 final box = context.findRenderObject() as RenderBox?;
                 if (box == null) return;
                 final local = box.globalToLocal(event.position);
-                _updateThetaFromPosition(local);
+                if (_isMoving) {
+                  final last = _lastGlobalPos;
+                  _lastGlobalPos = event.position;
+                  if (last == null) return;
+                  widget.onMoveDelta?.call(event.position - last);
+                  return;
+                }
+                if (_isRotating) {
+                  _updateThetaFromPosition(local);
+                }
               }
             : null,
         onPointerUp: widget.isEditMode
@@ -177,12 +198,16 @@ class _RobotMarkerWidgetState extends State<RobotMarkerWidget>
                 //   debugPrint('RobotMarkerWidget rotate end global=${event.position}');
                 // }
                 _isRotating = false;
+                _isMoving = false;
+                _lastGlobalPos = null;
               }
             : null,
         onPointerCancel: widget.isEditMode
             ? (event) {
                 // debugPrint('RobotMarkerWidget pointerCancel');
                 _isRotating = false;
+                _isMoving = false;
+                _lastGlobalPos = null;
               }
             : null,
         child: AnimatedBuilder(
@@ -208,6 +233,7 @@ Widget buildRobotMarkerLayer(
   RobotPose? poseOverride,
   bool isEditMode = false,
   ValueChanged<double>? onThetaChanged,
+  ValueChanged<Offset>? onMoveDelta,
 }) {
   final robotPose = poseOverride ?? rosChannel.robotPoseMap.value;
   final robotSize = globalSetting.robotSize.toDouble();
@@ -223,6 +249,7 @@ Widget buildRobotMarkerLayer(
           theta: robotPose.theta,
           isEditMode: isEditMode,
           onThetaChanged: onThetaChanged,
+          onMoveDelta: onMoveDelta,
         ),
       ),
     ],
