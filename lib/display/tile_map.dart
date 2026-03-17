@@ -19,12 +19,12 @@ import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 
-class TileMapWidget extends StatefulWidget {
+class TileMap extends StatefulWidget {
   final Function(NavPoint?)? onNavPointTap;
   final VoidCallback? onTap;
   final bool followRobot;
 
-  const TileMapWidget({
+  const TileMap({
     super.key,
     this.onNavPointTap,
     this.onTap,
@@ -32,10 +32,10 @@ class TileMapWidget extends StatefulWidget {
   });
 
   @override
-  State<TileMapWidget> createState() => TileMapWidgetState();
+  State<TileMap> createState() => TileMapState();
 }
 
-class TileMapWidgetState extends State<TileMapWidget> {
+class TileMapState extends State<TileMap> {
   MapMeta? _meta;
   String? _error;
   final MapController _mapController = MapController();
@@ -259,7 +259,14 @@ class TileMapWidgetState extends State<TileMapWidget> {
 
         layers.add(ValueListenableBuilder(
           valueListenable: rosChannel.robotPoseMap,
-          builder: (_, __, ___) => buildRobotMarkerLayer(rosChannel, toLatLng),
+          builder: (_, __, ___) => ValueListenableBuilder(
+            valueListenable: globalState.mode,
+            builder: (_, mode, ___) => buildRobotMarkerLayer(
+              rosChannel,
+              toLatLng,
+              isEditMode: mode == Mode.reloc,
+            ),
+          ),
         ));
 
         return Stack(children: layers);
@@ -286,7 +293,6 @@ class TileMapWidgetState extends State<TileMapWidget> {
     _mapController.move(_mapController.camera.center, _currentZoom - 0.5);
   }
 
-  void setRelocMode(bool enabled) {}
 
   RobotPose getRelocRobotPose() {
     return context.read<RosChannel>().robotPoseMap.value;

@@ -15,11 +15,13 @@ class RobotMarkerPainter extends CustomPainter {
     required this.animationValue,
     this.color = const Color(0xFF0080ff),
     this.count = 2,
+    this.isEditMode = false,
   });
 
   final double animationValue;
   final Color color;
   final int count;
+  final bool isEditMode;
 
   @override
   void paint(Canvas canvas, Size canvasSize) {
@@ -49,12 +51,26 @@ class RobotMarkerPainter extends CustomPainter {
     final rect = Rect.fromCircle(center: Offset.zero, radius: radius);
     canvas.drawArc(rect, _deg2rad(-15), _deg2rad(30), true, dirPainter);
 
+    if (isEditMode) {
+      final ringPaint = Paint()
+        ..color = color.withValues(alpha: 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      canvas.drawCircle(Offset.zero, radius, ringPaint);
+      final dotPaint = Paint()
+        ..color = Colors.red
+        ..style = PaintingStyle.fill;
+      final dotOffset = Offset(radius * cos(0), radius * sin(0));
+      canvas.drawCircle(dotOffset, 2, dotPaint);
+    }
+
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(RobotMarkerPainter oldDelegate) =>
-      oldDelegate.animationValue != animationValue;
+      oldDelegate.animationValue != animationValue ||
+      oldDelegate.isEditMode != isEditMode;
 }
 
 class RobotMarkerWidget extends StatefulWidget {
@@ -62,10 +78,12 @@ class RobotMarkerWidget extends StatefulWidget {
     super.key,
     required this.size,
     this.color = const Color(0xFF0080ff),
+    this.isEditMode = false,
   });
 
   final double size;
   final Color color;
+  final bool isEditMode;
 
   @override
   State<RobotMarkerWidget> createState() => _RobotMarkerWidgetState();
@@ -102,6 +120,7 @@ class _RobotMarkerWidgetState extends State<RobotMarkerWidget>
           painter: RobotMarkerPainter(
             animationValue: _controller.value,
             color: widget.color,
+            isEditMode: widget.isEditMode,
           ),
         ),
       ),
@@ -109,19 +128,23 @@ class _RobotMarkerWidgetState extends State<RobotMarkerWidget>
   }
 }
 
-Widget buildRobotMarkerLayer(RosChannel rosChannel, WorldToLatLngFn worldToLatLng) {
+Widget buildRobotMarkerLayer(
+  RosChannel rosChannel,
+  WorldToLatLngFn worldToLatLng, {
+  bool isEditMode = false,
+}) {
   final robotPose = rosChannel.robotPoseMap.value;
   final size = globalSetting.robotSize.toDouble();
   return MarkerLayer(
     markers: [
       Marker(
         point: worldToLatLng(robotPose.x, robotPose.y),
-        width: size*5,
-        height: size*5,
+        width: size * 5,
+        height: size * 5,
         alignment: Alignment.center,
         child: Transform.rotate(
           angle: -robotPose.theta,
-          child: RobotMarkerWidget(size: size),
+          child: RobotMarkerWidget(size: size, isEditMode: isEditMode),
         ),
       ),
     ],

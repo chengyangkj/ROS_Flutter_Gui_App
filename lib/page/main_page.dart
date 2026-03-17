@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
-import 'package:ros_flutter_gui_app/display/tile_map_widget.dart';
+import 'package:ros_flutter_gui_app/display/tile_map.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/action_status.dart';
@@ -24,7 +24,7 @@ class MainFlamePage extends StatefulWidget {
 }
 
 class _MainFlamePageState extends State<MainFlamePage> {
-  final GlobalKey<TileMapWidgetState> _tileMapKey = GlobalKey<TileMapWidgetState>();
+  final GlobalKey<TileMapState> _tileMapKey = GlobalKey<TileMapState>();
   bool showLayerControl = false;
   bool showCamera = false;
   NavPoint? selectedNavPoint;
@@ -135,7 +135,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
     return Scaffold(
           body: Stack(
             children: [
-              TileMapWidget(
+              TileMap(
                 key: _tileMapKey,
                 onNavPointTap: (NavPoint? point) {
                   setState(() {
@@ -414,65 +414,55 @@ class _MainFlamePageState extends State<MainFlamePage> {
             ),
           ),
 
-          // 重定位工具
-          Card(
-            elevation: 10,
-            child: Container(
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      var globalState =
-                          Provider.of<GlobalState>(context, listen: false);
-                      if (globalState.mode.value == Mode.reloc) {
-                        globalState.mode.value = Mode.normal;
-                      } else {
-                        globalState.mode.value = Mode.reloc;
-                      }
-                      _tileMapKey.currentState?.setRelocMode(globalState.mode.value == Mode.reloc);
-                      setState(() {});
-                    },
-                    icon: Icon(
-                      const IconData(0xe60f, fontFamily: "Reloc"),
-                      color: Provider.of<GlobalState>(context, listen: false)
-                                  .mode
-                                  .value ==
-                              Mode.reloc
-                          ? Colors.green
-                          : theme.iconTheme.color,
-                    ),
-                  ),
-                  if (Provider.of<GlobalState>(context, listen: false)
-                          .mode
-                          .value ==
-                      Mode.reloc) ...[
+          ValueListenableBuilder(
+            valueListenable: Provider.of<GlobalState>(context, listen: false).mode,
+            builder: (context, mode, _) {
+              return Card(
+                elevation: 10,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     IconButton(
                       onPressed: () {
-                        // 确认重定位逻辑
-                        Provider.of<GlobalState>(context, listen: false)
-                            .mode
-                            .value = Mode.normal;
-                        _tileMapKey.currentState?.setRelocMode(false);
-                        Provider.of<RosChannel>(context, listen: false).sendRelocPose(_tileMapKey.currentState?.getRelocRobotPose() ?? RobotPose.zero());
-                        setState(() {});
+                        var globalState =
+                            Provider.of<GlobalState>(context, listen: false);
+                        globalState.mode.value =
+                            mode == Mode.reloc ? Mode.normal : Mode.reloc;
                       },
-                      icon: Icon(Icons.check, color: Colors.green),
+                      icon: Icon(
+                        const IconData(0xe60f, fontFamily: "Reloc"),
+                        color: mode == Mode.reloc
+                            ? Colors.green
+                            : theme.iconTheme.color,
+                      ),
                     ),
-                    IconButton(
-                      onPressed: () {
-                        // 取消重定位逻辑
-                        Provider.of<GlobalState>(context, listen: false)
-                            .mode
-                            .value = Mode.normal;
-                        _tileMapKey.currentState?.setRelocMode(false);
-                        setState(() {});
-                      },
-                      icon: Icon(Icons.close, color: Colors.red),
-                    ),
+                    if (mode == Mode.reloc) ...[
+                      IconButton(
+                        onPressed: () {
+                          Provider.of<GlobalState>(context, listen: false)
+                              .mode
+                              .value = Mode.normal;
+                          Provider.of<RosChannel>(context, listen: false)
+                              .sendRelocPose(
+                            _tileMapKey.currentState?.getRelocRobotPose() ??
+                                RobotPose.zero(),
+                          );
+                        },
+                        icon: Icon(Icons.check, color: Colors.green),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          Provider.of<GlobalState>(context, listen: false)
+                              .mode
+                              .value = Mode.normal;
+                        },
+                        icon: Icon(Icons.close, color: Colors.red),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
           
           const SizedBox(height: 8),
