@@ -100,6 +100,10 @@ class DiagnosticManager extends ChangeNotifier {
   
   // 过期时间阈值（5秒）
   static const Duration _staleThreshold = Duration(seconds: 5);
+  // 数据移除阈值（1分钟未更新则移除）
+  static const Duration _removeThreshold = Duration(minutes: 1);
+  // 针对历史类诊断，限制每个硬件最多保留的组件数量
+  static const int _maxHistoryPerHardware = 50;
   
   // 新错误/警告回调函数
   Function(List<Map<String, dynamic>>)? _onNewErrorsWarnings;
@@ -133,45 +137,70 @@ class DiagnosticManager extends ChangeNotifier {
   // 检查过期状态
   void _checkForStaleStates() {
     bool hasChanges = false;
-    List<Map<String, dynamic>> newStaleStates = []; // 存储新变为失活的状态
     final now = DateTime.now();
-
-    var stateHardwareId=[];
+    List<Map<String, dynamic>> newStaleStates = [];
+    var stateHardwareId = <String>[];
+    var hardwareToRemove = <String>[];
 
     for (var hardwareEntry in _diagnosticStates.entries) {
+      final componentsToRemove = <String>[];
+
       for (var componentEntry in hardwareEntry.value.entries) {
         final state = componentEntry.value;
         final timeSinceUpdate = now.difference(state.lastUpdateTime);
 
+        // 长时间未更新的状态直接移除，避免数据无限增长
+        if (timeSinceUpdate > _removeThreshold) {
+          componentsToRemove.add(componentEntry.key);
+          hasChanges = true;
+          continue;
+        }
+
         // 如果超过5秒未更新且当前不是过期状态，则设置为过期
-        if (timeSinceUpdate > _staleThreshold && state.level != DiagnosticStatus.STALE) {
+        if (timeSinceUpdate > _staleThreshold &&
+            state.level != DiagnosticStatus.STALE) {
           final newStaleState = state.copyWith(
             level: DiagnosticStatus.STALE,
             message: '(已过期)',
-            lastUpdateTime: state.lastUpdateTime, // 保持原始更新时间
+            lastUpdateTime: state.lastUpdateTime,
           );
-          
-          _diagnosticStates[hardwareEntry.key]![componentEntry.key] = newStaleState;
+
+          _diagnosticStates[hardwareEntry.key]![componentEntry.key] =
+              newStaleState;
           hasChanges = true;
-          
-          if( hardwareEntry.key!="Node Start History" &&!stateHardwareId.contains(hardwareEntry.key)){
+
+          if (hardwareEntry.key != "Node Start History" &&
+              !stateHardwareId.contains(hardwareEntry.key)) {
             stateHardwareId.add(hardwareEntry.key);
           }
-         
         }
       }
+
+      for (var key in componentsToRemove) {
+        hardwareEntry.value.remove(key);
+      }
+      if (hardwareEntry.value.isEmpty) {
+        hardwareToRemove.add(hardwareEntry.key);
+      }
+    }
+
+    for (var key in hardwareToRemove) {
+      _diagnosticStates.remove(key);
     }
 
     if (hasChanges) {
       notifyListeners();
-      
+
       // 如果有新变为失活的状态，触发回调
       if (stateHardwareId.isNotEmpty) {
         for (var hardwareId in stateHardwareId) {
           newStaleStates.add({
             'hardwareId': hardwareId,
             'componentName': '',
-            'state': DiagnosticState(level: DiagnosticStatus.STALE, message: '超过5s未更新数据'),
+            'state': DiagnosticState(
+              level: DiagnosticStatus.STALE,
+              message: '超过5s未更新数据',
+            ),
           });
         }
         _onNewErrorsWarnings?.call(newStaleStates);
@@ -265,6 +294,19 @@ class DiagnosticManager extends ChangeNotifier {
       _diagnosticStates[hardwareId] ??= {};
       // 更新状态
       _diagnosticStates[hardwareId]![componentName] = newState;
+
+      // 对历史类诊断限制数量，防止无限增长
+      if (hardwareId == 'Node Start History') {
+        final hardwareMap = _diagnosticStates[hardwareId]!;
+        if (hardwareMap.length > _maxHistoryPerHardware) {
+          final entries = hardwareMap.entries.toList()
+            ..sort((a, b) => a.value.lastUpdateTime.compareTo(b.value.lastUpdateTime));
+          final toRemove = entries.length - _maxHistoryPerHardware;
+          for (var i = 0; i < toRemove; i++) {
+            hardwareMap.remove(entries[i].key);
+          }
+        }
+      }
       
       // 如果是新出现的错误或警告，添加到列表中
       if (isNewErrorOrWarning) {
