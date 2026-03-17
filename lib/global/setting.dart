@@ -249,7 +249,7 @@ class Setting {
     prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 8.0);
+    prefs.setDouble('robotSize', 30.0);
   }
 
   void setDefaultCfgRos2TB4() {
@@ -278,7 +278,7 @@ class Setting {
     prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 8.0);
+    prefs.setDouble('robotSize', 30.0);
   }
 
   void setDefaultCfgRos2TB3() {
@@ -307,7 +307,7 @@ class Setting {
     prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 8.0);
+    prefs.setDouble('robotSize', 30.0);
   }
 
   void setDefaultCfgRos2() {
@@ -335,7 +335,7 @@ class Setting {
     prefs.setString('diagnosticTopic', "/diagnostics");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 8.0);
+    prefs.setDouble('robotSize', 30.0);
   }
 
   void setDefaultCfgRos1() {
@@ -362,7 +362,7 @@ class Setting {
     prefs.setString('imageTopic', "/camera/rgb/image_raw");
     prefs.setDouble('imageWidth', 640);
     prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 8.0);
+    prefs.setDouble('robotSize', 30.0);
   }
 
   SharedPreferences get config {
@@ -709,7 +709,7 @@ class Setting {
   }
   
   double get robotSize {
-    return prefs.getDouble('robotSize') ?? 8.0;
+    return prefs.getDouble('robotSize') ?? 30.0;
   }
   
 }

@@ -41,6 +41,7 @@ class TileMapState extends State<TileMap> {
   final MapController _mapController = MapController();
   double _currentZoom = 2.0;
   bool _isDarkMode = true;
+  RobotPose? _relocPose;
 
   @override
   void initState() {
@@ -102,50 +103,57 @@ class TileMapState extends State<TileMap> {
     );
     final mapBounds = LatLngBounds(sw, ne);
 
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        crs: crs,
-        initialCameraFit: CameraFit.bounds(
-          bounds: mapBounds,
-          padding: const EdgeInsets.all(24),
-          maxZoom: meta.maxZoom.toDouble(),
-        ),
-        minZoom: 0,
-        maxZoom: meta.maxZoom.toDouble(),
-        cameraConstraint: const CameraConstraint.unconstrained(),
-        onMapEvent: (event) {
-          if (event is MapEventWithMove) {
-            _currentZoom = event.camera.zoom;
-          }
-        },
-        onTap: (tapPosition, latLng) {
-          widget.onTap?.call();
-          _handleTap(latLng);
-        },
-        interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: '${globalSetting.tileServerUrl}/tiles/{z}/{x}/{y}.png',
-          userAgentPackageName: 'ros_flutter_gui_app',
-          tileBounds: getTileBounds(),
-          tileBuilder: (context, child, tileImage) {
-            if (tileImage.imageInfo?.image != null && !tileImage.loadError) {
-              return RawImage(
-                image: tileImage.imageInfo!.image,
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.none,
-                opacity: tileImage.opacity == 1
-                    ? null
-                    : AlwaysStoppedAnimation(tileImage.opacity),
-              );
-            }
-            return child;
-          },
-        ),
-        _buildOverlayLayers(meta),
-      ],
+    return ValueListenableBuilder<Mode>(
+      valueListenable: context.read<GlobalState>().mode,
+      builder: (context, mode, _) {
+        return FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            crs: crs,
+            initialCameraFit: CameraFit.bounds(
+              bounds: mapBounds,
+              padding: const EdgeInsets.all(24),
+              maxZoom: meta.maxZoom.toDouble(),
+            ),
+            minZoom: 0,
+            maxZoom: meta.maxZoom.toDouble(),
+            cameraConstraint: const CameraConstraint.unconstrained(),
+            onMapEvent: (event) {
+              if (event is MapEventWithMove) {
+                _currentZoom = event.camera.zoom;
+              }
+            },
+            onTap: (tapPosition, latLng) {
+              widget.onTap?.call();
+              _handleTap(latLng);
+            },
+            interactionOptions: InteractionOptions(
+              flags: mode == Mode.reloc ? InteractiveFlag.none : InteractiveFlag.all,
+            ),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: '${globalSetting.tileServerUrl}/tiles/{z}/{x}/{y}.png',
+              userAgentPackageName: 'ros_flutter_gui_app',
+              tileBounds: getTileBounds(),
+              tileBuilder: (context, child, tileImage) {
+                if (tileImage.imageInfo?.image != null && !tileImage.loadError) {
+                  return RawImage(
+                    image: tileImage.imageInfo!.image,
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.none,
+                    opacity: tileImage.opacity == 1
+                        ? null
+                        : AlwaysStoppedAnimation(tileImage.opacity),
+                  );
+                }
+                return child;
+              },
+            ),
+            _buildOverlayLayers(meta),
+          ],
+        );
+      },
     );
   }
 
@@ -261,11 +269,28 @@ class TileMapState extends State<TileMap> {
           valueListenable: rosChannel.robotPoseMap,
           builder: (_, __, ___) => ValueListenableBuilder(
             valueListenable: globalState.mode,
-            builder: (_, mode, ___) => buildRobotMarkerLayer(
-              rosChannel,
-              toLatLng,
-              isEditMode: mode == Mode.reloc,
-            ),
+            builder: (_, mode, ___) {
+              final isReloc = mode == Mode.reloc;
+              if (isReloc) {
+                _relocPose ??= rosChannel.robotPoseMap.value;
+              } else {
+                _relocPose = null;
+              }
+              return buildRobotMarkerLayer(
+                rosChannel,
+                toLatLng,
+                poseOverride: isReloc ? _relocPose : null,
+                isEditMode: isReloc,
+                onThetaChanged: isReloc
+                    ? (theta) {
+                        final current = _relocPose ?? rosChannel.robotPoseMap.value;
+                        _relocPose = RobotPose(current.x, current.y, theta);
+                        print('TileMapState _relocPose=$_relocPose');
+                        setState(() {});
+                      }
+                    : null,
+              );
+            },
           ),
         ));
 
@@ -295,7 +320,7 @@ class TileMapState extends State<TileMap> {
 
 
   RobotPose getRelocRobotPose() {
-    return context.read<RosChannel>().robotPoseMap.value;
+    return _relocPose ?? context.read<RosChannel>().robotPoseMap.value;
   }
 }
 
