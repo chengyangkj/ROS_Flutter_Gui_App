@@ -1155,7 +1155,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
 
   Color _getOccupiedAreaColor() => const Color(0xFF3C3C3C);
 
-  Color _getUnknownAreaColor() => const Color(0xFFC8C8C8);
+  Color _getUnknownAreaColor() => const Color.fromRGBO(205, 205, 205, 1);
 
   @override
   void dispose() {

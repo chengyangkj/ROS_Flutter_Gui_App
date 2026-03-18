@@ -125,7 +125,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_robot_subtitle.
   ///
   /// In zh, this message translates to:
-  /// **'连接 ROS 机器人系统'**
+  /// **'输入ROS Bridge IP 以连接 ROS 机器人系统'**
   String get connect_robot_subtitle;
 
   /// No description provided for @ip_address.

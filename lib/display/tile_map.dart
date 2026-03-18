@@ -171,6 +171,7 @@ class TileMapState extends State<TileMap> {
           child: FlutterMap(
             mapController: _mapController,
             options: MapOptions(
+              backgroundColor: const Color.fromRGBO(205, 205, 205, 1),
               crs: crs,
               initialCameraFit: CameraFit.bounds(
                 bounds: mapBounds,
