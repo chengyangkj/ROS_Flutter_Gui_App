@@ -148,53 +148,59 @@ class _MainFlamePageState extends State<MainFlamePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
+    final globalState = Provider.of<GlobalState>(context, listen: true);
     return Scaffold(
-          body: Stack(
-            children: [
-              TileMap(
-                key: _tileMapKey,
-                onTap: () {
-                  setState(() {
-                    selectedNavPoint = null;
-                    _selectedRoute = null;
-                    _editingRouteInfo = null;
-                  });
-                },
-                onNavPointTap: (NavPoint? point) {
-                  setState(() {
-                    selectedNavPoint = point;
-                    if (point != null) {
-                      _selectedRoute = null;
-                      _editingRouteInfo = null;
-                      _showNavPointDialog(context, point);
-                    }
-                  });
-                },
-                selectedRoute: _selectedRoute,
-                onRouteTap: (route) {
-                  setState(() {
-                    _selectedRoute = route;
-                    _editingRouteInfo = RouteInfo(controller: route.routeInfo.controller);
-                    selectedNavPoint = null;
-                  });
-                },
-                selectedNavPointName: selectedNavPoint?.name,
-                enableMapInteraction: Provider.of<GlobalState>(context, listen: true).mode.value != Mode.reloc,
-                followRobot: Provider.of<GlobalState>(context, listen: true).mode.value == Mode.robotFixedCenter,
-              ),
-              _buildTopMenuBar(context, theme),
-              _buildLeftToolbar(context, theme),
-              _buildRightToolbar(context, theme),
-              Positioned(
-                top: 60,
-                right: 5,
-                child: _buildSelectionPanel(theme),
-              ),
-              _buildBottomControls(context, theme),
-              _buildCameraWidget(context, theme),
-              _buildGamepadWidget(context, theme),
-              _buildMapLegend(context, theme),
-            ],
+          body: ValueListenableBuilder<Mode>(
+            valueListenable: globalState.mode,
+            builder: (context, mode, _) {
+              return Stack(
+                children: [
+                  TileMap(
+                    key: _tileMapKey,
+                    onTap: () {
+                      setState(() {
+                        selectedNavPoint = null;
+                        _selectedRoute = null;
+                        _editingRouteInfo = null;
+                      });
+                    },
+                    onNavPointTap: (NavPoint? point) {
+                      setState(() {
+                        selectedNavPoint = point;
+                        if (point != null) {
+                          _selectedRoute = null;
+                          _editingRouteInfo = null;
+                          _showNavPointDialog(context, point);
+                        }
+                      });
+                    },
+                    selectedRoute: _selectedRoute,
+                    onRouteTap: (route) {
+                      setState(() {
+                        _selectedRoute = route;
+                        _editingRouteInfo = RouteInfo(controller: route.routeInfo.controller);
+                        selectedNavPoint = null;
+                      });
+                    },
+                    selectedNavPointName: selectedNavPoint?.name,
+                    enableMapInteraction: mode != Mode.reloc,
+                    followRobot: mode == Mode.robotFixedCenter,
+                  ),
+                  _buildTopMenuBar(context, theme),
+                  _buildLeftToolbar(context, theme),
+                  _buildRightToolbar(context, theme),
+                  Positioned(
+                    top: 60,
+                    right: 5,
+                    child: _buildSelectionPanel(theme),
+                  ),
+                  _buildBottomControls(context, theme),
+                  _buildCameraWidget(context, theme),
+                  _buildGamepadWidget(context, theme),
+                  _buildMapLegend(context, theme),
+                ],
+              );
+            },
           ),
         );
   }

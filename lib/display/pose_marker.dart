@@ -204,7 +204,7 @@ class _PoseMarkerWidgetState extends State<PoseMarkerWidget>
   bool _hitTestMoveArea(Offset localPosition) {
     final center = Offset(widget.size / 2, widget.size / 2);
     final dist = (localPosition - center).distance;
-    return dist <= widget.size * 0.18;
+    return dist <= widget.size * 0.5;
   }
 
   @override
