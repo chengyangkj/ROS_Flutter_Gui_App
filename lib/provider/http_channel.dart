@@ -1,9 +1,15 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
+
+class AppException implements Exception {
+  final String key;
+  AppException(this.key);
+  @override
+  String toString() => key;
+}
 
 class HttpChannel {
   Uri _buildUri(String path, {Map<String, String>? queryParameters}) {
@@ -70,7 +76,7 @@ class HttpChannel {
   }) async {
     final name = mapName ?? await getCurrentMap();
     if (name.isEmpty) {
-      throw Exception('当前无地图可用，请先选择或创建地图');
+      throw AppException('no_map_available');
     }
     final obstacleEditsJson = obstacleEdits
         .map((cellIndex, value) => MapEntry(cellIndex.toString(), value));

@@ -29,7 +29,6 @@ class GridCellChange {
 class MapComponent extends SpriteComponent {
   OccupancyMap? _currentMap;
   RosChannel? _rosChannel;
-  bool _isDarkMode = false;
   
   Uint8List? _pixelBuffer;
   int _bufferWidth = 0;
@@ -95,14 +94,6 @@ class MapComponent extends SpriteComponent {
     await _processMapToSprite(map);
   }
   
-  void updateThemeMode(bool isDarkMode) {
-    _isDarkMode = isDarkMode;
-    // 重新渲染地图以应用新的主题
-    if (_currentMap != null) {
-      _processMapToSprite(_currentMap!);
-    }
-  }
-  
   // 返回变化列表，用于撤销
   List<GridCellChange> modifyCells(List<MapEntry<int, int>> cells, int value, {Map<String, int>? initialValues}) {
     if (_currentMap == null || _pixelBuffer == null) {
@@ -155,41 +146,20 @@ class MapComponent extends SpriteComponent {
     
     if (mapValue > 0) {
       int alpha = (mapValue * 2.55).clamp(0, 255).toInt();
-      if (_isDarkMode) {
-        _pixelBuffer![pixelIndex] = 200;
-        _pixelBuffer![pixelIndex + 1] = 200;
-        _pixelBuffer![pixelIndex + 2] = 200;
-        _pixelBuffer![pixelIndex + 3] = alpha;
-      } else {
-        _pixelBuffer![pixelIndex] = 60;
-        _pixelBuffer![pixelIndex + 1] = 60;
-        _pixelBuffer![pixelIndex + 2] = 60;
-        _pixelBuffer![pixelIndex + 3] = alpha;
-      }
+      _pixelBuffer![pixelIndex] = 60;
+      _pixelBuffer![pixelIndex + 1] = 60;
+      _pixelBuffer![pixelIndex + 2] = 60;
+      _pixelBuffer![pixelIndex + 3] = alpha;
     } else if (mapValue == 0) {
-      if (_isDarkMode) {
-        _pixelBuffer![pixelIndex] = 30;
-        _pixelBuffer![pixelIndex + 1] = 30;
-        _pixelBuffer![pixelIndex + 2] = 30;
-        _pixelBuffer![pixelIndex + 3] = 255;
-      } else {
-        _pixelBuffer![pixelIndex] = 255;
-        _pixelBuffer![pixelIndex + 1] = 255;
-        _pixelBuffer![pixelIndex + 2] = 255;
-        _pixelBuffer![pixelIndex + 3] = 255;
-      }
+      _pixelBuffer![pixelIndex] = 255;
+      _pixelBuffer![pixelIndex + 1] = 255;
+      _pixelBuffer![pixelIndex + 2] = 255;
+      _pixelBuffer![pixelIndex + 3] = 255;
     } else {
-      if (_isDarkMode) {
-        _pixelBuffer![pixelIndex] = 80;
-        _pixelBuffer![pixelIndex + 1] = 80;
-        _pixelBuffer![pixelIndex + 2] = 80;
-        _pixelBuffer![pixelIndex + 3] = 128;
-      } else {
-        _pixelBuffer![pixelIndex] = 200;
-        _pixelBuffer![pixelIndex + 1] = 200;
-        _pixelBuffer![pixelIndex + 2] = 200;
-        _pixelBuffer![pixelIndex + 3] = 128;
-      }
+      _pixelBuffer![pixelIndex] = 200;
+      _pixelBuffer![pixelIndex + 1] = 200;
+      _pixelBuffer![pixelIndex + 2] = 200;
+      _pixelBuffer![pixelIndex + 3] = 128;
     }
   }
   

@@ -199,7 +199,7 @@ class DiagnosticManager extends ChangeNotifier {
             'componentName': '',
             'state': DiagnosticState(
               level: DiagnosticStatus.STALE,
-              message: '超过5s未更新数据',
+              message: 'data_stale',
             ),
           });
         }
@@ -273,7 +273,7 @@ class DiagnosticManager extends ChangeNotifier {
       if(status.message== "Node starting up"){
         status.hardwareId="Node Start History";
       }
-      final hardwareId = status.hardwareId.isEmpty ? '未知硬件' : status.hardwareId;
+      final hardwareId = status.hardwareId.isEmpty ? 'unknown_hardware' : status.hardwareId;
       final componentName = status.name;
       
       // 检查是否为新的错误或警告

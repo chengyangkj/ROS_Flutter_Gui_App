@@ -10,6 +10,7 @@ import 'package:ros_flutter_gui_app/provider/http_channel.dart';
 import 'package:ros_flutter_gui_app/provider/map_manager.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_command.dart';
+import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:toastification/toastification.dart';
 
 enum EditToolType {
@@ -249,7 +250,7 @@ class _MapEditPageState extends State<MapEditPage> {
             TextButton.icon(
               onPressed: _onAddRobotPositionPressed,
               icon: const Icon(Icons.my_location, color: Colors.white, size: 16),
-              label: const Text('添加当前位置', style: TextStyle(color: Colors.white, fontSize: 12)),
+              label: Text(AppLocalizations.of(context)!.add_current_position, style: const TextStyle(color: Colors.white, fontSize: 12)),
               style: TextButton.styleFrom(
                 backgroundColor: Colors.blue.shade700,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -258,10 +259,10 @@ class _MapEditPageState extends State<MapEditPage> {
               ),
             ),
           ],
-          const Expanded(
+          Expanded(
             child: Center(
               child: Text(
-                '地图编辑',
+                AppLocalizations.of(context)!.map_edit,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 15,
@@ -275,7 +276,7 @@ class _MapEditPageState extends State<MapEditPage> {
             iconSize: 22,
             padding: const EdgeInsets.all(8),
             constraints: const BoxConstraints(),
-            tooltip: '退出',
+            tooltip: AppLocalizations.of(context)!.exit,
             onPressed: () async {
               _tileMapKey.currentState?.flushDraggingNavPoints();
               widget.onExit?.call();
@@ -306,7 +307,7 @@ class _MapEditPageState extends State<MapEditPage> {
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: const Text('撤销', style: TextStyle(fontSize: 13)),
+      child: Text(AppLocalizations.of(context)!.undo, style: const TextStyle(fontSize: 13)),
     );
   }
 
@@ -324,7 +325,7 @@ class _MapEditPageState extends State<MapEditPage> {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       onPressed: () => _showMapManagementDialog(context, theme, httpChannel, mapManager),
-      child: const Text('地图管理', style: TextStyle(fontSize: 13)),
+      child: Text(AppLocalizations.of(context)!.map_management, style: const TextStyle(fontSize: 13)),
     );
   }
 
@@ -354,23 +355,25 @@ class _MapEditPageState extends State<MapEditPage> {
             context: context,
             type: ToastificationType.success,
             style: ToastificationStyle.flatColored,
-            title: const Text('保存成功'),
-            description: const Text('已发布拓扑地图与栅格地图'),
+            title: Text(AppLocalizations.of(context)!.save_success),
+            description: Text(AppLocalizations.of(context)!.save_success_desc),
             autoCloseDuration: const Duration(seconds: 3),
           );
         } catch (e) {
           if (!mounted) return;
+          final l10n = AppLocalizations.of(context)!;
+          final desc = e.toString().contains('no_map_available') ? l10n.no_map_available : e.toString();
           toastification.show(
             context: context,
             type: ToastificationType.error,
             style: ToastificationStyle.flatColored,
-            title: const Text('保存失败'),
-            description: Text('$e'),
+            title: Text(l10n.save_failed),
+            description: Text(desc),
             autoCloseDuration: const Duration(seconds: 3),
           );
         }
       },
-      child: const Text('保存', style: TextStyle(fontSize: 13)),
+      child: Text(AppLocalizations.of(context)!.save, style: const TextStyle(fontSize: 13)),
     );
   }
 
@@ -383,7 +386,7 @@ class _MapEditPageState extends State<MapEditPage> {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       onPressed: () => _showSaveAsDialog(context, httpChannel, mapManager),
-      child: const Text('另存为', style: TextStyle(fontSize: 13)),
+      child: Text(AppLocalizations.of(context)!.save_as, style: const TextStyle(fontSize: 13)),
     );
   }
 
@@ -396,11 +399,11 @@ class _MapEditPageState extends State<MapEditPage> {
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('另存为'),
+        title: Text(AppLocalizations.of(context)!.save_as),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: '地图名称',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context)!.map_name,
             border: OutlineInputBorder(),
           ),
           autofocus: true,
@@ -408,11 +411,11 @@ class _MapEditPageState extends State<MapEditPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('确定'),
+            child: Text(AppLocalizations.of(context)!.ok),
           ),
         ],
       ),
@@ -440,18 +443,20 @@ class _MapEditPageState extends State<MapEditPage> {
         context: context,
         type: ToastificationType.success,
         style: ToastificationStyle.flatColored,
-        title: const Text('另存为成功'),
-        description: Text('已保存为: $name'),
+        title: Text(AppLocalizations.of(context)!.save_as_success),
+        description: Text(AppLocalizations.of(context)!.save_as_desc(name)),
         autoCloseDuration: const Duration(seconds: 3),
       );
     } catch (e) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final desc = e.toString().contains('no_map_available') ? l10n.no_map_available : e.toString();
       toastification.show(
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.flatColored,
-        title: const Text('另存为失败'),
-        description: Text('$e'),
+        title: Text(l10n.save_as_failed),
+        description: Text(desc),
         autoCloseDuration: const Duration(seconds: 3),
       );
     }
@@ -490,7 +495,7 @@ class _MapEditPageState extends State<MapEditPage> {
         _buildToolButton(
           context,
           icon: Icons.open_with,
-          label: '移动',
+          label: AppLocalizations.of(context)!.tool_move,
           tool: EditToolType.Move,
           activeColor: Colors.grey,
         ),
@@ -498,7 +503,7 @@ class _MapEditPageState extends State<MapEditPage> {
         _buildToolButton(
           context,
           icon: Icons.add_location,
-          label: '点位',
+          label: AppLocalizations.of(context)!.tool_point,
           tool: EditToolType.AddNavPoint,
           activeColor: Colors.blue,
         ),
@@ -506,7 +511,7 @@ class _MapEditPageState extends State<MapEditPage> {
         _buildToolButton(
           context,
           icon: Icons.link,
-          label: '连线',
+          label: AppLocalizations.of(context)!.tool_route,
           tool: EditToolType.AddRoute,
           activeColor: Colors.deepPurple,
         ),
@@ -514,7 +519,7 @@ class _MapEditPageState extends State<MapEditPage> {
         _buildToolButton(
           context,
           icon: Icons.brush,
-          label: '画笔',
+          label: AppLocalizations.of(context)!.tool_brush,
           tool: EditToolType.BrushObstacle,
           activeColor: Colors.green,
         ),
@@ -522,7 +527,7 @@ class _MapEditPageState extends State<MapEditPage> {
         _buildToolButton(
           context,
           icon: Icons.auto_fix_high,
-          label: '橡皮',
+          label: AppLocalizations.of(context)!.tool_eraser,
           tool: EditToolType.EraseObstacle,
           activeColor: Colors.red,
         ),
@@ -654,7 +659,7 @@ class _MapEditPageState extends State<MapEditPage> {
       });
       toastification.show(
         context: context,
-        title: Text('已选择起点: ${p.name}'),
+        title: Text(AppLocalizations.of(context)!.route_start_selected(p.name)),
         autoCloseDuration: const Duration(seconds: 2),
       );
       return;
@@ -685,7 +690,7 @@ class _MapEditPageState extends State<MapEditPage> {
 
     toastification.show(
       context: context,
-      title: Text('已创建连线: ${route.fromPoint} -> ${route.toPoint}'),
+      title: Text(AppLocalizations.of(context)!.route_created(route.fromPoint, route.toPoint)),
       autoCloseDuration: const Duration(seconds: 2),
     );
   }
@@ -708,18 +713,18 @@ class _MapEditPageState extends State<MapEditPage> {
         builder: (context, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('拓扑线属性'),
+            title: Text(AppLocalizations.of(context)!.route_properties),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('方向: ${route.fromPoint} -> ${route.toPoint}'),
+                  Text(AppLocalizations.of(context)!.direction(route.fromPoint, route.toPoint)),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: controllerValue,
-                    decoration: const InputDecoration(
-                      labelText: '控制器',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.controller,
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -759,7 +764,7 @@ class _MapEditPageState extends State<MapEditPage> {
                     _editingRouteInfo = null;
                   });
                 },
-                child: const Text('关闭'),
+                child: Text(AppLocalizations.of(context)!.close),
               ),
               FilledButton.icon(
                 onPressed: () {
@@ -780,7 +785,7 @@ class _MapEditPageState extends State<MapEditPage> {
                   });
                 },
                 icon: const Icon(Icons.delete, size: 18),
-                label: const Text('删除该方向'),
+                label: Text(AppLocalizations.of(context)!.delete_route),
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
@@ -806,7 +811,7 @@ class _MapEditPageState extends State<MapEditPage> {
         builder: (context, setDialogState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('点位属性'),
+            title: Text(AppLocalizations.of(context)!.point_properties),
             content: SingleChildScrollView(
               child: SizedBox(
                 width: 320,
@@ -815,7 +820,7 @@ class _MapEditPageState extends State<MapEditPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildEditableKvText(
-                      label: '名称',
+                      label: AppLocalizations.of(context)!.name,
                       value: localPoint.name,
                       onCommitted: (newName) {
                         final oldPoint = localPoint;
@@ -847,7 +852,7 @@ class _MapEditPageState extends State<MapEditPage> {
                       },
                     ),
                     _buildEditableKvNumber(
-                      label: 'X',
+                      label: AppLocalizations.of(context)!.coord_x,
                       value: localPoint.x,
                       onCommitted: (newX) {
                         final oldPoint = localPoint;
@@ -871,7 +876,7 @@ class _MapEditPageState extends State<MapEditPage> {
                       },
                     ),
                     _buildEditableKvNumber(
-                      label: 'Y',
+                      label: AppLocalizations.of(context)!.coord_y,
                       value: localPoint.y,
                       onCommitted: (newY) {
                         final oldPoint = localPoint;
@@ -895,7 +900,7 @@ class _MapEditPageState extends State<MapEditPage> {
                       },
                     ),
                     _buildEditableKvNumber(
-                      label: 'Theta',
+                      label: AppLocalizations.of(context)!.heading,
                       value: localPoint.theta,
                       onCommitted: (newTheta) {
                         final oldPoint = localPoint;
@@ -928,7 +933,7 @@ class _MapEditPageState extends State<MapEditPage> {
                   Navigator.of(ctx).pop();
                   setState(() => selectedNavPoint = null);
                 },
-                child: const Text('关闭'),
+                child: Text(AppLocalizations.of(context)!.close),
               ),
               FilledButton.icon(
                 onPressed: () {
@@ -949,7 +954,7 @@ class _MapEditPageState extends State<MapEditPage> {
                   });
                 },
                 icon: const Icon(Icons.delete, size: 18),
-                label: const Text('删除该点位'),
+                label: Text(AppLocalizations.of(context)!.delete_point),
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
@@ -1046,16 +1051,16 @@ class _MapEditPageState extends State<MapEditPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('添加导航点'),
+          title: Text(AppLocalizations.of(context)!.add_nav_point),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('位置: (${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})'),
+              Text(AppLocalizations.of(context)!.position_format(x.toStringAsFixed(2), y.toStringAsFixed(2))),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,
-                decoration: const InputDecoration(
-                  labelText: '名称',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.name,
                   border: OutlineInputBorder(),
                 ),
                 autofocus: true,
@@ -1065,11 +1070,11 @@ class _MapEditPageState extends State<MapEditPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('确定'),
+              child: Text(AppLocalizations.of(context)!.ok),
             ),
           ],
         );
@@ -1136,7 +1141,7 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('地图管理'),
+      title: Text(AppLocalizations.of(context)!.map_management),
       content: SizedBox(
         width: 400,
         child: _loading
@@ -1149,12 +1154,12 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                       const SizedBox(height: 12),
                       TextButton(
                         onPressed: _load,
-                        child: const Text('重试'),
+                        child: Text(AppLocalizations.of(context)!.retry),
                       ),
                     ],
                   )
                 : _mapNames.isEmpty
-                    ? const Text('暂无地图')
+                    ? Text(AppLocalizations.of(context)!.no_map)
                     : ListView.builder(
                         shrinkWrap: true,
                         itemCount: _mapNames.length,
@@ -1201,7 +1206,7 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                       : () async {
                                           await widget.onSwitchMap(name);
                                         },
-                                  child: const Text('编辑'),
+                                  child: Text(AppLocalizations.of(context)!.edit),
                                 ),
                                 
                                 const SizedBox(width: 4),
@@ -1215,8 +1220,8 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                       color: Colors.green.shade100,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text(
-                                      '当前使用',
+                                    child: Text(
+                                      AppLocalizations.of(context)!.current_in_use,
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.green,
@@ -1228,7 +1233,7 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                     onPressed: () async {
                                       await widget.onSwitchMap(name);
                                     },
-                                    child: const Text('切换地图'),
+                                    child: Text(AppLocalizations.of(context)!.switch_map),
                                   ),
                                   const SizedBox(width: 4),
                                 IconButton(
@@ -1237,24 +1242,24 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                     size: 20,
                                     color: isCurrent ? Colors.grey : Colors.red,
                                   ),
-                                  tooltip: isCurrent ? '当前使用中，不可删除' : '删除',
+                                  tooltip: isCurrent ? AppLocalizations.of(context)!.delete_map_tooltip_current : AppLocalizations.of(context)!.delete,
                                   onPressed: isCurrent
                                       ? null
                                       : () async {
                                     final confirm = await showDialog<bool>(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
-                                        title: const Text('确认删除'),
-                                        content: Text('确定要删除地图「$name」吗？此操作不可恢复。'),
+                                        title: Text(AppLocalizations.of(context)!.confirm_delete),
+                                        content: Text(AppLocalizations.of(context)!.confirm_delete_map(name)),
                                         actions: [
                                           TextButton(
                                             onPressed: () => Navigator.of(ctx).pop(false),
-                                            child: const Text('取消'),
+                                            child: Text(AppLocalizations.of(context)!.cancel),
                                           ),
                                           FilledButton(
                                             onPressed: () => Navigator.of(ctx).pop(true),
                                             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                                            child: const Text('删除'),
+                                            child: Text(AppLocalizations.of(context)!.delete),
                                           ),
                                         ],
                                       ),
@@ -1268,7 +1273,7 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                       toastification.show(
                                         context: context,
                                         type: ToastificationType.success,
-                                        title: Text('已删除: $name'),
+                                        title: Text(AppLocalizations.of(context)!.map_deleted(name)),
                                         autoCloseDuration: const Duration(seconds: 2),
                                       );
                                     } catch (e) {
@@ -1276,7 +1281,7 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                       toastification.show(
                                         context: context,
                                         type: ToastificationType.error,
-                                        title: Text('删除失败: $e'),
+                                        title: Text(AppLocalizations.of(context)!.delete_failed(e.toString())),
                                         autoCloseDuration: const Duration(seconds: 3),
                                       );
                                     }
@@ -1291,7 +1296,7 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('关闭'),
+          child: Text(AppLocalizations.of(context)!.close),
         ),
       ],
     );

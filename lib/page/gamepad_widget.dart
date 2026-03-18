@@ -99,8 +99,6 @@ class _GamepadWidgetState extends State<GamepadWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     return Visibility(
         visible:
             Provider.of<GlobalState>(context, listen: false).isManualCtrl.value,

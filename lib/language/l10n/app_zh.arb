@@ -97,5 +97,179 @@
   "exit_edit_mode": "退出编辑模式",
   "add_nav_point": "添加导航点",
   "draw_obstacle": "绘制障碍物",
-  "erase_obstacle": "擦除障碍物"
+  "erase_obstacle": "擦除障碍物",
+  "add_current_position": "添加当前位置",
+  "map_management": "地图管理",
+  "save_success": "保存成功",
+  "save_success_desc": "已发布拓扑地图与栅格地图",
+  "save_failed": "保存失败",
+  "save_as": "另存为",
+  "map_name": "地图名称",
+  "save_as_success": "另存为成功",
+  "save_as_desc": "已保存为: {name}",
+  "@save_as_desc": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "save_as_failed": "另存为失败",
+  "tool_move": "移动",
+  "tool_point": "点位",
+  "tool_route": "拓扑线",
+  "tool_brush": "画笔",
+  "tool_eraser": "橡皮",
+  "route_start_selected": "已选择起点: {name}",
+  "@route_start_selected": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "route_created": "已创建连线: {from} -> {to}",
+  "@route_created": {
+    "placeholders": {
+      "from": {},
+      "to": {}
+    }
+  },
+  "route_properties": "拓扑线属性",
+  "direction": "方向: {from} -> {to}",
+  "@direction": {
+    "placeholders": {
+      "from": {},
+      "to": {}
+    }
+  },
+  "controller": "控制器",
+  "controller_readonly": "控制器（只读）",
+  "close": "关闭",
+  "delete_route": "删除该方向",
+  "point_properties": "点位属性",
+  "name": "名称",
+  "delete_point": "删除该点位",
+  "retry": "重试",
+  "no_map": "暂无地图",
+  "current_in_use": "当前使用",
+  "switch_map": "切换地图",
+  "delete_map_tooltip_current": "当前使用中，不可删除",
+  "delete": "删除",
+  "confirm_delete": "确认删除",
+  "confirm_delete_map": "确定要删除地图「{name}」吗？此操作不可恢复。",
+  "@confirm_delete_map": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "map_deleted": "已删除: {name}",
+  "@map_deleted": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "delete_failed": "删除失败: {e}",
+  "@delete_failed": {
+    "placeholders": {
+      "e": {}
+    }
+  },
+  "position_label": "位置",
+  "position_format": "位置: ({x}, {y})",
+  "@position_format": {
+    "placeholders": {
+      "x": {},
+      "y": {}
+    }
+  },
+  "init_error": "发生错误：{error}",
+  "@init_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "diagnostic_warning": "警告",
+  "diagnostic_error": "错误",
+  "diagnostic_stale": "失活",
+  "diagnostic_normal": "正常",
+  "diagnostic_health": "健康诊断:[{level}] {component}",
+  "@diagnostic_health": {
+    "placeholders": {
+      "level": {},
+      "component": {}
+    }
+  },
+  "diagnostic_hardware": "硬件ID: {id}\n消息: {msg}",
+  "@diagnostic_hardware": {
+    "placeholders": {
+      "id": {},
+      "msg": {}
+    }
+  },
+  "error_count": "错误: {count}",
+  "@error_count": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "warn_count": "警告: {count}",
+  "@warn_count": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "nav_point_info": "导航点信息",
+  "position_coords": "位置坐标",
+  "coord_x": "X坐标",
+  "coord_y": "Y坐标",
+  "heading": "方向",
+  "stop_manual_first": "请先停止手动控制",
+  "nav_goal_sent": "已发送导航目标到 {name}",
+  "@nav_goal_sent": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "send_nav_goal": "发送导航目标",
+  "emergency_stopped": "急停已触发",
+  "nav_stopped": "导航已停止",
+  "legend_free": "自由",
+  "legend_occupied": "障碍",
+  "legend_unknown": "未知",
+  "nav_goal": "导航目标",
+  "charge_station": "充电站",
+  "layer_trace": "轨迹路径",
+  "layer_robot_footprint": "机器人轮廓",
+  "camera_image": "相机图像",
+  "no_map_available": "当前无地图可用，请先选择或创建地图",
+  "invalid_json": "导入失败：无效的JSON格式",
+  "data_stale": "超过5s未更新数据",
+  "unknown_hardware": "未知硬件",
+  "status": "状态",
+  "update_time": "更新时间",
+  "no_detail": "暂无详细信息",
+  "last_update": "最后更新",
+  "no_diagnostic_data": "暂无诊断数据",
+  "no_matching_diagnostic": "没有找到匹配的诊断数据",
+  "all": "全部",
+  "clear_filter": "清除筛选",
+  "show_hardware_count": "显示 {count} 个硬件组",
+  "@show_hardware_count": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clear_all_filter": "清除所有筛选",
+  "component_count": "组件数: {count}",
+  "system_diagnostic": "系统诊断",
+  "refresh": "刷新",
+  "search_component_hint": "搜索组件名称...",
+  "status_filter": "状态筛选",
+  "table_key": "键",
+  "table_value": "值",
+  "detail_info": "详细信息",
+  "diagnostic_overview": "诊断状态总览",
+  "hardware_id": "硬件ID",
+  "@component_count": {
+    "placeholders": {
+      "count": {}
+    }
+  }
 }

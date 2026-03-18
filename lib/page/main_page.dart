@@ -16,6 +16,7 @@ import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_status.dart';
 import 'package:ros_flutter_gui_app/page/diagnostic_page.dart';
 import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
+import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 
 
@@ -106,19 +107,19 @@ class _MainFlamePageState extends State<MainFlamePage> {
     
     switch (state.level) {
       case DiagnosticStatus.WARN:
-        levelText = '警告';
+        levelText = AppLocalizations.of(context)!.diagnostic_warning;
         levelColor = Colors.orange;
         toastType = ToastificationType.warning;
         iconData = Icons.warning;
         break;
       case DiagnosticStatus.ERROR:
-        levelText = '错误';
+        levelText = AppLocalizations.of(context)!.diagnostic_error;
         levelColor = Colors.red;
         toastType = ToastificationType.error;
         iconData = Icons.error;
         break;
       case DiagnosticStatus.STALE:
-        levelText = '失活';
+        levelText = AppLocalizations.of(context)!.diagnostic_stale;
         levelColor = Colors.grey;
         toastType = ToastificationType.info;
         iconData = Icons.schedule;
@@ -127,11 +128,14 @@ class _MainFlamePageState extends State<MainFlamePage> {
         return; // 其他状态不显示toast
     }
     
+    final l10n = AppLocalizations.of(context)!;
+    final hwId = hardwareId == 'unknown_hardware' ? l10n.unknown_hardware : hardwareId;
+    final msg = state.message == 'data_stale' ? l10n.data_stale : state.message;
     toastification.show(
       context: context,
       type: toastType,
-      title: Text('健康诊断:[$levelText] $componentName'),
-      description: Text('硬件ID: $hardwareId\n消息: ${state.message}'),
+      title: Text(l10n.diagnostic_health(levelText, componentName)),
+      description: Text(l10n.diagnostic_hardware(hwId, msg)),
       autoCloseDuration: const Duration(seconds: 5),
       icon: Icon(
         iconData,
@@ -214,14 +218,14 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   children: [
                     Expanded(
                       child: Text(
-                        '拓扑线属性',
+                        AppLocalizations.of(context)!.route_properties,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     IconButton(
-                      tooltip: '关闭',
+                      tooltip: AppLocalizations.of(context)!.close,
                       onPressed: () {
                         setState(() {
                           _selectedRoute = null;
@@ -233,13 +237,13 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text('方向: ${route.fromPoint} -> ${route.toPoint}'),
+                Text(AppLocalizations.of(context)!.direction(route.fromPoint, route.toPoint)),
                 const SizedBox(height: 12),
                 TextFormField(
                   initialValue: info.controller,
                   readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: '控制器（只读）',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.controller_readonly,
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -349,16 +353,16 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     
                     Color chipColor = Colors.green;
                     IconData chipIcon = Icons.check_circle;
-                    String chipText = '正常';
+                    String chipText = AppLocalizations.of(context)!.diagnostic_normal;
                     
                     if (errorCount > 0) {
                       chipColor = Colors.red;
                       chipIcon = Icons.error;
-                      chipText = '错误: $errorCount';
+                      chipText = AppLocalizations.of(context)!.error_count(errorCount.toString());
                     } else if (warnCount > 0) {
                       chipColor = Colors.orange;
                       chipIcon = Icons.warning;
-                      chipText = '警告: $warnCount';
+                      chipText = AppLocalizations.of(context)!.warn_count(warnCount.toString());
                     }
                     
                     return  RawChip(
@@ -421,66 +425,67 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     // 使用循环生成图层控制按钮
                     ...Provider.of<GlobalState>(context, listen: true).layerNames.map((layerName) {
                       // 定义每个图层的图标和颜色配置
+                      final l10n = AppLocalizations.of(context)!;
                       final layerConfig = <String, Map<String, dynamic>>{
                         'showGrid': {
                           'icon': Icons.grid_on,
                           'iconOff': Icons.grid_off,
                           'color': Colors.green,
-                          'tooltip': '网格图层',
+                          'tooltip': l10n.layer_grid,
                         },
                         'showGlobalCostmap': {
                           'icon': Icons.map,
                           'iconOff': Icons.map_outlined,
                           'color': Colors.green,
-                          'tooltip': '全局代价地图',
+                          'tooltip': l10n.layer_global_costmap,
                         },
                         'showLocalCostmap': {
                           'icon': Icons.map_outlined,
                           'iconOff': Icons.map_outlined,
                           'color': Colors.green,
-                          'tooltip': '局部代价地图',
+                          'tooltip': l10n.layer_local_costmap,
                         },
                         'showLaser': {
                           'icon': Icons.radar,
                           'iconOff': Icons.radar_outlined,
                           'color': Colors.green,
-                          'tooltip': '激光雷达数据',
+                          'tooltip': l10n.layer_laser,
                         },
                         'showPointCloud': {
                           'icon': Icons.cloud,
                           'iconOff': Icons.cloud_outlined,
                           'color': Colors.green,
-                          'tooltip': '点云数据',
+                          'tooltip': l10n.layer_pointcloud,
                         },
                         'showGlobalPath': {
                           'icon': Icons.timeline,
                           'iconOff': Icons.timeline_outlined,
                           'color': Colors.blue,
-                          'tooltip': '全局路径',
+                          'tooltip': l10n.layer_global_path,
                         },
                         'showLocalPath': {
                           'icon': Icons.timeline,
                           'iconOff': Icons.timeline_outlined,
                           'color': Colors.green,
-                          'tooltip': '局部路径',
+                          'tooltip': l10n.layer_local_path,
                         },
                         'showTracePath': {
                           'icon': Icons.timeline,
                           'iconOff': Icons.timeline_outlined,
                           'color': Colors.yellow,
-                          'tooltip': '轨迹路径',
+                          'tooltip': l10n.layer_trace,
                         },
                         'showTopology': {
                           'icon': Icons.account_tree,
                           'iconOff': Icons.account_tree_outlined,
                           'color': Colors.orange,
-                          'tooltip': '拓扑地图',
+                          'tooltip': l10n.layer_topology,
                         },
                         'showRobotFootprint': {
                           'icon': Icons.smart_toy,
                           'iconOff': Icons.smart_toy_outlined,
                           'color': Colors.blue,
-                          'tooltip': '机器人轮廓',
+                          'tooltip': l10n.layer_robot_footprint,
                         },
                       };
                       
@@ -576,7 +581,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   showCamera = !showCamera;
                 });
               },
-              tooltip: '相机图像',
+              tooltip: AppLocalizations.of(context)!.camera_image,
             ),
           ),
           
@@ -632,7 +637,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
           children: [
             Icon(Icons.location_on, color: Colors.blue[700], size: 24),
             const SizedBox(width: 10),
-            const Text('导航点信息'),
+            Text(AppLocalizations.of(context)!.nav_point_info),
           ],
         ),
         content: SingleChildScrollView(
@@ -684,10 +689,10 @@ class _MainFlamePageState extends State<MainFlamePage> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildInfoSection(ctx, theme, '位置坐标', Icons.gps_fixed, [
-                _buildInfoRow('X坐标', '${point.x.toStringAsFixed(2)} m'),
-                _buildInfoRow('Y坐标', '${point.y.toStringAsFixed(2)} m'),
-                _buildInfoRow('方向', '${(point.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
+              _buildInfoSection(ctx, theme, AppLocalizations.of(context)!.position_coords, Icons.gps_fixed, [
+                _buildInfoRow(AppLocalizations.of(context)!.coord_x, '${point.x.toStringAsFixed(2)} m'),
+                _buildInfoRow(AppLocalizations.of(context)!.coord_y, '${point.y.toStringAsFixed(2)} m'),
+                _buildInfoRow(AppLocalizations.of(context)!.heading, '${(point.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
               ]),
             ],
           ),
@@ -695,14 +700,14 @@ class _MainFlamePageState extends State<MainFlamePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton.icon(
             onPressed: () {
               if (Provider.of<GlobalState>(context, listen: false).isManualCtrl.value) {
                 toastification.show(
                   context: context,
-                  title: const Text('请先停止手动控制'),
+                  title: Text(AppLocalizations.of(context)!.stop_manual_first),
                   autoCloseDuration: const Duration(seconds: 3),
                 );
                 return;
@@ -712,14 +717,14 @@ class _MainFlamePageState extends State<MainFlamePage> {
               );
               toastification.show(
                 context: context,
-                title: Text('已发送导航目标到 ${point.name}'),
+                title: Text(AppLocalizations.of(context)!.nav_goal_sent(point.name)),
                 autoCloseDuration: const Duration(seconds: 3),
               );
               Navigator.of(ctx).pop();
               setState(() => selectedNavPoint = null);
             },
             icon: const Icon(Icons.navigation, size: 20),
-            label: const Text('发送导航目标'),
+            label: Text(AppLocalizations.of(context)!.send_nav_goal),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.blue[600],
               foregroundColor: Colors.white,
@@ -761,7 +766,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       ),
                     );
                   },
-                  tooltip: '地图编辑',
+                  tooltip: AppLocalizations.of(context)!.map_edit,
                 ),
               ),
               
@@ -778,7 +783,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     Icons.zoom_in,
                     color: theme.iconTheme.color,
                   ),
-                  tooltip: '放大',
+                  tooltip: AppLocalizations.of(context)!.zoom_in,
                 ),
               ),
               // 缩小按钮
@@ -792,7 +797,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     Icons.zoom_out,
                     color: theme.iconTheme.color,
                   ),
-                  tooltip: '缩小',
+                  tooltip: AppLocalizations.of(context)!.zoom_out,
                 ),
               ),
               // 定位到机器人按钮
@@ -865,7 +870,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                             .sendEmergencyStop();
                         toastification.show(
                           context: context,
-                          title: Text('急停已触发'),
+                          title: Text(AppLocalizations.of(context)!.emergency_stopped),
                           autoCloseDuration: const Duration(seconds: 3),
                         );
                       },
@@ -898,7 +903,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                                       .sendCancelNav();
                                   toastification.show(
                                     context: context,
-                                    title: Text('导航已停止'),
+                                    title: Text(AppLocalizations.of(context)!.nav_stopped),
                                     autoCloseDuration: const Duration(seconds: 3),
                                   );
                                 },
@@ -988,9 +993,9 @@ class _MainFlamePageState extends State<MainFlamePage> {
   String _getTypeText(NavPointType type) {
     switch (type) {
       case NavPointType.navGoal:
-        return '导航目标';
+        return AppLocalizations.of(context)!.nav_goal;
       case NavPointType.chargeStation:
-        return '充电站';
+        return AppLocalizations.of(context)!.charge_station;
     }
   }
   
@@ -1102,11 +1107,11 @@ class _MainFlamePageState extends State<MainFlamePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // 图例项目 - 横着排列
-              _buildCompactLegendItem('自由', _getFreeAreaColor()),
+              _buildCompactLegendItem(AppLocalizations.of(context)!.legend_free, _getFreeAreaColor()),
               const SizedBox(width: 12),
-              _buildCompactLegendItem('障碍', _getOccupiedAreaColor()),
+              _buildCompactLegendItem(AppLocalizations.of(context)!.legend_occupied, _getOccupiedAreaColor()),
               const SizedBox(width: 12),
-              _buildCompactLegendItem('未知', _getUnknownAreaColor()),
+              _buildCompactLegendItem(AppLocalizations.of(context)!.legend_unknown, _getUnknownAreaColor()),
             ],
           ),
         ),
@@ -1146,23 +1151,11 @@ class _MainFlamePageState extends State<MainFlamePage> {
     );
   }
 
-  // 获取自由区域颜色 - 与地图渲染中的RGB值完全匹配
-  Color _getFreeAreaColor() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    return isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFFFFFFF);
-  }
+  Color _getFreeAreaColor() => const Color(0xFFFFFFFF);
 
-  // 获取占据区域颜色 - 与地图渲染中的RGB值完全匹配
-  Color _getOccupiedAreaColor() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    return isDarkMode ? const Color(0xFFC8C8C8) : const Color(0xFF3C3C3C);
-  }
+  Color _getOccupiedAreaColor() => const Color(0xFF3C3C3C);
 
-  // 获取未知区域颜色 - 与地图渲染中的RGB值完全匹配
-  Color _getUnknownAreaColor() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    return isDarkMode ? const Color(0xFF505050) : const Color(0xFFC8C8C8);
-  }
+  Color _getUnknownAreaColor() => const Color(0xFFC8C8C8);
 
   @override
   void dispose() {

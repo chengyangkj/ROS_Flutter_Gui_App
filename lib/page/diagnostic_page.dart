@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_status.dart';
 import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
+import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 class DiagnosticPage extends StatefulWidget {
   const DiagnosticPage({super.key});
@@ -36,7 +37,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('系统诊断'),
+        title: Text(AppLocalizations.of(context)!.system_diagnostic),
         // backgroundColor: Colors.blue,
         // foregroundColor: Colors.white,
         actions: [
@@ -46,7 +47,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
             onPressed: () {
               setState(() {});
             },
-            tooltip: '刷新',
+            tooltip: AppLocalizations.of(context)!.refresh,
           ),
         ],
       ),
@@ -75,8 +76,8 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                             const SizedBox(height: 16),
                             Text(
                               _searchQuery.isNotEmpty || _filterLevel != -1
-                                  ? '没有找到匹配的诊断数据'
-                                  : '暂无诊断数据',
+                                  ? AppLocalizations.of(context)!.no_matching_diagnostic
+                                  : AppLocalizations.of(context)!.no_diagnostic_data,
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 16,
@@ -92,7 +93,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                     _searchController.clear();
                                   });
                                 },
-                                child: const Text('清除筛选条件'),
+                                child: Text(AppLocalizations.of(context)!.clear_filter),
                               ),
                             ],
                           ],
@@ -112,7 +113,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                 Icon(Icons.filter_list, color: Colors.blue[600], size: 16),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '显示 ${filteredData.length} 个硬件组',
+                                  AppLocalizations.of(context)!.show_hardware_count(filteredData.length.toString()),
                                   style: TextStyle(
                                     color: Colors.blue[800],
                                     fontWeight: FontWeight.w500,
@@ -127,7 +128,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                                       _searchController.clear();
                                     });
                                   },
-                                  child: const Text('清除筛选'),
+                                  child: Text(AppLocalizations.of(context)!.clear_filter),
                                 ),
                               ],
                             ),
@@ -165,7 +166,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: '搜索组件名称...',
+                hintText: AppLocalizations.of(context)!.search_component_hint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -199,22 +200,22 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
             flex: 3,
             child: Row(
               children: [
-                const Text('状态筛选: '),
+                Text(AppLocalizations.of(context)!.status_filter),
                 const SizedBox(width: 8),
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildFilterChip('全部', -1),
+                        _buildFilterChip(AppLocalizations.of(context)!.all, -1),
                         const SizedBox(width: 8),
-                        _buildFilterChip('正常', 0),
+                        _buildFilterChip(AppLocalizations.of(context)!.diagnostic_normal, 0),
                         const SizedBox(width: 8),
-                        _buildFilterChip('警告', 1),
+                        _buildFilterChip(AppLocalizations.of(context)!.diagnostic_warning, 1),
                         const SizedBox(width: 8),
-                        _buildFilterChip('错误', 2),
+                        _buildFilterChip(AppLocalizations.of(context)!.diagnostic_error, 2),
                         const SizedBox(width: 8),
-                        _buildFilterChip('过期', 3),
+                        _buildFilterChip(AppLocalizations.of(context)!.diagnostic_stale, 3),
                       ],
                     ),
                   ),
@@ -229,7 +230,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                         _searchController.clear();
                       });
                     },
-                    tooltip: '清除所有筛选',
+                    tooltip: AppLocalizations.of(context)!.clear_all_filter,
                   ),
               ],
             ),
@@ -383,30 +384,30 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
       case DiagnosticStatus.ERROR:
         groupColor = Colors.red;
         groupIcon = Icons.error;
-        groupStatusText = '错误';
         break;
       case DiagnosticStatus.WARN:
         groupColor = Colors.orange;
         groupIcon = Icons.warning;
-        groupStatusText = '警告';
         break;
       case DiagnosticStatus.STALE:
         groupColor = Colors.grey;
         groupIcon = Icons.schedule;
-        groupStatusText = '过期';
         break;
       default:
         groupColor = Colors.green;
         groupIcon = Icons.check_circle;
-        groupStatusText = '正常';
     }
+    groupStatusText = _levelDisplayName(maxLevel);
+
+    final l10n = AppLocalizations.of(context)!;
+    final displayHardwareId = hardwareId == 'unknown_hardware' ? l10n.unknown_hardware : hardwareId;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: ExpansionTile(
         leading: Icon(groupIcon, color: groupColor),
         title: Text(
-          hardwareId,
+          displayHardwareId,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -416,7 +417,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '状态: $groupStatusText | 组件数: ${filteredStates.length}',
+              '${l10n.status}: $groupStatusText | ${l10n.component_count(filteredStates.length.toString())}',
               style: TextStyle(
                 color: groupColor,
                 fontWeight: FontWeight.w500,
@@ -424,7 +425,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
             ),
             const SizedBox(height: 2),
             Text(
-              '最后更新: ${_formatDateTime(_getLatestUpdateTime(filteredStates))}',
+              '${l10n.last_update}: ${_formatDateTime(_getLatestUpdateTime(filteredStates))}',
               style: const TextStyle(
                 fontSize: 11,
                 color: Colors.grey,
@@ -444,7 +445,22 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     );
   }
 
-  // 构建组件项
+  String _levelDisplayName(int level) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (level) {
+      case DiagnosticStatus.OK:
+        return l10n.diagnostic_normal;
+      case DiagnosticStatus.WARN:
+        return l10n.diagnostic_warning;
+      case DiagnosticStatus.ERROR:
+        return l10n.diagnostic_error;
+      case DiagnosticStatus.STALE:
+        return l10n.diagnostic_stale;
+      default:
+        return l10n.diagnostic_stale;
+    }
+  }
+
   Widget _buildComponentItem(String hardwareId, String componentName, DiagnosticState state) {
     final isExpanded = _expandedComponents[hardwareId]?[componentName] ?? false;
     
@@ -465,7 +481,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '状态: ${state.levelDisplayName}',
+                '${AppLocalizations.of(context)!.status}: ${_levelDisplayName(state.level)}',
                 style: TextStyle(
                   color: state.levelColor,
                   fontWeight: FontWeight.w500,
@@ -474,7 +490,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
               ),
               if (state.message.isNotEmpty)
                 Text(
-                  state.message,
+                  state.message == 'data_stale' ? AppLocalizations.of(context)!.data_stale : state.message,
                   style: const TextStyle(
                     fontSize: 11,
                     color: Colors.grey,
@@ -484,7 +500,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                 ),
               const SizedBox(height: 4),
               Text(
-                '更新时间: ${_formatDateTime(state.lastUpdateTime)}',
+                '${AppLocalizations.of(context)!.update_time}: ${_formatDateTime(state.lastUpdateTime)}',
                 style: const TextStyle(
                   fontSize: 10,
                   color: Colors.grey,
@@ -510,8 +526,8 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    const Text(
-                      '暂无详细信息',
+                    Text(
+                      AppLocalizations.of(context)!.no_detail,
                       style: TextStyle(
                         color: Colors.grey,
                         fontStyle: FontStyle.italic,
@@ -519,7 +535,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '最后更新: ${_formatDateTime(state.lastUpdateTime)}',
+                      '${AppLocalizations.of(context)!.last_update}: ${_formatDateTime(state.lastUpdateTime)}',
                       style: const TextStyle(
                         fontSize: 10,
                         color: Colors.grey,
@@ -556,20 +572,20 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
             ),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   flex: 2,
                   child: Text(
-                    '键',
+                    AppLocalizations.of(context)!.table_key,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
                   ),
                 ),
-                const Expanded(
+                Expanded(
                   flex: 3,
                   child: Text(
-                    '值',
+                    AppLocalizations.of(context)!.table_value,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -579,7 +595,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                 Expanded(
                   flex: 2,
                   child: Text(
-                    '更新时间: ${_formatDateTime(lastUpdateTime)}',
+                    '${AppLocalizations.of(context)!.update_time}: ${_formatDateTime(lastUpdateTime)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
@@ -654,13 +670,13 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildSummaryChip('正常', okCount, Colors.green),
+                  _buildSummaryChip(AppLocalizations.of(context)!.diagnostic_normal, okCount, Colors.green),
                   const SizedBox(width: 4),
-                  _buildSummaryChip('警告', warnCount, Colors.orange),
+                  _buildSummaryChip(AppLocalizations.of(context)!.diagnostic_warning, warnCount, Colors.orange),
                   const SizedBox(width: 4),
-                  _buildSummaryChip('错误', errorCount, Colors.red),
+                  _buildSummaryChip(AppLocalizations.of(context)!.diagnostic_error, errorCount, Colors.red),
                   const SizedBox(width: 4),
-                  _buildSummaryChip('过期', staleCount, Colors.grey),
+                  _buildSummaryChip(AppLocalizations.of(context)!.diagnostic_stale, staleCount, Colors.grey),
                 ],
               ),
             );

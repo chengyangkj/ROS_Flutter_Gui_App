@@ -260,9 +260,7 @@ class _SettingsPageState extends State<SettingsPage> {
             value: _settings['language'] == 'zh'
                 ? AppLocalizations.of(context)!.zh
                 : AppLocalizations.of(context)!.en,
-            dropdownColor: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[800]
-                : Colors.white,
+            dropdownColor: Colors.white,
             onChanged: (String? newValue) {
               if (newValue != null) {
                 setState(() {
@@ -306,9 +304,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: Text(AppLocalizations.of(context)!.default_config_template),
           trailing: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[800]
-                  : Colors.white,
+              color: Colors.white,
               border: Border.all(
                 color: Colors.grey.withOpacity(0.2),
               ),
@@ -318,9 +314,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<TempConfigType>(
                 value: _selectedTempConfigType,
-                dropdownColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.white,
+                dropdownColor: Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 elevation: 8,
                 isDense: true,
@@ -361,9 +355,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text(
                       tempConfigTypeToString(type),
                       style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : Colors.black87,
+                        color: Colors.black87,
                       ),
                     ),
                   );
@@ -377,9 +369,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSection(String title, List<Widget> children) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -387,8 +376,8 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             title,
-            style: TextStyle(
-              color: isDarkMode ? Colors.grey[300] : Colors.grey,
+            style: const TextStyle(
+              color: Colors.grey,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -397,7 +386,7 @@ class _SettingsPageState extends State<SettingsPage> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isDarkMode ? Colors.grey[800] : Colors.white,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: Colors.grey.withOpacity(0.2)),
           ),
@@ -408,9 +397,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSettingItem(String key, String value) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -431,17 +417,17 @@ class _SettingsPageState extends State<SettingsPage> {
               Expanded(
                 child: Text(
                   _getDisplayName(key),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
-                    color: isDarkMode ? Colors.white : Colors.black,
+                    color: Colors.black,
                   ),
                 ),
               ),
               Flexible(
                 child: Text(
                   value,
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                  style: const TextStyle(
+                    color: Colors.grey,
                     fontSize: 16,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -452,7 +438,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(width: 8),
               Icon(
                 Icons.chevron_right,
-                color: isDarkMode ? Colors.grey[400] : Colors.grey,
+                color: Colors.grey,
                 size: 20,
               ),
             ],
@@ -528,9 +514,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: Text(AppLocalizations.of(context)!.screen_orientation),
           trailing: DropdownButton<Orientation>(
             value: _selectedOrientation,
-            dropdownColor: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[800]
-                : Colors.white,
+            dropdownColor: Colors.white,
             onChanged: (Orientation? newValue) {
               if (newValue != null) {
                 setState(() {
@@ -587,11 +571,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDarkMode ? Colors.grey[900] : Colors.grey[100],
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.setting),
         elevation: 0,

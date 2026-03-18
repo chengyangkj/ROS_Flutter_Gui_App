@@ -11,11 +11,10 @@ Widget buildGridLayer({
   required int width,
   required int height,
   required WorldToLatLngFn worldToLatLng,
-  required bool isDark,
 }) {
   final widthM = width * resolution;
   final heightM = height * resolution;
-  final color = isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.3);
+  final color = Colors.black.withOpacity(0.3);
   final polylines = <Polyline>[];
   for (double x = 0; x <= widthM; x += 1.0) {
     polylines.add(Polyline(

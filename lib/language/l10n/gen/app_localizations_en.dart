@@ -309,4 +309,304 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get erase_obstacle => 'Erase Obstacle';
+
+  @override
+  String get add_current_position => 'Add Current Position';
+
+  @override
+  String get map_management => 'Map Management';
+
+  @override
+  String get save_success => 'Save Success';
+
+  @override
+  String get save_success_desc => 'Topology map and occupancy map published';
+
+  @override
+  String get save_failed => 'Save Failed';
+
+  @override
+  String get save_as => 'Save As';
+
+  @override
+  String get map_name => 'Map Name';
+
+  @override
+  String get save_as_success => 'Save As Success';
+
+  @override
+  String save_as_desc(Object name) {
+    return 'Saved as: $name';
+  }
+
+  @override
+  String get save_as_failed => 'Save As Failed';
+
+  @override
+  String get tool_move => 'Move';
+
+  @override
+  String get tool_point => 'Point';
+
+  @override
+  String get tool_route => 'Route';
+
+  @override
+  String get tool_brush => 'Brush';
+
+  @override
+  String get tool_eraser => 'Eraser';
+
+  @override
+  String route_start_selected(Object name) {
+    return 'Start selected: $name';
+  }
+
+  @override
+  String route_created(Object from, Object to) {
+    return 'Route created: $from -> $to';
+  }
+
+  @override
+  String get route_properties => 'Route Properties';
+
+  @override
+  String direction(Object from, Object to) {
+    return 'Direction: $from -> $to';
+  }
+
+  @override
+  String get controller => 'Controller';
+
+  @override
+  String get controller_readonly => 'Controller (Read Only)';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get delete_route => 'Delete This Direction';
+
+  @override
+  String get point_properties => 'Point Properties';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get delete_point => 'Delete This Point';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get no_map => 'No Map';
+
+  @override
+  String get current_in_use => 'In Use';
+
+  @override
+  String get switch_map => 'Switch Map';
+
+  @override
+  String get delete_map_tooltip_current => 'In use, cannot delete';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get confirm_delete => 'Confirm Delete';
+
+  @override
+  String confirm_delete_map(Object name) {
+    return 'Delete map \"$name\"? This cannot be undone.';
+  }
+
+  @override
+  String map_deleted(Object name) {
+    return 'Deleted: $name';
+  }
+
+  @override
+  String delete_failed(Object e) {
+    return 'Delete failed: $e';
+  }
+
+  @override
+  String get position_label => 'Position';
+
+  @override
+  String position_format(Object x, Object y) {
+    return 'Position: ($x, $y)';
+  }
+
+  @override
+  String init_error(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get diagnostic_warning => 'Warning';
+
+  @override
+  String get diagnostic_error => 'Error';
+
+  @override
+  String get diagnostic_stale => 'Stale';
+
+  @override
+  String get diagnostic_normal => 'Normal';
+
+  @override
+  String diagnostic_health(Object level, Object component) {
+    return 'Diagnostic: [$level] $component';
+  }
+
+  @override
+  String diagnostic_hardware(Object id, Object msg) {
+    return 'Hardware ID: $id\nMessage: $msg';
+  }
+
+  @override
+  String error_count(Object count) {
+    return 'Errors: $count';
+  }
+
+  @override
+  String warn_count(Object count) {
+    return 'Warnings: $count';
+  }
+
+  @override
+  String get nav_point_info => 'Nav Point Info';
+
+  @override
+  String get position_coords => 'Position Coords';
+
+  @override
+  String get coord_x => 'X';
+
+  @override
+  String get coord_y => 'Y';
+
+  @override
+  String get heading => 'Heading';
+
+  @override
+  String get stop_manual_first => 'Please stop manual control first';
+
+  @override
+  String nav_goal_sent(Object name) {
+    return 'Nav goal sent to $name';
+  }
+
+  @override
+  String get send_nav_goal => 'Send Nav Goal';
+
+  @override
+  String get emergency_stopped => 'Emergency Stop Triggered';
+
+  @override
+  String get nav_stopped => 'Navigation Stopped';
+
+  @override
+  String get legend_free => 'Free';
+
+  @override
+  String get legend_occupied => 'Occupied';
+
+  @override
+  String get legend_unknown => 'Unknown';
+
+  @override
+  String get nav_goal => 'Nav Goal';
+
+  @override
+  String get charge_station => 'Charge Station';
+
+  @override
+  String get layer_trace => 'Trace Path';
+
+  @override
+  String get layer_robot_footprint => 'Robot Footprint';
+
+  @override
+  String get camera_image => 'Camera Image';
+
+  @override
+  String get no_map_available =>
+      'No map available, please select or create one first';
+
+  @override
+  String get invalid_json => 'Import failed: invalid JSON format';
+
+  @override
+  String get data_stale => 'No data update for over 5s';
+
+  @override
+  String get unknown_hardware => 'Unknown hardware';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get update_time => 'Update time';
+
+  @override
+  String get no_detail => 'No details available';
+
+  @override
+  String get last_update => 'Last update';
+
+  @override
+  String get no_diagnostic_data => 'No diagnostic data';
+
+  @override
+  String get no_matching_diagnostic => 'No matching diagnostic data found';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get clear_filter => 'Clear filter';
+
+  @override
+  String show_hardware_count(Object count) {
+    return 'Showing $count hardware groups';
+  }
+
+  @override
+  String get clear_all_filter => 'Clear all filters';
+
+  @override
+  String component_count(Object count) {
+    return 'Components: $count';
+  }
+
+  @override
+  String get system_diagnostic => 'System Diagnostic';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get search_component_hint => 'Search component...';
+
+  @override
+  String get status_filter => 'Status filter';
+
+  @override
+  String get table_key => 'Key';
+
+  @override
+  String get table_value => 'Value';
+
+  @override
+  String get detail_info => 'Detail';
+
+  @override
+  String get diagnostic_overview => 'Diagnostic Overview';
+
+  @override
+  String get hardware_id => 'Hardware ID';
 }

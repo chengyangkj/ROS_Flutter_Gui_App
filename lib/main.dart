@@ -13,7 +13,6 @@ import 'package:ros_flutter_gui_app/provider/http_channel.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/setting_page.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'provider/them_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
@@ -39,7 +38,6 @@ void main() async {
   runApp(MultiProvider(providers: [
     Provider<RosChannel>(create: (_) => RosChannel()),
     Provider<HttpChannel>(create: (_) => HttpChannel()),
-    ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
     ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState()),
   ], child: MyApp()));
 }
@@ -119,7 +117,7 @@ class _MyAppState extends State<MyApp> {
         "/setting": ((context) => SettingsPage()),
         // "/gamepad":((context) => GamepadPage()),
       },
-      themeMode: Provider.of<ThemeProvider>(context, listen: true).themeMode,
+      themeMode: ThemeMode.light,
       theme: ThemeData(
         brightness: Brightness.light,
         colorScheme: ColorScheme.fromSwatch().copyWith(
@@ -148,39 +146,6 @@ class _MyAppState extends State<MyApp> {
               shape: StadiumBorder(
                 side: BorderSide(
                   color: Colors.grey[300]!, // 设置边框颜色
-                  width: 1.0, // 设置边框宽度
-                ),
-              ),
-            ),
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme:
-            ColorScheme.fromSwatch(brightness: Brightness.dark).copyWith(
-          primary: Colors.blue,
-          secondary: Colors.blueGrey,
-          surface: Color.fromRGBO(60, 60, 60, 1),
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue, width: 2.0),
-          ),
-        ),
-        cardColor: Color.fromRGBO(230, 230, 230, 1),
-        scaffoldBackgroundColor: Color.fromRGBO(40, 40, 40, 1),
-        appBarTheme: AppBarTheme(elevation: 0),
-        iconTheme: IconThemeData(
-          color: Colors.white, // 设置全局图标颜色为绿色
-        ),
-        chipTheme: ThemeData.dark().chipTheme.copyWith(
-              backgroundColor: Color.fromRGBO(60, 60, 60, 1),
-              elevation: 10.0,
-              shape: StadiumBorder(
-                side: BorderSide(
-                  color: Colors.white, // 设置边框颜色
                   width: 1.0, // 设置边框宽度
                 ),
               ),

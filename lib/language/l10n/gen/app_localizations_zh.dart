@@ -304,4 +304,303 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get erase_obstacle => '擦除障碍物';
+
+  @override
+  String get add_current_position => '添加当前位置';
+
+  @override
+  String get map_management => '地图管理';
+
+  @override
+  String get save_success => '保存成功';
+
+  @override
+  String get save_success_desc => '已发布拓扑地图与栅格地图';
+
+  @override
+  String get save_failed => '保存失败';
+
+  @override
+  String get save_as => '另存为';
+
+  @override
+  String get map_name => '地图名称';
+
+  @override
+  String get save_as_success => '另存为成功';
+
+  @override
+  String save_as_desc(Object name) {
+    return '已保存为: $name';
+  }
+
+  @override
+  String get save_as_failed => '另存为失败';
+
+  @override
+  String get tool_move => '移动';
+
+  @override
+  String get tool_point => '点位';
+
+  @override
+  String get tool_route => '拓扑线';
+
+  @override
+  String get tool_brush => '画笔';
+
+  @override
+  String get tool_eraser => '橡皮';
+
+  @override
+  String route_start_selected(Object name) {
+    return '已选择起点: $name';
+  }
+
+  @override
+  String route_created(Object from, Object to) {
+    return '已创建连线: $from -> $to';
+  }
+
+  @override
+  String get route_properties => '拓扑线属性';
+
+  @override
+  String direction(Object from, Object to) {
+    return '方向: $from -> $to';
+  }
+
+  @override
+  String get controller => '控制器';
+
+  @override
+  String get controller_readonly => '控制器（只读）';
+
+  @override
+  String get close => '关闭';
+
+  @override
+  String get delete_route => '删除该方向';
+
+  @override
+  String get point_properties => '点位属性';
+
+  @override
+  String get name => '名称';
+
+  @override
+  String get delete_point => '删除该点位';
+
+  @override
+  String get retry => '重试';
+
+  @override
+  String get no_map => '暂无地图';
+
+  @override
+  String get current_in_use => '当前使用';
+
+  @override
+  String get switch_map => '切换地图';
+
+  @override
+  String get delete_map_tooltip_current => '当前使用中，不可删除';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get confirm_delete => '确认删除';
+
+  @override
+  String confirm_delete_map(Object name) {
+    return '确定要删除地图「$name」吗？此操作不可恢复。';
+  }
+
+  @override
+  String map_deleted(Object name) {
+    return '已删除: $name';
+  }
+
+  @override
+  String delete_failed(Object e) {
+    return '删除失败: $e';
+  }
+
+  @override
+  String get position_label => '位置';
+
+  @override
+  String position_format(Object x, Object y) {
+    return '位置: ($x, $y)';
+  }
+
+  @override
+  String init_error(Object error) {
+    return '发生错误：$error';
+  }
+
+  @override
+  String get diagnostic_warning => '警告';
+
+  @override
+  String get diagnostic_error => '错误';
+
+  @override
+  String get diagnostic_stale => '失活';
+
+  @override
+  String get diagnostic_normal => '正常';
+
+  @override
+  String diagnostic_health(Object level, Object component) {
+    return '健康诊断:[$level] $component';
+  }
+
+  @override
+  String diagnostic_hardware(Object id, Object msg) {
+    return '硬件ID: $id\n消息: $msg';
+  }
+
+  @override
+  String error_count(Object count) {
+    return '错误: $count';
+  }
+
+  @override
+  String warn_count(Object count) {
+    return '警告: $count';
+  }
+
+  @override
+  String get nav_point_info => '导航点信息';
+
+  @override
+  String get position_coords => '位置坐标';
+
+  @override
+  String get coord_x => 'X坐标';
+
+  @override
+  String get coord_y => 'Y坐标';
+
+  @override
+  String get heading => '方向';
+
+  @override
+  String get stop_manual_first => '请先停止手动控制';
+
+  @override
+  String nav_goal_sent(Object name) {
+    return '已发送导航目标到 $name';
+  }
+
+  @override
+  String get send_nav_goal => '发送导航目标';
+
+  @override
+  String get emergency_stopped => '急停已触发';
+
+  @override
+  String get nav_stopped => '导航已停止';
+
+  @override
+  String get legend_free => '自由';
+
+  @override
+  String get legend_occupied => '障碍';
+
+  @override
+  String get legend_unknown => '未知';
+
+  @override
+  String get nav_goal => '导航目标';
+
+  @override
+  String get charge_station => '充电站';
+
+  @override
+  String get layer_trace => '轨迹路径';
+
+  @override
+  String get layer_robot_footprint => '机器人轮廓';
+
+  @override
+  String get camera_image => '相机图像';
+
+  @override
+  String get no_map_available => '当前无地图可用，请先选择或创建地图';
+
+  @override
+  String get invalid_json => '导入失败：无效的JSON格式';
+
+  @override
+  String get data_stale => '超过5s未更新数据';
+
+  @override
+  String get unknown_hardware => '未知硬件';
+
+  @override
+  String get status => '状态';
+
+  @override
+  String get update_time => '更新时间';
+
+  @override
+  String get no_detail => '暂无详细信息';
+
+  @override
+  String get last_update => '最后更新';
+
+  @override
+  String get no_diagnostic_data => '暂无诊断数据';
+
+  @override
+  String get no_matching_diagnostic => '没有找到匹配的诊断数据';
+
+  @override
+  String get all => '全部';
+
+  @override
+  String get clear_filter => '清除筛选';
+
+  @override
+  String show_hardware_count(Object count) {
+    return '显示 $count 个硬件组';
+  }
+
+  @override
+  String get clear_all_filter => '清除所有筛选';
+
+  @override
+  String component_count(Object count) {
+    return '组件数: $count';
+  }
+
+  @override
+  String get system_diagnostic => '系统诊断';
+
+  @override
+  String get refresh => '刷新';
+
+  @override
+  String get search_component_hint => '搜索组件名称...';
+
+  @override
+  String get status_filter => '状态筛选';
+
+  @override
+  String get table_key => '键';
+
+  @override
+  String get table_value => '值';
+
+  @override
+  String get detail_info => '详细信息';
+
+  @override
+  String get diagnostic_overview => '诊断状态总览';
+
+  @override
+  String get hardware_id => '硬件ID';
 }

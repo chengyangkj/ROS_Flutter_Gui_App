@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_array.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_status.dart';
+import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 class DiagnosticDisplay extends StatelessWidget {
   final DiagnosticArray diagnosticData;
@@ -13,9 +14,9 @@ class DiagnosticDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (diagnosticData.status.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          '暂无诊断数据',
+          AppLocalizations.of(context)!.no_diagnostic_data,
           style: TextStyle(
             color: Colors.grey,
             fontSize: 16,
@@ -28,12 +29,28 @@ class DiagnosticDisplay extends StatelessWidget {
       itemCount: diagnosticData.status.length,
       itemBuilder: (context, index) {
         final status = diagnosticData.status[index];
-        return _buildDiagnosticItem(status);
+        return _buildDiagnosticItem(context, status);
       },
     );
   }
 
-  Widget _buildDiagnosticItem(DiagnosticStatus status) {
+  String _levelDisplayName(BuildContext context, int level) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (level) {
+      case DiagnosticStatus.OK:
+        return l10n.diagnostic_normal;
+      case DiagnosticStatus.WARN:
+        return l10n.diagnostic_warning;
+      case DiagnosticStatus.ERROR:
+        return l10n.diagnostic_error;
+      case DiagnosticStatus.STALE:
+        return l10n.diagnostic_stale;
+      default:
+        return l10n.diagnostic_stale;
+    }
+  }
+
+  Widget _buildDiagnosticItem(BuildContext context, DiagnosticStatus status) {
     Color statusColor;
     IconData statusIcon;
     
@@ -74,7 +91,7 @@ class DiagnosticDisplay extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '状态: ${status.levelDisplayName}',
+              '${AppLocalizations.of(context)!.status}: ${_levelDisplayName(context, status.level)}',
               style: TextStyle(
                 color: statusColor,
                 fontWeight: FontWeight.w500,
@@ -98,8 +115,8 @@ class DiagnosticDisplay extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Text(
-                    '硬件ID: ',
+                  Text(
+                    '${AppLocalizations.of(context)!.hardware_id}: ',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Expanded(
@@ -117,8 +134,8 @@ class DiagnosticDisplay extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '详细信息:',
+                  Text(
+                    '${AppLocalizations.of(context)!.detail_info}:',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -201,8 +218,8 @@ class DiagnosticSummary extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '诊断状态总览',
+            Text(
+              AppLocalizations.of(context)!.diagnostic_overview,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -212,10 +229,10 @@ class DiagnosticSummary extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatusChip('正常', okCount, Colors.green),
-                _buildStatusChip('警告', warnCount, Colors.orange),
-                _buildStatusChip('错误', errorCount, Colors.red),
-                _buildStatusChip('过期', staleCount, Colors.grey),
+                _buildStatusChip(AppLocalizations.of(context)!.diagnostic_normal, okCount, Colors.green),
+                _buildStatusChip(AppLocalizations.of(context)!.diagnostic_warning, warnCount, Colors.orange),
+                _buildStatusChip(AppLocalizations.of(context)!.diagnostic_error, errorCount, Colors.red),
+                _buildStatusChip(AppLocalizations.of(context)!.diagnostic_stale, staleCount, Colors.grey),
               ],
             ),
           ],

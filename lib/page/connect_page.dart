@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
-import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
@@ -51,13 +50,12 @@ class _ConnectPageState extends State<ConnectPage>
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('发生错误：${snapshot.error}'));
+            return Center(child: Text(AppLocalizations.of(context)!.init_error(snapshot.error.toString())));
           }
 
           _ipController.text = globalSetting.robotIp;
           _portController.text = globalSetting.robotPort;
 
-          final isDark = Theme.of(context).brightness == Brightness.dark;
           final primaryColor = Theme.of(context).colorScheme.primary;
           final surfaceColor = Theme.of(context).colorScheme.surface;
 
@@ -66,17 +64,11 @@ class _ConnectPageState extends State<ConnectPage>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isDark
-                    ? [
-                        primaryColor.withOpacity(0.25),
-                        primaryColor.withOpacity(0.15),
-                        primaryColor.withOpacity(0.22),
-                      ]
-                    : [
-                        primaryColor.withOpacity(0.18),
-                        primaryColor.withOpacity(0.10),
-                        primaryColor.withOpacity(0.15),
-                      ],
+                colors: [
+                  primaryColor.withOpacity(0.18),
+                  primaryColor.withOpacity(0.10),
+                  primaryColor.withOpacity(0.15),
+                ],
                 stops: const [0.0, 0.5, 1.0],
               ),
             ),
@@ -134,7 +126,7 @@ class _ConnectPageState extends State<ConnectPage>
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.15),
+                              color: Colors.black.withOpacity(0.15),
                               blurRadius: 30,
                               offset: const Offset(0, 15),
                               spreadRadius: 0,
@@ -364,109 +356,6 @@ class _ConnectPageState extends State<ConnectPage>
                                             ),
                                     ),
                                   ),
-                                  const SizedBox(height: 28),
-
-                                  // 主题切换
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest
-                                          .withOpacity(0.4),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: primaryColor.withOpacity(0.15),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.palette_rounded,
-                                            size: 18,
-                                            color: primaryColor,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: SegmentedButton<ThemeMode>(
-                                              segments: [
-                                                ButtonSegment(
-                                                  value: ThemeMode.system,
-                                                  icon: Icon(
-                                                    Icons.brightness_auto,
-                                                    size: 16,
-                                                  ),
-                                                  label: Text(
-                                                    AppLocalizations.of(
-                                                            context)!
-                                                        .auto,
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                    ),
-                                                  ),
-                                                ),
-                                                ButtonSegment(
-                                                  value: ThemeMode.light,
-                                                  icon: Icon(
-                                                    Icons.light_mode,
-                                                    size: 16,
-                                                  ),
-                                                  label: Text(
-                                                    AppLocalizations.of(
-                                                            context)!
-                                                        .light,
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                    ),
-                                                  ),
-                                                ),
-                                                ButtonSegment(
-                                                  value: ThemeMode.dark,
-                                                  icon: Icon(
-                                                    Icons.dark_mode,
-                                                    size: 16,
-                                                  ),
-                                                  label: Text(
-                                                    AppLocalizations.of(
-                                                            context)!
-                                                        .dark,
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                              selected: {
-                                                Provider.of<ThemeProvider>(
-                                                        context)
-                                                    .themeMode
-                                              },
-                                              onSelectionChanged:
-                                                  (Set<ThemeMode> selection) {
-                                                Provider.of<ThemeProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .updateThemeMode(
-                                                        selection.first.index);
-                                              },
-                                              style: ButtonStyle(
-                                                side: MaterialStateProperty.all(
-                                                  BorderSide(
-                                                    color: primaryColor
-                                                        .withOpacity(0.3),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -488,8 +377,7 @@ class _ConnectPageState extends State<ConnectPage>
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(
-                                  isDark ? 0.3 : 0.1),
+                              color: Colors.black.withOpacity(0.1),
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             ),

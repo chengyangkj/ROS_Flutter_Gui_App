@@ -19,7 +19,7 @@ import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/http_channel.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
-import 'package:ros_flutter_gui_app/provider/them_provider.dart';
+import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 
 enum ObstacleEditTool {
   None,
@@ -69,7 +69,6 @@ class TileMapState extends State<TileMap> {
   final MapController _mapController = MapController();
   String _currentMapName = '';
   double _currentZoom = 2.0;
-  bool _isDarkMode = true;
   RobotPose? _relocPose;
   final Map<String, NavPoint> _draggingNavPoints = {};
   final Map<String, NavPoint> _draggingNavPointsStart = {};
@@ -107,9 +106,6 @@ class TileMapState extends State<TileMap> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: true);
-    _isDarkMode = themeProvider.themeMode == ThemeMode.dark;
-
     if (_error != null) {
       return Center(
         child: Column(
@@ -117,7 +113,7 @@ class TileMapState extends State<TileMap> {
           children: [
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: loadMeta, child: const Text('重试')),
+            ElevatedButton(onPressed: loadMeta, child: Text(AppLocalizations.of(context)!.retry)),
           ],
         ),
       );

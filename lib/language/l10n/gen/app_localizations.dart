@@ -691,6 +691,540 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'擦除障碍物'**
   String get erase_obstacle;
+
+  /// No description provided for @add_current_position.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加当前位置'**
+  String get add_current_position;
+
+  /// No description provided for @map_management.
+  ///
+  /// In zh, this message translates to:
+  /// **'地图管理'**
+  String get map_management;
+
+  /// No description provided for @save_success.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存成功'**
+  String get save_success;
+
+  /// No description provided for @save_success_desc.
+  ///
+  /// In zh, this message translates to:
+  /// **'已发布拓扑地图与栅格地图'**
+  String get save_success_desc;
+
+  /// No description provided for @save_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存失败'**
+  String get save_failed;
+
+  /// No description provided for @save_as.
+  ///
+  /// In zh, this message translates to:
+  /// **'另存为'**
+  String get save_as;
+
+  /// No description provided for @map_name.
+  ///
+  /// In zh, this message translates to:
+  /// **'地图名称'**
+  String get map_name;
+
+  /// No description provided for @save_as_success.
+  ///
+  /// In zh, this message translates to:
+  /// **'另存为成功'**
+  String get save_as_success;
+
+  /// No description provided for @save_as_desc.
+  ///
+  /// In zh, this message translates to:
+  /// **'已保存为: {name}'**
+  String save_as_desc(Object name);
+
+  /// No description provided for @save_as_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'另存为失败'**
+  String get save_as_failed;
+
+  /// No description provided for @tool_move.
+  ///
+  /// In zh, this message translates to:
+  /// **'移动'**
+  String get tool_move;
+
+  /// No description provided for @tool_point.
+  ///
+  /// In zh, this message translates to:
+  /// **'点位'**
+  String get tool_point;
+
+  /// No description provided for @tool_route.
+  ///
+  /// In zh, this message translates to:
+  /// **'拓扑线'**
+  String get tool_route;
+
+  /// No description provided for @tool_brush.
+  ///
+  /// In zh, this message translates to:
+  /// **'画笔'**
+  String get tool_brush;
+
+  /// No description provided for @tool_eraser.
+  ///
+  /// In zh, this message translates to:
+  /// **'橡皮'**
+  String get tool_eraser;
+
+  /// No description provided for @route_start_selected.
+  ///
+  /// In zh, this message translates to:
+  /// **'已选择起点: {name}'**
+  String route_start_selected(Object name);
+
+  /// No description provided for @route_created.
+  ///
+  /// In zh, this message translates to:
+  /// **'已创建连线: {from} -> {to}'**
+  String route_created(Object from, Object to);
+
+  /// No description provided for @route_properties.
+  ///
+  /// In zh, this message translates to:
+  /// **'拓扑线属性'**
+  String get route_properties;
+
+  /// No description provided for @direction.
+  ///
+  /// In zh, this message translates to:
+  /// **'方向: {from} -> {to}'**
+  String direction(Object from, Object to);
+
+  /// No description provided for @controller.
+  ///
+  /// In zh, this message translates to:
+  /// **'控制器'**
+  String get controller;
+
+  /// No description provided for @controller_readonly.
+  ///
+  /// In zh, this message translates to:
+  /// **'控制器（只读）'**
+  String get controller_readonly;
+
+  /// No description provided for @close.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get close;
+
+  /// No description provided for @delete_route.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除该方向'**
+  String get delete_route;
+
+  /// No description provided for @point_properties.
+  ///
+  /// In zh, this message translates to:
+  /// **'点位属性'**
+  String get point_properties;
+
+  /// No description provided for @name.
+  ///
+  /// In zh, this message translates to:
+  /// **'名称'**
+  String get name;
+
+  /// No description provided for @delete_point.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除该点位'**
+  String get delete_point;
+
+  /// No description provided for @retry.
+  ///
+  /// In zh, this message translates to:
+  /// **'重试'**
+  String get retry;
+
+  /// No description provided for @no_map.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无地图'**
+  String get no_map;
+
+  /// No description provided for @current_in_use.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前使用'**
+  String get current_in_use;
+
+  /// No description provided for @switch_map.
+  ///
+  /// In zh, this message translates to:
+  /// **'切换地图'**
+  String get switch_map;
+
+  /// No description provided for @delete_map_tooltip_current.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前使用中，不可删除'**
+  String get delete_map_tooltip_current;
+
+  /// No description provided for @delete.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get delete;
+
+  /// No description provided for @confirm_delete.
+  ///
+  /// In zh, this message translates to:
+  /// **'确认删除'**
+  String get confirm_delete;
+
+  /// No description provided for @confirm_delete_map.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除地图「{name}」吗？此操作不可恢复。'**
+  String confirm_delete_map(Object name);
+
+  /// No description provided for @map_deleted.
+  ///
+  /// In zh, this message translates to:
+  /// **'已删除: {name}'**
+  String map_deleted(Object name);
+
+  /// No description provided for @delete_failed.
+  ///
+  /// In zh, this message translates to:
+  /// **'删除失败: {e}'**
+  String delete_failed(Object e);
+
+  /// No description provided for @position_label.
+  ///
+  /// In zh, this message translates to:
+  /// **'位置'**
+  String get position_label;
+
+  /// No description provided for @position_format.
+  ///
+  /// In zh, this message translates to:
+  /// **'位置: ({x}, {y})'**
+  String position_format(Object x, Object y);
+
+  /// No description provided for @init_error.
+  ///
+  /// In zh, this message translates to:
+  /// **'发生错误：{error}'**
+  String init_error(Object error);
+
+  /// No description provided for @diagnostic_warning.
+  ///
+  /// In zh, this message translates to:
+  /// **'警告'**
+  String get diagnostic_warning;
+
+  /// No description provided for @diagnostic_error.
+  ///
+  /// In zh, this message translates to:
+  /// **'错误'**
+  String get diagnostic_error;
+
+  /// No description provided for @diagnostic_stale.
+  ///
+  /// In zh, this message translates to:
+  /// **'失活'**
+  String get diagnostic_stale;
+
+  /// No description provided for @diagnostic_normal.
+  ///
+  /// In zh, this message translates to:
+  /// **'正常'**
+  String get diagnostic_normal;
+
+  /// No description provided for @diagnostic_health.
+  ///
+  /// In zh, this message translates to:
+  /// **'健康诊断:[{level}] {component}'**
+  String diagnostic_health(Object level, Object component);
+
+  /// No description provided for @diagnostic_hardware.
+  ///
+  /// In zh, this message translates to:
+  /// **'硬件ID: {id}\n消息: {msg}'**
+  String diagnostic_hardware(Object id, Object msg);
+
+  /// No description provided for @error_count.
+  ///
+  /// In zh, this message translates to:
+  /// **'错误: {count}'**
+  String error_count(Object count);
+
+  /// No description provided for @warn_count.
+  ///
+  /// In zh, this message translates to:
+  /// **'警告: {count}'**
+  String warn_count(Object count);
+
+  /// No description provided for @nav_point_info.
+  ///
+  /// In zh, this message translates to:
+  /// **'导航点信息'**
+  String get nav_point_info;
+
+  /// No description provided for @position_coords.
+  ///
+  /// In zh, this message translates to:
+  /// **'位置坐标'**
+  String get position_coords;
+
+  /// No description provided for @coord_x.
+  ///
+  /// In zh, this message translates to:
+  /// **'X坐标'**
+  String get coord_x;
+
+  /// No description provided for @coord_y.
+  ///
+  /// In zh, this message translates to:
+  /// **'Y坐标'**
+  String get coord_y;
+
+  /// No description provided for @heading.
+  ///
+  /// In zh, this message translates to:
+  /// **'方向'**
+  String get heading;
+
+  /// No description provided for @stop_manual_first.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先停止手动控制'**
+  String get stop_manual_first;
+
+  /// No description provided for @nav_goal_sent.
+  ///
+  /// In zh, this message translates to:
+  /// **'已发送导航目标到 {name}'**
+  String nav_goal_sent(Object name);
+
+  /// No description provided for @send_nav_goal.
+  ///
+  /// In zh, this message translates to:
+  /// **'发送导航目标'**
+  String get send_nav_goal;
+
+  /// No description provided for @emergency_stopped.
+  ///
+  /// In zh, this message translates to:
+  /// **'急停已触发'**
+  String get emergency_stopped;
+
+  /// No description provided for @nav_stopped.
+  ///
+  /// In zh, this message translates to:
+  /// **'导航已停止'**
+  String get nav_stopped;
+
+  /// No description provided for @legend_free.
+  ///
+  /// In zh, this message translates to:
+  /// **'自由'**
+  String get legend_free;
+
+  /// No description provided for @legend_occupied.
+  ///
+  /// In zh, this message translates to:
+  /// **'障碍'**
+  String get legend_occupied;
+
+  /// No description provided for @legend_unknown.
+  ///
+  /// In zh, this message translates to:
+  /// **'未知'**
+  String get legend_unknown;
+
+  /// No description provided for @nav_goal.
+  ///
+  /// In zh, this message translates to:
+  /// **'导航目标'**
+  String get nav_goal;
+
+  /// No description provided for @charge_station.
+  ///
+  /// In zh, this message translates to:
+  /// **'充电站'**
+  String get charge_station;
+
+  /// No description provided for @layer_trace.
+  ///
+  /// In zh, this message translates to:
+  /// **'轨迹路径'**
+  String get layer_trace;
+
+  /// No description provided for @layer_robot_footprint.
+  ///
+  /// In zh, this message translates to:
+  /// **'机器人轮廓'**
+  String get layer_robot_footprint;
+
+  /// No description provided for @camera_image.
+  ///
+  /// In zh, this message translates to:
+  /// **'相机图像'**
+  String get camera_image;
+
+  /// No description provided for @no_map_available.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前无地图可用，请先选择或创建地图'**
+  String get no_map_available;
+
+  /// No description provided for @invalid_json.
+  ///
+  /// In zh, this message translates to:
+  /// **'导入失败：无效的JSON格式'**
+  String get invalid_json;
+
+  /// No description provided for @data_stale.
+  ///
+  /// In zh, this message translates to:
+  /// **'超过5s未更新数据'**
+  String get data_stale;
+
+  /// No description provided for @unknown_hardware.
+  ///
+  /// In zh, this message translates to:
+  /// **'未知硬件'**
+  String get unknown_hardware;
+
+  /// No description provided for @status.
+  ///
+  /// In zh, this message translates to:
+  /// **'状态'**
+  String get status;
+
+  /// No description provided for @update_time.
+  ///
+  /// In zh, this message translates to:
+  /// **'更新时间'**
+  String get update_time;
+
+  /// No description provided for @no_detail.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无详细信息'**
+  String get no_detail;
+
+  /// No description provided for @last_update.
+  ///
+  /// In zh, this message translates to:
+  /// **'最后更新'**
+  String get last_update;
+
+  /// No description provided for @no_diagnostic_data.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无诊断数据'**
+  String get no_diagnostic_data;
+
+  /// No description provided for @no_matching_diagnostic.
+  ///
+  /// In zh, this message translates to:
+  /// **'没有找到匹配的诊断数据'**
+  String get no_matching_diagnostic;
+
+  /// No description provided for @all.
+  ///
+  /// In zh, this message translates to:
+  /// **'全部'**
+  String get all;
+
+  /// No description provided for @clear_filter.
+  ///
+  /// In zh, this message translates to:
+  /// **'清除筛选'**
+  String get clear_filter;
+
+  /// No description provided for @show_hardware_count.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示 {count} 个硬件组'**
+  String show_hardware_count(Object count);
+
+  /// No description provided for @clear_all_filter.
+  ///
+  /// In zh, this message translates to:
+  /// **'清除所有筛选'**
+  String get clear_all_filter;
+
+  /// No description provided for @component_count.
+  ///
+  /// In zh, this message translates to:
+  /// **'组件数: {count}'**
+  String component_count(Object count);
+
+  /// No description provided for @system_diagnostic.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统诊断'**
+  String get system_diagnostic;
+
+  /// No description provided for @refresh.
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新'**
+  String get refresh;
+
+  /// No description provided for @search_component_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索组件名称...'**
+  String get search_component_hint;
+
+  /// No description provided for @status_filter.
+  ///
+  /// In zh, this message translates to:
+  /// **'状态筛选'**
+  String get status_filter;
+
+  /// No description provided for @table_key.
+  ///
+  /// In zh, this message translates to:
+  /// **'键'**
+  String get table_key;
+
+  /// No description provided for @table_value.
+  ///
+  /// In zh, this message translates to:
+  /// **'值'**
+  String get table_value;
+
+  /// No description provided for @detail_info.
+  ///
+  /// In zh, this message translates to:
+  /// **'详细信息'**
+  String get detail_info;
+
+  /// No description provided for @diagnostic_overview.
+  ///
+  /// In zh, this message translates to:
+  /// **'诊断状态总览'**
+  String get diagnostic_overview;
+
+  /// No description provided for @hardware_id.
+  ///
+  /// In zh, this message translates to:
+  /// **'硬件ID'**
+  String get hardware_id;
 }
 
 class _AppLocalizationsDelegate

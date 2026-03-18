@@ -284,8 +284,8 @@ class _TopologyLineLayerState extends State<_TopologyLineLayer> {
     final markers = widget.points
         .map((p) => Marker(
             point: widget.worldToLatLng(p.x, p.y),
-            width: globalSetting.robotSize.toDouble() + 40,
-            height: globalSetting.robotSize.toDouble() + 18,
+            width: globalSetting.robotSize.toDouble() + 90,
+            height: globalSetting.robotSize.toDouble() + 16,
             alignment: Alignment.center,
             child: GestureDetector(
               onTap: widget.onNavPointTap != null ? () => widget.onNavPointTap!(p) : null,
@@ -339,7 +339,7 @@ class _TopologyLineLayerState extends State<_TopologyLineLayer> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 8,
                         color: Colors.white,
                         height: 1.0,
                         fontWeight: FontWeight.w600,

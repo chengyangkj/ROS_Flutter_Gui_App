@@ -218,7 +218,7 @@ class MapManager extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('MapManager: 导入拓扑地图失败: $e');
-      throw Exception('导入失败：无效的JSON格式');
+      throw Exception('invalid_json');
     }
   }
 }
