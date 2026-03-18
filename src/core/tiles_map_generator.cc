@@ -102,9 +102,9 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
         tile_list += std::to_string(z) + "/" + std::to_string(x) + "/" + std::to_string(y);
       }
     }
-    LOG_INFO("TilesGen: z=" << z << " tiles_per_axis=" << tiles_per_axis
-        << " x=[0," << (tiles_per_axis - 1) << "] y=[0," << (tiles_per_axis - 1) << "] "
-        << tile_list);
+    // LOG_INFO("TilesGen: z=" << z << " tiles_per_axis=" << tiles_per_axis
+    //     << " x=[0," << (tiles_per_axis - 1) << "] y=[0," << (tiles_per_axis - 1) << "] "
+    //     << tile_list);
   }
   LOG_INFO("TilesGen: total " << total << " tiles written to " << output_dir);
   return total > 0;

@@ -1,6 +1,7 @@
 #include "core/map_server_core.hpp"
 #include "core/tiles_map_generator.h"
 
+#include "core/map_io.hpp"
 #include "common/logger/logger.h"
 
 #include <httplib.h>
@@ -105,6 +106,96 @@ void MapServerCore::RunHttpServer() {
     }
     res.set_header("Content-Type", "image/png");
     res.set_content(content, "image/png");
+  });
+
+  svr.Get("/updateMapEdit", [this](const httplib::Request& req, httplib::Response& res) {
+    if (!map_available_) {
+      res.status = 503;
+      res.set_content("{\"error\":\"map not available\"}", "application/json");
+      return;
+    }
+
+    auto find_param = [&req](const char* key, std::string& out) -> bool {
+      if (!req.has_param(key)) return false;
+      out = req.get_param_value(key);
+      return true;
+    };
+
+    std::string session_id;
+    std::string map_name;
+    std::string topology_json;
+    std::string obstacle_edits_json;
+
+    if (!find_param("session_id", session_id) ||
+        !find_param("map_name", map_name) ||
+        !find_param("topology_json", topology_json) ||
+        !find_param("obstacle_edits_json", obstacle_edits_json)) {
+      res.status = 400;
+      res.set_content("{\"error\":\"missing query params\"}", "application/json");
+      return;
+    }
+
+    (void)session_id;  // session_id 用于后端清空/应用逻辑；当前 core 内仅做落盘与覆盖。
+
+    const std::string map_path = map_name;
+
+    try {
+      auto obstacle_edits = nlohmann::json::parse(obstacle_edits_json);
+      if (!obstacle_edits.is_object()) {
+        res.status = 400;
+        res.set_content("{\"error\":\"obstacle_edits_json must be a JSON object\"}", "application/json");
+        return;
+      }
+
+      for (auto it = obstacle_edits.begin(); it != obstacle_edits.end(); ++it) {
+        const std::string key = it.key();
+        if (!it.value().is_number_integer()) {
+          LOG_ERROR("Invalid edit value for cellIndex: " << key
+                                                           << ", value type is not integer");
+          continue;
+        }
+        const int8_t edit_value = static_cast<int8_t>(it.value().get<int>());
+
+        // 前端 key 是 cellIndex；兼容 key 为字符串形式或可被解析为整数的情况。
+        int64_t cell_index = 0;
+        try {
+          cell_index = std::stoll(key);
+        } catch (const std::exception& e) {
+          LOG_ERROR("Invalid cell index: " << key << " error: " << e.what());
+          continue;
+        }
+
+        if (cell_index < 0 || static_cast<size_t>(cell_index) >= map_data_.data.size()) {
+          continue;
+        }
+        map_data_.data[static_cast<size_t>(cell_index)] = edit_value;
+        LOG_INFO("Apply obstacle edit cell_index=" << cell_index
+                                                       << " edit_value=" << static_cast<int>(edit_value));
+      }
+
+      // 保存栅格地图覆盖（使用默认阈值与模式，保证落盘可用）
+      SaveParameters save_params;
+      save_params.map_file_name = map_path;
+      save_params.image_format = "pgm";
+      save_params.free_thresh = 0.25;
+      save_params.occupied_thresh = 0.65;
+      save_params.mode = MapMode::Trinary;
+      (void)saveMapToFile(map_data_, save_params);
+
+      // 保存拓扑地图（写到 map_path.topology）
+      auto topology_obj = nlohmann::json::parse(topology_json).get<TopologyMap>();
+      const std::string topo_file = map_path + ".topology";
+      saveTopologyMapToJson(topology_obj, topo_file);
+
+      map_available_ = true;
+      RegenerateTiles();
+
+      res.status = 200;
+      res.set_content("{\"result\":\"ok\"}", "application/json");
+    } catch (const std::exception& e) {
+      res.status = 400;
+      res.set_content(std::string("{\"error\":\"") + e.what() + "\"}", "application/json");
+    }
   });
 
   svr.Get("/tiles/", [this](const httplib::Request&, httplib::Response& res) {
