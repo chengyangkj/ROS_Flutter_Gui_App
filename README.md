@@ -1,6 +1,55 @@
-# nav2_map_server
+# ROS1/ROS2 Map Manager
 
 基于 Nav2 的地图服务，支持 ROS1/ROS2，集成 HTTP 瓦片服务、栅格地图与拓扑地图管理。地图数据存储在 `~/.maps` 目录。
+
+## 编译
+
+### 依赖
+
+```bash
+# Ubuntu
+sudo apt-get install libsdl2-dev libsdl2-image-dev -y
+```
+
+需已安装 ROS1 或 ROS2，并 `source /opt/ros/<distro>/setup.bash`。
+
+### 编译命令
+
+```bash
+# 标准编译（build.sh 会执行 apt 安装依赖 + cmake + make + install）
+./build.sh
+
+# 国内加速（使用 Gitee 镜像拉取 topology_msgs 等）
+./build_cn.sh
+```
+
+输出目录：`build/install/`，可执行文件在 `build/install/bin/map_manager`。
+
+### 切换 ROS 版本
+
+```bash
+# ROS2（默认）
+./build.sh
+
+# ROS1
+./build.sh -DROS_VERSION=1
+```
+
+## 运行
+
+```bash
+# 进入安装目录并执行（需先 source ROS）
+cd build/install/bin
+./map_manager.sh
+```
+
+或直接运行可执行文件：
+
+```bash
+./build/install/bin/map_manager [选项]
+```
+
+运行前需 `source` 对应 ROS 环境。
 
 ## 架构
 
@@ -47,7 +96,7 @@ main.cpp                    # 入口：解析参数，初始化 MapManager 与 R
 
 # 常用选项
 --yaml_filename, -y    初始地图 yaml（不存在则不加载，从 ROS topic 获取）
---pub_map_topic, -t    发布地图 topic，默认 /tiles/map
+--pub_map_topic, -t    发布地图 topic，默认 /map_manager/map
 --sub_map_topic        订阅地图 topic，默认 /map
 --frame_id, -f         frame_id，默认 map
 --tiles_http_port      HTTP 瓦片服务端口，默认 7684
@@ -92,7 +141,7 @@ main.cpp                    # 入口：解析参数，初始化 MapManager 与 R
 ## ROS 接口
 
 - **服务**（节点名 map_manager）：`map_manager/map`(GetMap)、`map_manager/load_map`、`map_manager/save_map`
-- **发布**：`/tiles/map`（occupancy grid）、`/map/topology`（拓扑）
+- **发布**：`/map_manager/map`（occupancy grid）、`/map/topology`（拓扑）
 - **订阅**：`/map`（occupancy grid，收到后更新瓦片并保存）
 - 收到地图更新且 current_map 为空时，自动设为 `map` 并保存到 `~/.maps/map/`
 

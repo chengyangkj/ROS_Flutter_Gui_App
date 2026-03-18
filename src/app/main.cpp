@@ -24,7 +24,7 @@ nav2_map_server::MapServerConfig ParseOptions(int argc, char** argv) {
   desc.add_options()
       ("yaml_filename,y", po::value<std::string>()->default_value("./map.yaml"),
        "yaml file path,which is default to load or save map path")
-      ("pub_map_topic,t", po::value<std::string>()->default_value("/tiles/map"),
+      ("pub_map_topic,t", po::value<std::string>()->default_value("/map_manager/map"),
        "map publish topic name,which is read from yaml file")
       ("sub_map_topic", po::value<std::string>()->default_value("/map"),
        "map subscribe topic name,which is used to subscribe map from other nodes,will transform this topic top tile map")
