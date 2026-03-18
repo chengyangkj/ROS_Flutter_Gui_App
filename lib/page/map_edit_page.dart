@@ -118,6 +118,7 @@ class _MapEditPageState extends State<MapEditPage> {
                       _selectedRoute = route;
                       _editingRouteInfo = RouteInfo(controller: route.routeInfo.controller);
                     });
+                    _showRouteDialog(context, theme, rosChannel);
                   },
                   onNavPointTap: (p) {
                     setState(() {
@@ -125,10 +126,9 @@ class _MapEditPageState extends State<MapEditPage> {
                     });
                     if (selectedTool == EditToolType.AddRoute) {
                       _handleAddRouteTap(rosChannel, p);
-                    } else {
-                      setState(() {
-                        _routeStartPointName = null;
-                      });
+                    } else if (p != null) {
+                      setState(() => _routeStartPointName = null);
+                      _showNavPointDialog(context, theme);
                     }
                   },
                   onNavPointEditEnd: (oldPoint, newPoint) {
@@ -181,31 +181,16 @@ class _MapEditPageState extends State<MapEditPage> {
                 ),
                 Positioned(
                   left: 10,
-                  top: 80,
-                  child: _buildEditToolbar(theme),
+                  top: 72,
+                  bottom: 90,
+                  child: SingleChildScrollView(
+                    child: _buildEditToolbar(context, theme),
+                  ),
                 ),
                 Positioned(
                   left: 10,
                   bottom: 16,
                   child: _buildObstacleBrushSize(theme),
-                ),
-            Positioned(
-              left: 10,
-              bottom: 64,
-              child: _buildAddRobotPositionButton(theme),
-            ),
-                Positioned(
-                  top: 80,
-                  right: 10,
-                  child: _buildRoutePanel(theme, rosChannel),
-                ),
-                Positioned(
-                  top: 80,
-                  right: 10,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 220),
-                    child: _buildNavPointPanel(theme),
-                  ),
                 ),
               ],
             ),
@@ -287,6 +272,26 @@ class _MapEditPageState extends State<MapEditPage> {
             },
           ),
           const SizedBox(width: 8),
+          if (selectedTool == EditToolType.AddNavPoint) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: TextButton.icon(
+                onPressed: _onAddRobotPositionPressed,
+                icon: const Icon(Icons.my_location, color: Colors.white, size: 18),
+                label: const Text(
+                  '添加机器人当前位置',
+                  style: TextStyle(color: Colors.white, fontSize: 13),
+                ),
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
           const Expanded(
             child: Center(
               child: Text(
@@ -316,43 +321,49 @@ class _MapEditPageState extends State<MapEditPage> {
     );
   }
 
-  Widget _buildEditToolbar(ThemeData theme) {
+  Widget _buildEditToolbar(BuildContext context, ThemeData theme) {
+    final compact = MediaQuery.sizeOf(context).width < 480;
     return Card(
       elevation: 8,
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: EdgeInsets.all(compact ? 6 : 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildToolButton(
+              context,
               icon: Icons.open_with,
               label: '移动/选择',
               tool: EditToolType.Move,
               activeColor: Colors.grey,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildToolButton(
+              context,
               icon: Icons.add_location,
               label: '添加点位',
               tool: EditToolType.AddNavPoint,
               activeColor: Colors.blue,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildToolButton(
+              context,
               icon: Icons.link,
               label: '拓扑连线',
               tool: EditToolType.AddRoute,
               activeColor: Colors.deepPurple,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildToolButton(
+              context,
               icon: Icons.brush,
               label: '画笔',
               tool: EditToolType.BrushObstacle,
               activeColor: Colors.green,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildToolButton(
+              context,
               icon: Icons.auto_fix_high,
               label: '橡皮擦',
               tool: EditToolType.EraseObstacle,
@@ -396,31 +407,6 @@ class _MapEditPageState extends State<MapEditPage> {
     );
   }
 
-  Widget _buildAddRobotPositionButton(ThemeData theme) {
-    final show = selectedTool == EditToolType.AddNavPoint;
-    return AnimatedOpacity(
-      opacity: show ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 200),
-      child: SizedBox(
-        width: 220,
-        child: ElevatedButton.icon(
-          onPressed: show ? _onAddRobotPositionPressed : null,
-          icon: const Icon(Icons.my_location, size: 18),
-          label: const Text('添加机器人当前位置'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            elevation: 4,
-          ),
-        ),
-      ),
-    );
-  }
-
   void _onAddRobotPositionPressed() {
     final rosChannel = context.read<RosChannel>();
     final mapManager = rosChannel.mapManager;
@@ -452,13 +438,15 @@ class _MapEditPageState extends State<MapEditPage> {
     });
   }
 
-  Widget _buildToolButton({
+  Widget _buildToolButton(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required EditToolType tool,
     required Color activeColor,
   }) {
     final isActive = selectedTool == tool;
+    final compact = MediaQuery.sizeOf(context).width < 480;
     return InkWell(
       onTap: () {
         setState(() {
@@ -473,21 +461,29 @@ class _MapEditPageState extends State<MapEditPage> {
         });
       },
       child: Container(
-        width: 120,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        width: compact ? 90 : 120,
+        padding: EdgeInsets.symmetric(
+          vertical: compact ? 6 : 8,
+          horizontal: compact ? 4 : 6,
+        ),
         decoration: BoxDecoration(
           color: isActive ? activeColor.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: isActive ? Border.all(color: activeColor, width: 2) : null,
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: isActive ? activeColor : Colors.grey),
-            const SizedBox(height: 4),
+            Icon(
+              icon,
+              size: compact ? 18 : 22,
+              color: isActive ? activeColor : Colors.grey,
+            ),
+            SizedBox(height: compact ? 2 : 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: compact ? 10 : 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 color: isActive ? activeColor : Colors.grey,
               ),
@@ -548,195 +544,278 @@ class _MapEditPageState extends State<MapEditPage> {
     );
   }
 
-  Widget _buildNavPointPanel(ThemeData theme) {
-    final p = selectedNavPoint;
-    if (p == null) return const SizedBox.shrink();
-    final mapManager = context.read<RosChannel>().mapManager;
-    return Card(
-      elevation: 10,
-      child: SizedBox(
-        width: 320,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+  void _showRouteDialog(BuildContext context, ThemeData theme, RosChannel rosChannel) {
+    final route = _selectedRoute;
+    if (route == null) return;
+    final mapManager = rosChannel.mapManager;
+    final topologyMap = mapManager.topologyMap.value;
+    final supportControllers = topologyMap.mapProperty.supportControllers;
+    final controllerOptions = supportControllers.isNotEmpty
+        ? supportControllers
+        : <String>{route.routeInfo.controller, 'FollowPath'}.toList();
+    String controllerValue = (_editingRouteInfo ?? route.routeInfo).controller;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('拓扑线属性'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      '点位属性',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Text('方向: ${route.fromPoint} -> ${route.toPoint}'),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: controllerValue,
+                    decoration: const InputDecoration(
+                      labelText: '控制器',
+                      border: OutlineInputBorder(),
+                      isDense: true,
                     ),
-                  ),
-                  IconButton(
-                    tooltip: '关闭',
-                    onPressed: () {
-                      setState(() {
-                        selectedNavPoint = null;
-                      });
+                    items: controllerOptions
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      final oldRoute = mapManager.getRoute(route.fromPoint, route.toPoint);
+                      if (oldRoute == null) return;
+                      final newRoute = TopologyRoute(
+                        fromPoint: route.fromPoint,
+                        toPoint: route.toPoint,
+                        routeInfo: RouteInfo(controller: value),
+                      );
+                      _commandManager.executeCommand(
+                        ModifyRouteCommand(
+                          mapManager.topologyMap.value,
+                          oldRoute,
+                          newRoute,
+                          () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                        ),
+                      );
+                      setDialogState(() => controllerValue = value);
+                      setState(() => _editingRouteInfo = RouteInfo(controller: value));
                     },
-                    icon: const Icon(Icons.close),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              _buildEditableKvText(
-                label: '名称',
-                value: p.name,
-                onCommitted: (newName) {
-                  final oldPoint = p;
-                  if (newName.trim().isEmpty) return;
-                  final trimmed = newName.trim();
-                  if (trimmed == oldPoint.name) return;
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  setState(() {
+                    _selectedRoute = null;
+                    _editingRouteInfo = null;
+                  });
+                },
+                child: const Text('关闭'),
+              ),
+              FilledButton.icon(
+                onPressed: () {
+                  final oldRoute = mapManager.getRoute(route.fromPoint, route.toPoint);
+                  if (oldRoute != null) {
+                    _commandManager.executeCommand(
+                      DeleteRouteCommand(
+                        mapManager.topologyMap.value,
+                        oldRoute,
+                        () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                      ),
+                    );
+                  }
+                  Navigator.of(ctx).pop();
+                  setState(() {
+                    _selectedRoute = null;
+                    _editingRouteInfo = null;
+                  });
+                },
+                icon: const Icon(Icons.delete, size: 18),
+                label: const Text('删除该方向'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-                  final newPoint = NavPoint(
-                    name: trimmed,
-                    x: oldPoint.x,
-                    y: oldPoint.y,
-                    theta: oldPoint.theta,
-                    type: oldPoint.type,
-                  );
+  void _showNavPointDialog(BuildContext context, ThemeData theme) {
+    final p = selectedNavPoint;
+    if (p == null) return;
+    final mapManager = context.read<RosChannel>().mapManager;
+    NavPoint localPoint = p;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('点位属性'),
+            content: SingleChildScrollView(
+              child: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildEditableKvText(
+                      label: '名称',
+                      value: localPoint.name,
+                      onCommitted: (newName) {
+                        final oldPoint = localPoint;
+                        if (newName.trim().isEmpty) return;
+                        final trimmed = newName.trim();
+                        if (trimmed == oldPoint.name) return;
+                        final newPoint = NavPoint(
+                          name: trimmed,
+                          x: oldPoint.x,
+                          y: oldPoint.y,
+                          theta: oldPoint.theta,
+                          type: oldPoint.type,
+                        );
+                        _commandManager.executeCommand(
+                          RenamePointCommand(
+                            mapManager.topologyMap.value,
+                            oldPoint,
+                            newPoint,
+                            () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                          ),
+                        );
+                        setDialogState(() => localPoint = newPoint);
+                        setState(() {
+                          selectedNavPoint = newPoint;
+                          _selectedRoute = null;
+                          _editingRouteInfo = null;
+                          _routeStartPointName = null;
+                        });
+                      },
+                    ),
+                    _buildEditableKvNumber(
+                      label: 'X',
+                      value: localPoint.x,
+                      onCommitted: (newX) {
+                        final oldPoint = localPoint;
+                        final newPoint = NavPoint(
+                          name: oldPoint.name,
+                          x: newX,
+                          y: oldPoint.y,
+                          theta: oldPoint.theta,
+                          type: oldPoint.type,
+                        );
+                        _commandManager.executeCommand(
+                          ModifyPointCommand(
+                            mapManager.topologyMap.value,
+                            oldPoint,
+                            newPoint,
+                            () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                          ),
+                        );
+                        setDialogState(() => localPoint = newPoint);
+                        setState(() => selectedNavPoint = newPoint);
+                      },
+                    ),
+                    _buildEditableKvNumber(
+                      label: 'Y',
+                      value: localPoint.y,
+                      onCommitted: (newY) {
+                        final oldPoint = localPoint;
+                        final newPoint = NavPoint(
+                          name: oldPoint.name,
+                          x: oldPoint.x,
+                          y: newY,
+                          theta: oldPoint.theta,
+                          type: oldPoint.type,
+                        );
+                        _commandManager.executeCommand(
+                          ModifyPointCommand(
+                            mapManager.topologyMap.value,
+                            oldPoint,
+                            newPoint,
+                            () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                          ),
+                        );
+                        setDialogState(() => localPoint = newPoint);
+                        setState(() => selectedNavPoint = newPoint);
+                      },
+                    ),
+                    _buildEditableKvNumber(
+                      label: 'Theta',
+                      value: localPoint.theta,
+                      onCommitted: (newTheta) {
+                        final oldPoint = localPoint;
+                        final newPoint = NavPoint(
+                          name: oldPoint.name,
+                          x: oldPoint.x,
+                          y: oldPoint.y,
+                          theta: newTheta,
+                          type: oldPoint.type,
+                        );
+                        _commandManager.executeCommand(
+                          ModifyPointCommand(
+                            mapManager.topologyMap.value,
+                            oldPoint,
+                            newPoint,
+                            () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                          ),
+                        );
+                        setDialogState(() => localPoint = newPoint);
+                        setState(() => selectedNavPoint = newPoint);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  setState(() => selectedNavPoint = null);
+                },
+                child: const Text('关闭'),
+              ),
+              FilledButton.icon(
+                onPressed: () {
+                  final oldPoint = localPoint;
                   _commandManager.executeCommand(
-                    RenamePointCommand(
+                    DeletePointCommand(
                       mapManager.topologyMap.value,
                       oldPoint,
-                      newPoint,
-                      () => mapManager.updateTopologyMap(
-                        mapManager.topologyMap.value,
-                      ),
+                      () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
                     ),
                   );
+                  Navigator.of(ctx).pop();
                   setState(() {
-                    selectedNavPoint = newPoint;
+                    selectedNavPoint = null;
                     _selectedRoute = null;
                     _editingRouteInfo = null;
                     _routeStartPointName = null;
                   });
                 },
-              ),
-              _buildEditableKvNumber(
-                label: 'X',
-                value: p.x,
-                onCommitted: (newX) {
-                  final oldPoint = p;
-                  final newPoint = NavPoint(
-                    name: oldPoint.name,
-                    x: newX,
-                    y: oldPoint.y,
-                    theta: oldPoint.theta,
-                    type: oldPoint.type,
-                  );
-                  _commandManager.executeCommand(
-                    ModifyPointCommand(
-                      mapManager.topologyMap.value,
-                      oldPoint,
-                      newPoint,
-                      () => mapManager.updateTopologyMap(
-                        mapManager.topologyMap.value,
-                      ),
-                    ),
-                  );
-                  setState(() {
-                    selectedNavPoint = newPoint;
-                  });
-                },
-              ),
-              _buildEditableKvNumber(
-                label: 'Y',
-                value: p.y,
-                onCommitted: (newY) {
-                  final oldPoint = p;
-                  final newPoint = NavPoint(
-                    name: oldPoint.name,
-                    x: oldPoint.x,
-                    y: newY,
-                    theta: oldPoint.theta,
-                    type: oldPoint.type,
-                  );
-                  _commandManager.executeCommand(
-                    ModifyPointCommand(
-                      mapManager.topologyMap.value,
-                      oldPoint,
-                      newPoint,
-                      () => mapManager.updateTopologyMap(
-                        mapManager.topologyMap.value,
-                      ),
-                    ),
-                  );
-                  setState(() {
-                    selectedNavPoint = newPoint;
-                  });
-                },
-              ),
-              _buildEditableKvNumber(
-                label: 'Theta',
-                value: p.theta,
-                onCommitted: (newTheta) {
-                  final oldPoint = p;
-                  final newPoint = NavPoint(
-                    name: oldPoint.name,
-                    x: oldPoint.x,
-                    y: oldPoint.y,
-                    theta: newTheta,
-                    type: oldPoint.type,
-                  );
-                  _commandManager.executeCommand(
-                    ModifyPointCommand(
-                      mapManager.topologyMap.value,
-                      oldPoint,
-                      newPoint,
-                      () => mapManager.updateTopologyMap(
-                        mapManager.topologyMap.value,
-                      ),
-                    ),
-                  );
-                  setState(() {
-                    selectedNavPoint = newPoint;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    final oldPoint = selectedNavPoint;
-                    if (oldPoint == null) return;
-                    _commandManager.executeCommand(
-                      DeletePointCommand(
-                        mapManager.topologyMap.value,
-                        oldPoint,
-                        () => mapManager.updateTopologyMap(
-                          mapManager.topologyMap.value,
-                        ),
-                      ),
-                    );
-                    setState(() {
-                      selectedNavPoint = null;
-                      _selectedRoute = null;
-                      _editingRouteInfo = null;
-                      _routeStartPointName = null;
-                    });
-                  },
-                  icon: const Icon(Icons.delete, size: 18),
-                  label: const Text('删除该点位'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
+                icon: const Icon(Icons.delete, size: 18),
+                label: const Text('删除该点位'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
+
 
   Widget _buildEditableKvText({
     required String label,
@@ -806,125 +885,6 @@ class _MapEditPageState extends State<MapEditPage> {
       ),
     );
   }
-
-  Widget _buildRoutePanel(ThemeData theme, RosChannel rosChannel) {
-    final route = _selectedRoute;
-    if (route == null) return const SizedBox.shrink();
-
-    final mapManager = rosChannel.mapManager;
-    final topologyMap = mapManager.topologyMap.value;
-    final supportControllers = topologyMap.mapProperty.supportControllers;
-    final controllerOptions = supportControllers.isNotEmpty
-        ? supportControllers
-        : <String>{route.routeInfo.controller, 'FollowPath'}.toList();
-
-    final info = _editingRouteInfo ?? route.routeInfo;
-    return Card(
-      elevation: 10,
-      child: SizedBox(
-        width: 320,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '拓扑线属性',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: '关闭',
-                    onPressed: () {
-                      setState(() {
-                        _selectedRoute = null;
-                        _editingRouteInfo = null;
-                      });
-                    },
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text('方向: ${route.fromPoint} -> ${route.toPoint}'),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: info.controller,
-                decoration: const InputDecoration(
-                  labelText: '控制器',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                items: controllerOptions
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  final oldRoute = mapManager.getRoute(route.fromPoint, route.toPoint);
-                  if (oldRoute == null) return;
-                  final newRoute = TopologyRoute(
-                    fromPoint: route.fromPoint,
-                    toPoint: route.toPoint,
-                    routeInfo: RouteInfo(controller: value),
-                  );
-                  _commandManager.executeCommand(
-                    ModifyRouteCommand(
-                      mapManager.topologyMap.value,
-                      oldRoute,
-                      newRoute,
-                      () =>
-                          mapManager.updateTopologyMap(mapManager.topologyMap.value),
-                    ),
-                  );
-                  setState(() {
-                    _editingRouteInfo = RouteInfo(controller: value);
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        final oldRoute = mapManager.getRoute(route.fromPoint, route.toPoint);
-                        if (oldRoute != null) {
-                          _commandManager.executeCommand(
-                            DeleteRouteCommand(
-                              mapManager.topologyMap.value,
-                              oldRoute,
-                              () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
-                            ),
-                          );
-                        }
-                        setState(() {
-                          _selectedRoute = null;
-                          _editingRouteInfo = null;
-                        });
-                      },
-                      icon: const Icon(Icons.delete, size: 18),
-                      label: const Text('删除该方向'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
 
   Future<String?> _showAddNavPointDialog(
     BuildContext context,

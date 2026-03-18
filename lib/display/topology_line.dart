@@ -44,9 +44,10 @@ class _RouteArrowPainter extends CustomPainter {
     final h = size.height;
     final center = Offset(w * 0.5, h * 0.5);
 
-    final forward = Offset(w * 0.45, 0);
-    final back = Offset(-w * 0.25, 0);
-    final perp = Offset(0, h * 0.22);
+    final forward = Offset(w * 0.4, 0);
+    final back = Offset(-w * 0.2, 0);
+    final baseHalf = math.min(w, h) * 0.35;
+    final perp = Offset(0, baseHalf.clamp(0.0, 1.8));
 
     final path = ui.Path()
       ..moveTo(center.dx + forward.dx, center.dy + forward.dy)
@@ -143,12 +144,12 @@ class _TopologyLineLayerState extends State<_TopologyLineLayer> {
     const routeColor = Color(0xFF2563EB);
     const selectedColor = Color(0xFFFF0000);
     const parallelOffsetMeters = 0.05;
-    const arrowSpacingMeters = 0.30;
+    const arrowSpacingMeters = 0.55;
     const pointRadiusMeters = 0.10;
     const pipeInnerWidth = 5.0;
     const lineOpacity = 0.30;
-    const arrowSize = 14.0;
-    const arrowHitSize = 26.0;
+    const arrowSize = 10.0;
+    const arrowHitSize = 22.0;
 
     void addPipeAndFlowArrows({
       required double x1,

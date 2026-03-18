@@ -152,6 +152,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     if (point != null) {
                       _selectedRoute = null;
                       _editingRouteInfo = null;
+                      _showNavPointDialog(context, point);
                     }
                   });
                 },
@@ -610,248 +611,120 @@ class _MainFlamePageState extends State<MainFlamePage> {
     );
   }
 
+  void _showNavPointDialog(BuildContext context, NavPoint point) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.location_on, color: Colors.blue[700], size: 24),
+            const SizedBox(width: 10),
+            const Text('导航点信息'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.label, color: Colors.blue[700], size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            point.name,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[800],
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _getTypeColor(point.type),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _getTypeText(point.type),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildInfoSection(ctx, theme, '位置坐标', Icons.gps_fixed, [
+                _buildInfoRow('X坐标', '${point.x.toStringAsFixed(2)} m'),
+                _buildInfoRow('Y坐标', '${point.y.toStringAsFixed(2)} m'),
+                _buildInfoRow('方向', '${(point.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
+              ]),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (Provider.of<GlobalState>(context, listen: false).isManualCtrl.value) {
+                toastification.show(
+                  context: context,
+                  title: const Text('请先停止手动控制'),
+                  autoCloseDuration: const Duration(seconds: 3),
+                );
+                return;
+              }
+              Provider.of<RosChannel>(context, listen: false).sendNavigationGoal(
+                RobotPose(point.x, point.y, point.theta),
+              );
+              toastification.show(
+                context: context,
+                title: Text('已发送导航目标到 ${point.name}'),
+                autoCloseDuration: const Duration(seconds: 3),
+              );
+              Navigator.of(ctx).pop();
+              setState(() => selectedNavPoint = null);
+            },
+            icon: const Icon(Icons.navigation, size: 20),
+            label: const Text('发送导航目标'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.blue[600],
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRightToolbar(BuildContext context, ThemeData theme) {
     return Positioned(
       right: 5,
       top: 30,
-      child: Row(
-        children: [
-          // 右侧信息面板
-          if (selectedNavPoint != null)
-            Container(
-              width: 300, // 固定宽度，不占满右侧
-              child: Card(
-                elevation: 16,
-                shadowColor: Colors.black.withOpacity(0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white,
-                        Colors.blue[50]!,
-                      ],
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0), // 减少内边距
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min, // 根据内容自适应高度
-                      children: [
-                        // 标题栏
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6), // 减少图标容器大小
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue[100],
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(
-                                    Icons.location_on,
-                                    color: Colors.blue[700],
-                                    size: 20, // 减少图标大小
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  '导航点信息',
-                                  style: theme.textTheme.titleMedium?.copyWith( // 使用较小的标题样式
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // 添加关闭按钮
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.close, size: 18),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedNavPoint = null;
-                                  });
-                                },
-                                tooltip: '关闭',
-                                style: IconButton.styleFrom(
-                                  padding: const EdgeInsets.all(6),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Divider(height: 20, thickness: 1, color: Colors.grey[300]), // 减少分隔线高度
-                        
-                        // 导航点名称和类型
-                        Container(
-                          padding: const EdgeInsets.all(12), // 减少内边距
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.blue[200]!, width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blue[100]!.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[100],
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Icon(
-                                  Icons.label,
-                                  color: Colors.blue[700],
-                                  size: 16, // 减少图标大小
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      selectedNavPoint!.name,
-                                      style: theme.textTheme.bodyLarge?.copyWith( // 使用较小的文本样式
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue[800],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: _getTypeColor(selectedNavPoint!.type),
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: _getTypeColor(selectedNavPoint!.type).withOpacity(0.3),
-                                            blurRadius: 3,
-                                            offset: Offset(0, 1),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        _getTypeText(selectedNavPoint!.type),
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 16), // 减少间距
-                        
-                        // 坐标信息
-                        _buildInfoSection(
-                          context,
-                          theme,
-                          '位置坐标',
-                          Icons.gps_fixed,
-                          [
-                            _buildInfoRow('X坐标', '${selectedNavPoint!.x.toStringAsFixed(2)} m'),
-                            _buildInfoRow('Y坐标', '${selectedNavPoint!.y.toStringAsFixed(2)} m'),
-                            _buildInfoRow('方向', '${(selectedNavPoint!.theta * 180 / 3.14159).toStringAsFixed(1)}°'),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 16), // 减少间距
-                        
-                        // 导航按钮
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blue[400]!.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              if(Provider.of<GlobalState>(context, listen: false).isManualCtrl.value){
-                                toastification.show(
-                                  context: context,
-                                  title: Text('请先停止手动控制'),
-                                  autoCloseDuration: const Duration(seconds: 3),
-                                );
-                                return;
-                              }
-                              
-                              // 使用RosChannel发送导航目标
-                              Provider.of<RosChannel>(context, listen: false).sendNavigationGoal(
-                                RobotPose(
-                                  selectedNavPoint!.x, 
-                                  selectedNavPoint!.y, 
-                                  selectedNavPoint!.theta
-                                )
-                              );
-                              
-                              // 使用fluttertoast显示成功消息
-                              toastification.show(
-                                context: context,
-                                title: Text('已发送导航目标到 ${selectedNavPoint!.name}'),
-                                autoCloseDuration: const Duration(seconds: 3),
-                              );
-                              
-                              // 发送导航目标后自动关闭信息面板
-                              setState(() {
-                                selectedNavPoint = null;
-                              });
-                            },
-                            icon: const Icon(Icons.navigation, size: 20),
-                            label: const Text(
-                              '发送导航目标',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600), // 减少按钮文字大小
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[600],
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14), // 减少按钮高度
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 0,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          
-          // 原有的工具栏按钮
-          Column(
+      child: Column(
             children: [
               // 地图编辑按钮
               Card(
@@ -951,11 +824,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
               //     tooltip: '退出',
               //   ),
               // ),
-                             // 移除这里的GamepadWidget，我们将把它移到屏幕底部
             ],
           ),
-        ],
-      ),
     );
   }
 
