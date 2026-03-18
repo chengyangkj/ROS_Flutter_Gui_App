@@ -1,143 +1,105 @@
-# Map Server
+# nav2_map_server
 
-The `Map Server` provides maps to the rest of the Nav2 system using both topic and
-service interfaces. Map server will expose maps on the node bringup, but can also change maps using a `load_map` service during run-time, as well as save maps using a `save_map` server.
+基于 Nav2 的地图服务，支持 ROS1/ROS2，集成 HTTP 瓦片服务、栅格地图与拓扑地图管理。地图数据存储在 `~/.maps` 目录。
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-map-server.html) for additional parameter descriptions.
-
-### Architecture
-
-In contrast to the ROS1 navigation map server, the nav2 map server will support a variety
-of map types, and thus some aspects of the original code have been refactored to support
-this new extensible framework.
-
-Currently map server divides into tree parts:
-
-- `map_server`
-- `map_saver`
-- `map_io` library
-
-`map_server` is responsible for loading the map from a file through command-line interface
-or by using service requests.
-
-`map_saver` saves the map into a file. Like `map_server`, it has an ability to save the map from
-command-line or by calling a service.
-
-`map_io` - is a map input-output library. The library is designed to be an object-independent
-in order to allow easily save/load map from external code just by calling necessary function.
-This library is also used by `map_loader` and `map_saver` to work. Currently it contains
-OccupancyGrid saving/loading functions moved from the rest part of map server code.
-It is designed to be replaceable for a new IO library (e.g. for library with new map encoding
-method or any other library supporting costmaps, multifloor maps, etc...).
-
-### CLI-usage
-
-#### Map Server
-
-The `Map Server` is a composable ROS2 node. By default, there is a `map_server` executable that
-instances one of these nodes, but it is possible to compose multiple map server nodes into
-a single process, if desired.
-
-The command line for the map server executable is slightly different that it was with ROS1.
-With ROS1, one invoked the map server and passing the map YAML filename, like this:
+## 架构
 
 ```
-$ map_server map.yaml
+main.cpp                    # 入口：解析参数，初始化 MapManager 与 ROS 节点
+├── MapManager              # 核心：地图加载、瓦片生成、HTTP 接口
+│   ├── map_io              # 栅格地图与拓扑地图读写
+│   ├── tiles_map_generator # 瓦片生成
+│   └── HTTP Server         # 瓦片与 REST 接口
+└── MapServerNode           # ROS 接口：topic/service，桥接 MapManager
+    ├── ros1/map_server_node
+    └── ros2/map_server_node
 ```
 
-Where the YAML file specified contained the various map metadata, such as:
+### 模块说明
+
+| 模块 | 路径 | 职责 |
+|------|------|------|
+| app | src/app/ | main、MapManager（地图逻辑、HTTP） |
+| node | src/node/ | ROS 节点，提供 topic/service |
+| core | src/core/ | map_io、tiles_map_generator、topology_map |
+| common | src/common/ | 日志等公共组件 |
+
+### 数据目录
 
 ```
-image: testmap.png
-resolution: 0.1
-origin: [2.0, 3.0, 1.0]
-negate: 0
-occupied_thresh: 0.65
-free_thresh: 0.196
+~/.maps/
+├── current_map          # 当前地图名
+├── map_name_1/          # 地图目录
+│   ├── map_name_1.yaml  # 或 map.yaml（栅格元数据）
+│   ├── map_name_1.pgm   # 栅格图像
+│   ├── map_name_1.topology  # 拓扑地图 JSON
+│   └── tiles/           # 瓦片缓存
+│       └── {z}/{x}/{y}.png
+└── map_name_2/
+    └── ...
 ```
 
-The Nav2 software retains the map YAML file format from Nav1, but uses the ROS2 parameter
-mechanism to get the name of the YAML file to use. This effectively introduces a
-level of indirection to get the map yaml filename. For example, for a node named 'map_server',
-the parameter file would look like this:
+## 启动方式
 
-```
-# map_server_params.yaml
-map_server:
-    ros__parameters:
-        yaml_filename: "map.yaml"
-```
+```bash
+# ROS2
+./map_manager [选项]
 
-One can invoke the map service executable directly, passing the params file on the command line,
-like this:
-
-```
-$ map_server __params:=map_server_params.yaml
+# 常用选项
+--yaml_filename, -y    初始地图 yaml（不存在则不加载，从 ROS topic 获取）
+--pub_map_topic, -t    发布地图 topic，默认 /tiles/map
+--sub_map_topic        订阅地图 topic，默认 /map
+--frame_id, -f         frame_id，默认 map
+--tiles_http_port      HTTP 瓦片服务端口，默认 7684
+--config, -c           配置文件路径
 ```
 
-There is also possibility of having multiple map server nodes in a single process, where the parameters file would separate the parameters by node name, like this:
+地图来源优先顺序：若 `yaml_filename` 存在则加载；否则若有 current_map 且对应 yaml 存在则加载；否则不加载，等待 ROS topic 发布地图。
 
-```
-# combined_params.yaml
-map_server1:
-    ros__parameters:
-        yaml_filename: "some_map.yaml"
+## HTTP 接口
 
-map_server2:
-    ros__parameters:
-        yaml_filename: "another_map.yaml"
-```
+默认 `http://0.0.0.0:7684`，支持 CORS。
 
-Then, one would invoke this process with the params file that contains the parameters for both nodes:
+### 瓦片
 
-```
-$ process_with_multiple_map_servers __params:=combined_params.yaml
-```
+| 接口 | 说明 |
+|------|------|
+| GET /tiles/{z}/{x}/{y}.png | 当前地图瓦片 |
+| GET /tiles/{map_name}/{z}/{x}/{y}.png | 指定地图瓦片 |
+| GET /tiles/meta | 当前地图元信息 |
+| GET /tiles/{map_name}/meta | 指定地图元信息 |
+| POST /tiles/config | 设置当前地图 extra_zoom_levels |
+| POST /tiles/{map_name}/config | 设置指定地图 extra_zoom_levels |
+| GET /tiles/ | 接口说明页 |
 
+### 地图管理
 
-The parameter for the initial map (yaml_filename) has to be set, but an empty string can be used if no initial map should be loaded. In this case, no map is loaded during
-on_configure or published during on_activate. The _load_map_-service should the be used to load and publish a map. 
+| 接口 | 说明 |
+|------|------|
+| GET /getAllMapList | 地图名列表 |
+| GET /currentMap | 当前地图名 |
+| GET /setCurrentMap?name=xxx | 切换当前地图 |
+| GET /deleteMap?map_name=xxx | 删除地图目录 |
+| GET /getTopologyMap | 当前拓扑 JSON |
+| GET /getTopologyMap?map_name=xxx | 指定地图拓扑 JSON |
 
+### 编辑
 
-#### Map Saver
+| 接口 | 说明 |
+|------|------|
+| GET /updateMapEdit | 提交编辑，query: session_id, map_name, topology_json, obstacle_edits_json |
 
-Like in ROS1 `map_saver` could be used as CLI-executable. It was renamed to `map_saver_cli`
-and could be invoked by following command:
+## ROS 接口
 
-```
-$ ros2 run nav2_map_server map_saver_cli [arguments] [--ros-args ROS remapping args]
-```
+- **服务**（节点名 map_manager）：`map_manager/map`(GetMap)、`map_manager/load_map`、`map_manager/save_map`
+- **发布**：`/tiles/map`（occupancy grid）、`/map/topology`（拓扑）
+- **订阅**：`/map`（occupancy grid，收到后更新瓦片并保存）
+- 收到地图更新且 current_map 为空时，自动设为 `map` 并保存到 `~/.maps/map/`
 
-## Currently Supported Map Types
+话题名可通过 `--pub_map_topic`、`--sub_map_topic` 修改。
 
-- Occupancy grid (nav_msgs/msg/OccupancyGrid)
+## 依赖
 
-## MapIO library
-
-`MapIO` library contains following API functions declared in `map_io.hpp` to work with
-OccupancyGrid maps:
-
-- loadMapYaml(): Load and parse the given YAML file
-- loadMapFromFile(): Load the image from map file and generate an OccupancyGrid
-- loadMapFromYaml(): Load the map YAML, image from map file and generate an OccupancyGrid
-- saveMapToFile(): Write OccupancyGrid map to file
-
-## Services
-
-As in ROS navigation, the `map_server` node provides a "map" service to get the map. See the nav_msgs/srv/GetMap.srv file for details.
-
-NEW in ROS2 Eloquent, `map_server` also now provides a "load_map" service and `map_saver` -
-a "save_map" service. See nav2_msgs/srv/LoadMap.srv and nav2_msgs/srv/SaveMap.srv for details.
-
-For using these services `map_server`/`map_saver` should be launched as a continuously running
-`nav2::LifecycleNode` node. In addition to the CLI, `Map Saver` has a functionality of server
-handling incoming services. To run `Map Saver` in a server mode
-`nav2_map_server/launch/map_saver_server.launch.py` launch-file could be used.
-
-Service usage examples:
-
-```
-$ ros2 service call /map_server/load_map nav2_msgs/srv/LoadMap "{map_url: /ros/maps/map.yaml}"
-$ ros2 service call /map_saver/save_map nav2_msgs/srv/SaveMap "{map_topic: map, map_url: my_map, image_format: pgm, map_mode: trinary, free_thresh: 0.25, occupied_thresh: 0.65}"
-```
-
+- ROS1 或 ROS2
+- Boost、OpenCV、yaml-cpp、cpp-httplib
+- topology_msgs（ROS2）
