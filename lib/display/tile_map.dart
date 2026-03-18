@@ -17,6 +17,7 @@ import 'package:ros_flutter_gui_app/display/robot.dart' hide WorldToLatLngFn;
 import 'package:ros_flutter_gui_app/display/topology_line.dart' hide WorldToLatLngFn;
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/provider/http_channel.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 
@@ -66,6 +67,7 @@ class TileMapState extends State<TileMap> {
   MapMeta? _meta;
   String? _error;
   final MapController _mapController = MapController();
+  String _currentMapName = '';
   double _currentZoom = 2.0;
   bool _isDarkMode = true;
   RobotPose? _relocPose;
@@ -83,11 +85,14 @@ class TileMapState extends State<TileMap> {
 
   Future<void> loadMeta() async {
     try {
+      final httpChannel = context.read<HttpChannel>();
+      final mapName = await httpChannel.getCurrentMap();
       final meta = await MapMeta.fetch(globalSetting.tileServerUrl);
       if (mounted) {
         setState(() {
           _meta = meta;
           _error = null;
+          _currentMapName = mapName;
         });
       }
     } catch (e) {
@@ -196,9 +201,15 @@ class TileMapState extends State<TileMap> {
             ),
             children: [
               TileLayer(
-                urlTemplate: '${globalSetting.tileServerUrl}/tiles/{z}/{x}/{y}.png',
+                urlTemplate: _currentMapName.isNotEmpty
+                    ? '${globalSetting.tileServerUrl}/tiles/{map_name}/{z}/{x}/{y}.png'
+                    : '${globalSetting.tileServerUrl}/tiles/{z}/{x}/{y}.png',
+                additionalOptions: {'map_name': _currentMapName},
                 userAgentPackageName: 'ros_flutter_gui_app',
                 tileBounds: getTileBounds(),
+                tileProvider: NetworkTileProvider(
+                  cachingProvider: const DisabledMapCachingProvider(),
+                ),
                 tileBuilder: (context, child, tileImage) {
                   if (tileImage.imageInfo?.image != null && !tileImage.loadError) {
                     return RawImage(

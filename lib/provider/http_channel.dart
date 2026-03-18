@@ -39,6 +39,14 @@ class HttpChannel {
     }
   }
 
+  Future<void> deleteMap(String mapName) async {
+    final uri = _buildUri('/deleteMap', queryParameters: {'map_name': mapName});
+    final res = await http.get(uri);
+    if (res.statusCode != 200) {
+      throw Exception('deleteMap failed: ${res.statusCode} ${res.body}');
+    }
+  }
+
   Future<TopologyMap> getTopologyMap({String? mapName}) async {
     final uri = mapName != null && mapName.isNotEmpty
         ? _buildUri('/getTopologyMap', queryParameters: {'map_name': mapName})

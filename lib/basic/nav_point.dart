@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 enum NavPointType {
   navGoal,
   chargeStation
@@ -20,25 +18,38 @@ class NavPoint {
     required this.type,
   });
 
-  // 从JSON创建NavPoint
+  static NavPointType _parseType(dynamic v) {
+    if (v is int) return NavPointType.values[v];
+    final s = v.toString();
+    switch (s) {
+      case 'NavGoal':
+      case 'navGoal':
+        return NavPointType.navGoal;
+      case 'ChargeStation':
+      case 'chargeStation':
+        return NavPointType.chargeStation;
+      default:
+        return NavPointType.navGoal;
+    }
+  }
+
   factory NavPoint.fromJson(Map<String, dynamic> json) {
     return NavPoint(
-      x: json['x'] as double,
-      y: json['y'] as double,
-      theta: json['theta'] as double,
+      x: (json['x'] as num).toDouble(),
+      y: (json['y'] as num).toDouble(),
+      theta: (json['theta'] as num).toDouble(),
       name: json['name'] as String,
-      type: NavPointType.values[json['type'] as int],
+      type: _parseType(json['type']),
     );
   }
 
-  // 转换为JSON
   Map<String, dynamic> toJson() {
     return {
       'x': x,
       'y': y,
       'theta': theta,
       'name': name,
-      'type': type.index,
+      'type': type == NavPointType.navGoal ? 'NavGoal' : 'ChargeStation',
     };
   }
 
@@ -55,7 +66,7 @@ class NavPoint {
       y: y ?? this.y,
       theta: theta ?? this.theta,
       name: name ?? this.name,
-      type: type ?? this.type,
+      type: this.type,
     );
   }
 

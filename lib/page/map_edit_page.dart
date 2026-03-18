@@ -179,9 +179,7 @@ class _MapEditPageState extends State<MapEditPage> {
                     () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
                   ),
                 );
-                    setState(() {
-                      selectedNavPoint = navPoint;
-                    });
+                    if (mounted) setState(() => selectedNavPoint = navPoint);
                   },
                   followRobot: false,
                 ),
@@ -192,17 +190,24 @@ class _MapEditPageState extends State<MapEditPage> {
                   child: _buildTopToolbar(context, theme),
                 ),
                 Positioned(
-                  left: 10,
-                  top: 72,
-                  bottom: 90,
-                  child: SingleChildScrollView(
-                    child: _buildEditToolbar(context, theme),
+                  right: 0,
+                  top: 48,
+                  bottom: 0,
+                  width: 64,
+                  child: Container(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                            child: _buildEditToolbar(context, theme),
+                          ),
+                        ),
+                        _buildObstacleBrushSize(theme),
+                      ],
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: 10,
-                  bottom: 16,
-                  child: _buildObstacleBrushSize(theme),
                 ),
               ],
             ),
@@ -218,61 +223,40 @@ class _MapEditPageState extends State<MapEditPage> {
     final mapManager = rosChannel.mapManager;
 
     return Container(
-      height: 68,
+      height: 48,
       decoration: BoxDecoration(
-        color: Colors.orange,
+        color: Colors.orange.shade700,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Row(
         children: [
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.undo, color: Colors.white, size: 26),
-            tooltip: '撤销',
-            onPressed: _commandManager.canUndo()
-                ? () {
-                    setState(() {
-                      _commandManager.undo();
-                    });
-                  }
-                : null,
-          ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
+          _buildUndoButton(),
+          const SizedBox(width: 2),
           _buildSaveButton(httpChannel, mapManager),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           _buildSaveAsButton(httpChannel, mapManager),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.map, color: Colors.white, size: 26),
-            tooltip: '地图管理',
-            onPressed: () => _showMapManagementDialog(context, theme, httpChannel, mapManager),
-          ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 2),
+          _buildMapManageButton(context, theme, httpChannel, mapManager),
           if (selectedTool == EditToolType.AddNavPoint) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: TextButton.icon(
-                onPressed: _onAddRobotPositionPressed,
-                icon: const Icon(Icons.my_location, color: Colors.white, size: 18),
-                label: const Text(
-                  '添加机器人当前位置',
-                  style: TextStyle(color: Colors.white, fontSize: 13),
-                ),
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+            const SizedBox(width: 4),
+            TextButton.icon(
+              onPressed: _onAddRobotPositionPressed,
+              icon: const Icon(Icons.my_location, color: Colors.white, size: 16),
+              label: const Text('添加当前位置', style: TextStyle(color: Colors.white, fontSize: 12)),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blue.shade700,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
-            const SizedBox(width: 8),
           ],
           const Expanded(
             child: Center(
@@ -280,14 +264,17 @@ class _MapEditPageState extends State<MapEditPage> {
                 '地图编辑',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white, size: 26),
+            icon: const Icon(Icons.close, color: Colors.white, size: 22),
+            iconSize: 22,
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
             tooltip: '退出',
             onPressed: () async {
               _tileMapKey.currentState?.flushDraggingNavPoints();
@@ -296,85 +283,107 @@ class _MapEditPageState extends State<MapEditPage> {
               if (mounted) Navigator.pop(context);
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
     );
   }
 
-  Widget _buildSaveButton(HttpChannel httpChannel, MapManager mapManager) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.save, color: Colors.white, size: 26),
-          tooltip: '保存并发布到ROS',
-          padding: const EdgeInsets.all(4),
-          constraints: const BoxConstraints(),
-          onPressed: () async {
-            try {
-              _tileMapKey.currentState?.flushDraggingNavPoints();
-              final topologyMap = mapManager.topologyMap.value;
-              final obstacleEdits =
-                  _tileMapKey.currentState?.getObstacleEdits() ?? {};
-              final editSessionId = DateTime.now().millisecondsSinceEpoch.toString();
-              await httpChannel.updateMapEdit(
-                editSessionId: editSessionId,
-                topologyMap: topologyMap,
-                obstacleEdits: obstacleEdits,
-              );
-              if (!mounted) return;
-              toastification.show(
-                context: context,
-                type: ToastificationType.success,
-                style: ToastificationStyle.flatColored,
-                title: const Text('保存成功'),
-                description: const Text('已发布拓扑地图与栅格地图'),
-                autoCloseDuration: const Duration(seconds: 3),
-              );
-            } catch (e) {
-              if (!mounted) return;
-              toastification.show(
-                context: context,
-                type: ToastificationType.error,
-                style: ToastificationStyle.flatColored,
-                title: const Text('保存失败'),
-                description: Text('$e'),
-                autoCloseDuration: const Duration(seconds: 3),
-              );
+  Widget _buildUndoButton() {
+    final canUndo = _commandManager.canUndo();
+    return TextButton(
+      onPressed: canUndo
+          ? () {
+              setState(() {
+                _commandManager.undo();
+              });
             }
-          },
-        ),
-        Text(
-          _currentMapName.isEmpty ? '未选择' : _currentMapName,
-          style: const TextStyle(color: Colors.white70, fontSize: 10),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+          : null,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        disabledForegroundColor: Colors.white54,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: const Text('撤销', style: TextStyle(fontSize: 13)),
+    );
+  }
+
+  Widget _buildMapManageButton(
+    BuildContext context,
+    ThemeData theme,
+    HttpChannel httpChannel,
+    MapManager mapManager,
+  ) {
+    return TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onPressed: () => _showMapManagementDialog(context, theme, httpChannel, mapManager),
+      child: const Text('地图管理', style: TextStyle(fontSize: 13)),
+    );
+  }
+
+  Widget _buildSaveButton(HttpChannel httpChannel, MapManager mapManager) {
+    return TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onPressed: () async {
+        try {
+          _tileMapKey.currentState?.flushDraggingNavPoints();
+          final topologyMap = mapManager.topologyMap.value;
+          final obstacleEdits =
+              _tileMapKey.currentState?.getObstacleEdits() ?? {};
+          final editSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+          await httpChannel.updateMapEdit(
+            editSessionId: editSessionId,
+            topologyMap: topologyMap,
+            obstacleEdits: obstacleEdits,
+          );
+          if (!mounted) return;
+          _tileMapKey.currentState?.loadMeta();
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.flatColored,
+            title: const Text('保存成功'),
+            description: const Text('已发布拓扑地图与栅格地图'),
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        } catch (e) {
+          if (!mounted) return;
+          toastification.show(
+            context: context,
+            type: ToastificationType.error,
+            style: ToastificationStyle.flatColored,
+            title: const Text('保存失败'),
+            description: Text('$e'),
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+        }
+      },
+      child: const Text('保存', style: TextStyle(fontSize: 13)),
     );
   }
 
   Widget _buildSaveAsButton(HttpChannel httpChannel, MapManager mapManager) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.save_as, color: Colors.white, size: 26),
-          tooltip: '另存为',
-          padding: const EdgeInsets.all(4),
-          constraints: const BoxConstraints(),
-          onPressed: () => _showSaveAsDialog(context, httpChannel, mapManager),
-        ),
-        Text(
-          _currentMapName.isEmpty ? '另存为新地图' : _currentMapName,
-          style: const TextStyle(color: Colors.white70, fontSize: 10),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onPressed: () => _showSaveAsDialog(context, httpChannel, mapManager),
+      child: const Text('另存为', style: TextStyle(fontSize: 13)),
     );
   }
 
@@ -459,11 +468,14 @@ class _MapEditPageState extends State<MapEditPage> {
       builder: (ctx) => _MapManagementDialog(
         httpChannel: httpChannel,
         tileServerUrl: globalSetting.tileServerUrl,
+        mapManager: mapManager,
         onSwitchMap: (name) async {
           await httpChannel.setCurrentMap(name);
           final topo = await httpChannel.getTopologyMap(mapName: name);
           mapManager.updateTopologyMap(topo);
-          if (ctx.mounted) Navigator.of(ctx).pop();
+          if (!ctx.mounted) return;
+          Navigator.of(ctx).pop();
+          if (!mounted) return;
           _tileMapKey.currentState?.loadMeta();
           setState(() => _currentMapName = name);
         },
@@ -472,56 +484,49 @@ class _MapEditPageState extends State<MapEditPage> {
   }
 
   Widget _buildEditToolbar(BuildContext context, ThemeData theme) {
-    final compact = MediaQuery.sizeOf(context).width < 480;
-    return Card(
-      elevation: 8,
-      child: Padding(
-        padding: EdgeInsets.all(compact ? 6 : 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildToolButton(
-              context,
-              icon: Icons.open_with,
-              label: '移动/选择',
-              tool: EditToolType.Move,
-              activeColor: Colors.grey,
-            ),
-            const SizedBox(height: 6),
-            _buildToolButton(
-              context,
-              icon: Icons.add_location,
-              label: '添加点位',
-              tool: EditToolType.AddNavPoint,
-              activeColor: Colors.blue,
-            ),
-            const SizedBox(height: 6),
-            _buildToolButton(
-              context,
-              icon: Icons.link,
-              label: '拓扑连线',
-              tool: EditToolType.AddRoute,
-              activeColor: Colors.deepPurple,
-            ),
-            const SizedBox(height: 6),
-            _buildToolButton(
-              context,
-              icon: Icons.brush,
-              label: '画笔',
-              tool: EditToolType.BrushObstacle,
-              activeColor: Colors.green,
-            ),
-            const SizedBox(height: 6),
-            _buildToolButton(
-              context,
-              icon: Icons.auto_fix_high,
-              label: '橡皮擦',
-              tool: EditToolType.EraseObstacle,
-              activeColor: Colors.red,
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildToolButton(
+          context,
+          icon: Icons.open_with,
+          label: '移动',
+          tool: EditToolType.Move,
+          activeColor: Colors.grey,
         ),
-      ),
+        const SizedBox(height: 4),
+        _buildToolButton(
+          context,
+          icon: Icons.add_location,
+          label: '点位',
+          tool: EditToolType.AddNavPoint,
+          activeColor: Colors.blue,
+        ),
+        const SizedBox(height: 4),
+        _buildToolButton(
+          context,
+          icon: Icons.link,
+          label: '连线',
+          tool: EditToolType.AddRoute,
+          activeColor: Colors.deepPurple,
+        ),
+        const SizedBox(height: 4),
+        _buildToolButton(
+          context,
+          icon: Icons.brush,
+          label: '画笔',
+          tool: EditToolType.BrushObstacle,
+          activeColor: Colors.green,
+        ),
+        const SizedBox(height: 4),
+        _buildToolButton(
+          context,
+          icon: Icons.auto_fix_high,
+          label: '橡皮',
+          tool: EditToolType.EraseObstacle,
+          activeColor: Colors.red,
+        ),
+      ],
     );
   }
 
@@ -529,62 +534,57 @@ class _MapEditPageState extends State<MapEditPage> {
     final show = selectedTool == EditToolType.BrushObstacle ||
         selectedTool == EditToolType.EraseObstacle;
     if (!show) return const SizedBox.shrink();
-    return Card(
-      elevation: 10,
-      child: SizedBox(
-        width: 260,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '画笔大小: ${_obstacleBrushSizeMeters.toStringAsFixed(2)} m',
-                style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              Slider(
-                value: _obstacleBrushSizeMeters,
-                min: 0.05,
-                max: 1.0,
-                divisions: 19,
-                onChanged: (v) => setState(() => _obstacleBrushSizeMeters = v),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.fromLTRB(6, 8, 6, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${_obstacleBrushSizeMeters.toStringAsFixed(2)}m',
+            style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
-        ),
+          Slider(
+            value: _obstacleBrushSizeMeters,
+            min: 0.05,
+            max: 1.0,
+            divisions: 19,
+            onChanged: (v) => setState(() => _obstacleBrushSizeMeters = v),
+          ),
+        ],
       ),
     );
   }
 
-  void _onAddRobotPositionPressed() {
+  void _onAddRobotPositionPressed() async {
     final rosChannel = context.read<RosChannel>();
     final mapManager = rosChannel.mapManager;
     final pose = rosChannel.robotPoseMap.value;
 
-    final nextIdFuture = mapManager.getNextPointId();
-    nextIdFuture.then((id) {
-      final navPoint = NavPoint(
-        name: 'NAV_POINT_$id',
-        x: pose.x,
-        y: pose.y,
-        theta: pose.theta,
-        type: NavPointType.navGoal,
-      );
+    final id = await mapManager.getNextPointId();
+    if (!mounted) return;
 
-      _commandManager.executeCommand(
-        AddPointCommand(
-          mapManager.topologyMap.value,
-          navPoint,
-          () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
-        ),
-      );
+    final navPoint = NavPoint(
+      name: 'NAV_POINT_$id',
+      x: pose.x,
+      y: pose.y,
+      theta: pose.theta,
+      type: NavPointType.navGoal,
+    );
 
-      setState(() {
-        selectedNavPoint = navPoint;
-        _selectedRoute = null;
-        _editingRouteInfo = null;
-      });
+    _commandManager.executeCommand(
+      AddPointCommand(
+        mapManager.topologyMap.value,
+        navPoint,
+        () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+      ),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      selectedNavPoint = navPoint;
+      _selectedRoute = null;
+      _editingRouteInfo = null;
     });
   }
 
@@ -596,7 +596,6 @@ class _MapEditPageState extends State<MapEditPage> {
     required Color activeColor,
   }) {
     final isActive = selectedTool == tool;
-    final compact = MediaQuery.sizeOf(context).width < 480;
     return InkWell(
       onTap: () {
         setState(() {
@@ -611,14 +610,11 @@ class _MapEditPageState extends State<MapEditPage> {
         });
       },
       child: Container(
-        width: compact ? 90 : 120,
-        padding: EdgeInsets.symmetric(
-          vertical: compact ? 6 : 8,
-          horizontal: compact ? 4 : 6,
-        ),
+        width: 52,
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         decoration: BoxDecoration(
-          color: isActive ? activeColor.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: isActive ? activeColor.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
           border: isActive ? Border.all(color: activeColor, width: 2) : null,
         ),
         child: Column(
@@ -626,15 +622,15 @@ class _MapEditPageState extends State<MapEditPage> {
           children: [
             Icon(
               icon,
-              size: compact ? 18 : 22,
+              size: 20,
               color: isActive ? activeColor : Colors.grey,
             ),
-            SizedBox(height: compact ? 2 : 4),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                fontSize: compact ? 10 : 12,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 color: isActive ? activeColor : Colors.grey,
               ),
             ),
@@ -1085,11 +1081,13 @@ class _MapEditPageState extends State<MapEditPage> {
 class _MapManagementDialog extends StatefulWidget {
   final HttpChannel httpChannel;
   final String tileServerUrl;
+  final MapManager mapManager;
   final Future<void> Function(String name) onSwitchMap;
 
   const _MapManagementDialog({
     required this.httpChannel,
     required this.tileServerUrl,
+    required this.mapManager,
     required this.onSwitchMap,
   });
 
@@ -1164,8 +1162,9 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                           final name = _mapNames[index];
                           final isCurrent = name == _currentMap;
                           final thumbUrl =
-                              '${widget.tileServerUrl}/tiles/$name/0/0/0.png';
+                              '${widget.tileServerUrl}/tiles/$name/0/0/0.png?id=$name';
                           return Padding(
+                            key: ValueKey(name),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: Row(
                               children: [
@@ -1173,6 +1172,8 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.network(
                                     thumbUrl,
+                                    key: ValueKey(thumbUrl),
+                                    gaplessPlayback: false,
                                     width: 64,
                                     height: 64,
                                     fit: BoxFit.cover,
@@ -1202,6 +1203,7 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                         },
                                   child: const Text('编辑'),
                                 ),
+                                
                                 const SizedBox(width: 4),
                                 if (isCurrent)
                                   Container(
@@ -1228,6 +1230,58 @@ class _MapManagementDialogState extends State<_MapManagementDialog> {
                                     },
                                     child: const Text('切换地图'),
                                   ),
+                                  const SizedBox(width: 4),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    size: 20,
+                                    color: isCurrent ? Colors.grey : Colors.red,
+                                  ),
+                                  tooltip: isCurrent ? '当前使用中，不可删除' : '删除',
+                                  onPressed: isCurrent
+                                      ? null
+                                      : () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('确认删除'),
+                                        content: Text('确定要删除地图「$name」吗？此操作不可恢复。'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(ctx).pop(false),
+                                            child: const Text('取消'),
+                                          ),
+                                          FilledButton(
+                                            onPressed: () => Navigator.of(ctx).pop(true),
+                                            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                                            child: const Text('删除'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm != true || !mounted) return;
+                                    try {
+                                      await widget.httpChannel.deleteMap(name);
+                                      if (!mounted) return;
+                                      await _load();
+                                      if (!mounted) return;
+                                      toastification.show(
+                                        context: context,
+                                        type: ToastificationType.success,
+                                        title: Text('已删除: $name'),
+                                        autoCloseDuration: const Duration(seconds: 2),
+                                      );
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      toastification.show(
+                                        context: context,
+                                        type: ToastificationType.error,
+                                        title: Text('删除失败: $e'),
+                                        autoCloseDuration: const Duration(seconds: 3),
+                                      );
+                                    }
+                                  },
+                                ),
                               ],
                             ),
                           );
