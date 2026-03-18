@@ -1,7 +1,7 @@
 #pragma once
 
 #include "node/map_server_interface.hpp"
-#include "core/map_server_core.hpp"
+#include "app/map_manager.hpp"
 
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -14,7 +14,7 @@ public:
   MapServerNode();
   ~MapServerNode();
 
-  bool Init(const MapServerConfig& config) override;
+  bool Init(const MapServerConfig& config, MapManager* map_manager) override;
   void Run() override;
   void Shutdown() override;
 
@@ -25,8 +25,10 @@ private:
   ros::Publisher map_pub_;
   ros::ServiceServer get_map_service_;
 
-  MapServerCore core_;
-  std::string yaml_filename_;
+  MapManager* map_manager_{nullptr};
+  MapServerConfig config_;
+
+  void PublishMapUpdate();
 };
 
 }  // namespace nav2_map_server

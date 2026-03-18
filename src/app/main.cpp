@@ -1,6 +1,8 @@
 #include "node/map_server_interface.hpp"
+#include "app/map_manager.hpp"
 #include "common/logger/logger.h"
 
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <fstream>
 #include <iostream>
@@ -9,8 +11,10 @@
 
 #if ROS_VERSION == 1
 #include "node/ros1/map_server_node.hpp"
+#include <ros/ros.h>
 #else
 #include "node/ros2/map_server_node.hpp"
+#include "rclcpp/rclcpp.hpp"
 #endif
 
 namespace po = boost::program_options;
@@ -28,8 +32,6 @@ nav2_map_server::MapServerConfig ParseOptions(int argc, char** argv) {
        "frame id")
       ("tiles_http_port", po::value<int>()->default_value(7684),
        "HTTP port for serving tiles to flutter_map")
-      ("tiles_output_dir", po::value<std::string>()->default_value("./tiles"),
-       "local directory for tile cache, served via HTTP")
       ("save_map_timeout", po::value<double>()->default_value(2.0),
        "save map timeout in seconds")
       ("free_thresh_default", po::value<double>()->default_value(0.25),
@@ -60,12 +62,26 @@ nav2_map_server::MapServerConfig ParseOptions(int argc, char** argv) {
   config.sub_map_topic = vm["sub_map_topic"].as<std::string>();
   config.frame_id = vm["frame_id"].as<std::string>();
   config.tiles_http_port = vm["tiles_http_port"].as<int>();
-  config.tiles_output_dir = vm["tiles_output_dir"].as<std::string>();
   config.save_map_timeout = vm["save_map_timeout"].as<double>();
   config.free_thresh_default = vm["free_thresh_default"].as<double>();
   config.occupied_thresh_default = vm["occupied_thresh_default"].as<double>();
   config.map_subscribe_transient_local = vm["map_subscribe_transient_local"].as<bool>();
   return config;
+}
+
+static std::string ResolveInitYaml(const nav2_map_server::MapServerConfig& config,
+    nav2_map_server::MapManager& map_manager) {
+  if (!config.yaml_filename.empty() && boost::filesystem::exists(config.yaml_filename)) {
+    return config.yaml_filename;
+  }
+  std::string current = map_manager.GetCurrentMapName();
+  if (!current.empty()) {
+    std::string yaml_path = map_manager.GetMapDir(current) + "/" + current + ".yaml";
+    if (boost::filesystem::exists(yaml_path)) {
+      return yaml_path;
+    }
+  }
+  return std::string();
 }
 
 int main(int argc, char** argv) {
@@ -78,17 +94,50 @@ int main(int argc, char** argv) {
   }
 
 #if ROS_VERSION == 1
-  ros::init(argc, argv, "map_server");
-  auto node = std::make_shared<nav2_map_server::MapServerNode>();
-  if (!node->Init(config)) {
+  ros::init(argc, argv, "map_manager");
+  nav2_map_server::MapManager map_manager;
+  map_manager.SetFrameId(config.frame_id);
+  std::string init_yaml = ResolveInitYaml(config, map_manager);
+  if (!map_manager.Initialize(config.tiles_http_port)) {
+    LOG_ERROR("Failed to initialize map manager");
     return -1;
   }
+  auto node = std::make_shared<nav2_map_server::MapServerNode>();
+  if (!node->Init(config, &map_manager)) {
+    return -1;
+  }
+  if (!init_yaml.empty()) {
+    if (map_manager.LoadMapFromYaml(init_yaml) != nav2_map_server::LOAD_MAP_SUCCESS) {
+      LOG_ERROR("Failed to load map: " << init_yaml);
+      return -1;
+    }
+  }
+  map_manager.Start();
   node->Run();
+  map_manager.Shutdown();
   node->Shutdown();
 #else
   rclcpp::init(argc, argv);
+  nav2_map_server::MapManager map_manager;
+  map_manager.SetFrameId(config.frame_id);
+  std::string init_yaml = ResolveInitYaml(config, map_manager);
+  if (!map_manager.Initialize(config.tiles_http_port)) {
+    LOG_ERROR("Failed to initialize map manager");
+    return -1;
+  }
   auto node = std::make_shared<nav2_map_server::MapServerNode>(config);
+  if (!node->Init(config, &map_manager)) {
+    return -1;
+  }
+  if (!init_yaml.empty()) {
+    if (map_manager.LoadMapFromYaml(init_yaml) != nav2_map_server::LOAD_MAP_SUCCESS) {
+      LOG_ERROR("Failed to load map: " << init_yaml);
+      return -1;
+    }
+  }
+  map_manager.Start();
   node->Run();
+  map_manager.Shutdown();
   node->Shutdown();
   rclcpp::shutdown();
 #endif

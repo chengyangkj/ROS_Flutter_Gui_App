@@ -11,31 +11,23 @@ MapServerNode::MapServerNode() {}
 
 MapServerNode::~MapServerNode() {}
 
-bool MapServerNode::Init(const MapServerConfig& config) {
-  yaml_filename_ = config.yaml_filename;
-  core_.SetFrameId(config.frame_id);
-  if (!core_.Initialize(config.tiles_http_port, config.tiles_output_dir)) {
-    LOG_ERROR("Failed to initialize tiles map server");
-    return false;
+void MapServerNode::PublishMapUpdate() {
+  if (map_manager_ && map_manager_->IsMapAvailable()) {
+    nav_msgs::OccupancyGrid msg;
+    Convert(map_manager_->GetMapData(), msg, map_manager_->GetFrameId());
+    map_pub_.publish(msg);
   }
-  core_.Start();
+}
 
-  if (!yaml_filename_.empty()) {
-    if (core_.LoadMapFromYaml(yaml_filename_) != LOAD_MAP_SUCCESS) {
-      LOG_ERROR("Failed to load map: " << yaml_filename_);
-      return false;
-    }
-  }
+bool MapServerNode::Init(const MapServerConfig& config, MapManager* map_manager) {
+  map_manager_ = map_manager;
+  config_ = config;
+  map_manager_->SetOnMapUpdateCallback([this]() { PublishMapUpdate(); });
 
   map_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>(config.pub_map_topic, 1, true);
   get_map_service_ = nh_.advertiseService("static_map", &MapServerNode::GetMapCallback, this);
 
-  if (core_.IsMapAvailable()) {
-    nav_msgs::OccupancyGrid msg;
-    Convert(core_.GetMapData(), msg, config.frame_id);
-    map_pub_.publish(msg);
-  }
-
+  PublishMapUpdate();
   return true;
 }
 
@@ -44,12 +36,13 @@ void MapServerNode::Run() {
 }
 
 void MapServerNode::Shutdown() {
-  core_.Shutdown();
   ros::shutdown();
 }
 
 void MapServerNode::GetMapCallback(nav_msgs::GetMap::Request&, nav_msgs::GetMap::Response& res) {
-  Convert(core_.GetMapData(), res.map, core_.GetFrameId());
+  if (map_manager_) {
+    Convert(map_manager_->GetMapData(), res.map, map_manager_->GetFrameId());
+  }
 }
 
 }  // namespace nav2_map_server

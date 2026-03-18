@@ -543,6 +543,8 @@ void tryWriteMapToFile(
     e << YAML::Key << "image" << YAML::Value << image_name;
     e << YAML::Key << "mode" << YAML::Value << map_mode_to_string(save_parameters.mode);
     e << YAML::Key << "resolution" << YAML::Value << map.resolution;
+    e << YAML::Key << "width" << YAML::Value << static_cast<int>(map.width);
+    e << YAML::Key << "height" << YAML::Value << static_cast<int>(map.height);
     e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq
         << map.origin_x << map.origin_y << map.origin_yaw << YAML::EndSeq;
     e << YAML::Key << "negate" << YAML::Value << 0;

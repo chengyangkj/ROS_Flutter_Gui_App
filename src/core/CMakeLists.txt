@@ -1,7 +1,6 @@
 add_library(map_io STATIC
   map_mode.cpp
   map_io.cpp
-  map_server_core.cpp
   tiles_map_generator.cc
 )
 
