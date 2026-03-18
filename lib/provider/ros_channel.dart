@@ -25,8 +25,6 @@ import 'package:ros_flutter_gui_app/basic/diagnostic_array.dart';
 import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
 import 'package:ros_flutter_gui_app/provider/map_manager.dart';
 import 'package:oktoast/oktoast.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 
 class LaserData {
@@ -742,61 +740,6 @@ class RosChannel {
       print("发布拓扑地图失败: $e");
     }
   }
-
-  Uri _buildHttpUri(String path, {Map<String, String>? queryParameters}) {
-    final base = globalSetting.tileServerUrl;
-    return Uri.parse('$base$path').replace(queryParameters: queryParameters);
-  }
-
-  /// 发送一次“地图编辑结果”给后端（GET /updateMapEdit）。
-  ///
-  /// 用途：
-  /// - 在地图编辑页面点击“保存并发布”时，将当前拓扑地图
-  ///   与障碍栅格编辑增量一次性提交给后端。
-  /// - 后端完成落库/发布与栅格覆盖（前端不在这里直接触发 ROS 发布）。
-  ///
-  /// HTTP：
-  /// - method: GET
-  /// - path: `/updateMapEdit`
-  /// - query 参数（均为字符串）：
-  ///   - `session_id`: 编辑会话 id（用于后端先清空再应用本次结果）
-  ///   - `map_name`: 拓扑地图名称（来自 `TopologyMap.mapName`）
-  ///   - `topology_json`: 拓扑地图 JSON 字符串（`jsonEncode(topologyMap.toJson())`）
-  ///   - `obstacle_edits_json`: 障碍物编辑增量 JSON 字符串（`jsonEncode(obstacleEdits)`）
-  ///
-  /// obstacle_edits_json 的含义（前端实际传输的 schema）：
-  /// - JSON Object: `{ "<cellIndex>": <value>, ... }`
-  /// - cellIndex: int，栅格 cell 的索引，由刷/擦笔时计算得到：
-  ///   - `key = row * meta.width + col`
-  /// - value: int
-  ///   - `100` 代表 Brush：该 cell 应标记为障碍（黑色单元）
-  ///   - `0` 代表 Eraser：该 cell 应被清除障碍（白色单元）
-  ///   - `-1` 代表“未作更改/占位值”：后端在应用时可以忽略该值
-  Future<void> updateMapEditHttp({
-    required String editSessionId,
-    required TopologyMap topologyMap,
-    required Map<int, int> obstacleEdits,
-  }) async {
-    final obstacleEditsJson = obstacleEdits
-        .map((cellIndex, value) => MapEntry(cellIndex.toString(), value));
-    final uri = _buildHttpUri(
-      '/updateMapEdit',
-      queryParameters: <String, String>{
-        'session_id': editSessionId,
-        'map_name': "./map",
-        'topology_json': jsonEncode(topologyMap.toJson()),
-        'obstacle_edits_json': jsonEncode(obstacleEditsJson),
-      },
-    );
-
-    print("obstacle_edits_json uri: $obstacleEditsJson");
-
-    final res = await http.get(uri);
-    if (res.statusCode != 200) {
-      throw Exception('updateMapEdit failed: ${res.statusCode} ${res.body}');
-    }
-  }
-
 
   Future<void> navStatusCallback(Map<String, dynamic> msg) async {
     GoalStatusArray goalStatusArray = GoalStatusArray.fromJson(msg);

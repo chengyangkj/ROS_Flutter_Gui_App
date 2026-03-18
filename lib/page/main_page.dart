@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/display/tile_map.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/provider/http_channel.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/basic/action_status.dart';
 import 'package:ros_flutter_gui_app/basic/RobotPose.dart';
@@ -42,7 +43,16 @@ class _MainFlamePageState extends State<MainFlamePage> {
   void initState() {
     super.initState();
     Provider.of<GlobalState>(context, listen: false).loadLayerSettings();
-    
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      try {
+        final httpChannel = Provider.of<HttpChannel>(context, listen: false);
+        final mapManager = Provider.of<RosChannel>(context, listen: false).mapManager;
+        final topo = await httpChannel.getTopologyMap();
+        mapManager.updateTopologyMap(topo);
+      } catch (_) {}
+    });
+
     // 初始化相机尺寸
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

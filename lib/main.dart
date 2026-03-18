@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/page/main_page.dart';
 import 'package:ros_flutter_gui_app/page/connect_page.dart';
+import 'package:ros_flutter_gui_app/provider/http_channel.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/setting_page.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -37,6 +38,7 @@ void main() async {
   await _setInitialOrientation();
   runApp(MultiProvider(providers: [
     Provider<RosChannel>(create: (_) => RosChannel()),
+    Provider<HttpChannel>(create: (_) => HttpChannel()),
     ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
     ChangeNotifierProvider<GlobalState>(create: (_) => GlobalState()),
   ], child: MyApp()));

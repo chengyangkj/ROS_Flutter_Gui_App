@@ -5,6 +5,9 @@ import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/display/tile_map.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
+import 'package:ros_flutter_gui_app/global/setting.dart';
+import 'package:ros_flutter_gui_app/provider/http_channel.dart';
+import 'package:ros_flutter_gui_app/provider/map_manager.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/page/map_edit_command.dart';
 import 'package:toastification/toastification.dart';
@@ -40,15 +43,24 @@ class _MapEditPageState extends State<MapEditPage> {
   double _obstacleBrushSizeMeters = 0.05;
   late final GlobalState _globalState;
   final CommandManager _commandManager = CommandManager();
+  String _currentMapName = '';
 
   @override
   void initState() {
     super.initState();
     selectedTool = EditToolType.Move;
     _globalState = context.read<GlobalState>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       _globalState.mode.value = Mode.mapEdit;
+      try {
+        final httpChannel = context.read<HttpChannel>();
+        final mapManager = context.read<RosChannel>().mapManager;
+        _currentMapName = await httpChannel.getCurrentMap();
+        final topo = await httpChannel.getTopologyMap();
+        mapManager.updateTopologyMap(topo);
+        if (mounted) setState(() {});
+      } catch (_) {}
     });
   }
   
@@ -202,10 +214,11 @@ class _MapEditPageState extends State<MapEditPage> {
 
   Widget _buildTopToolbar(BuildContext context, ThemeData theme) {
     final rosChannel = context.read<RosChannel>();
+    final httpChannel = context.read<HttpChannel>();
     final mapManager = rosChannel.mapManager;
 
     return Container(
-      height: 56,
+      height: 68,
       decoration: BoxDecoration(
         color: Colors.orange,
         boxShadow: [
@@ -231,45 +244,14 @@ class _MapEditPageState extends State<MapEditPage> {
                 : null,
           ),
           const SizedBox(width: 8),
+          _buildSaveButton(httpChannel, mapManager),
+          const SizedBox(width: 4),
+          _buildSaveAsButton(httpChannel, mapManager),
+          const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.save, color: Colors.white, size: 26),
-            tooltip: '保存并发布到ROS',
-            onPressed: () async {
-              try {
-                _tileMapKey.currentState?.flushDraggingNavPoints();
-                final topologyMap = mapManager.topologyMap.value;
-                final obstacleEdits =
-                    _tileMapKey.currentState?.getObstacleEdits() ?? {};
-                final editSessionId = DateTime.now().millisecondsSinceEpoch.toString();
-
-                await mapManager.saveLocalTopologyMap();
-                await rosChannel.updateMapEditHttp(
-                  editSessionId: editSessionId,
-                  topologyMap: topologyMap,
-                  obstacleEdits: obstacleEdits,
-                );
-
-                if (!mounted) return;
-                toastification.show(
-                  context: context,
-                  type: ToastificationType.success,
-                  style: ToastificationStyle.flatColored,
-                  title: const Text('保存成功'),
-                  description: const Text('已发布拓扑地图与栅格地图'),
-                  autoCloseDuration: const Duration(seconds: 3),
-                );
-              } catch (e) {
-                if (!mounted) return;
-                toastification.show(
-                  context: context,
-                  type: ToastificationType.error,
-                  style: ToastificationStyle.flatColored,
-                  title: const Text('保存失败'),
-                  description: Text('$e'),
-                  autoCloseDuration: const Duration(seconds: 3),
-                );
-              }
-            },
+            icon: const Icon(Icons.map, color: Colors.white, size: 26),
+            tooltip: '地图管理',
+            onPressed: () => _showMapManagementDialog(context, theme, httpChannel, mapManager),
           ),
           const SizedBox(width: 8),
           if (selectedTool == EditToolType.AddNavPoint) ...[
@@ -309,7 +291,6 @@ class _MapEditPageState extends State<MapEditPage> {
             tooltip: '退出',
             onPressed: () async {
               _tileMapKey.currentState?.flushDraggingNavPoints();
-              await mapManager.saveLocalTopologyMap();
               widget.onExit?.call();
               _globalState.mode.value = Mode.normal;
               if (mounted) Navigator.pop(context);
@@ -317,6 +298,175 @@ class _MapEditPageState extends State<MapEditPage> {
           ),
           const SizedBox(width: 8),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton(HttpChannel httpChannel, MapManager mapManager) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.save, color: Colors.white, size: 26),
+          tooltip: '保存并发布到ROS',
+          padding: const EdgeInsets.all(4),
+          constraints: const BoxConstraints(),
+          onPressed: () async {
+            try {
+              _tileMapKey.currentState?.flushDraggingNavPoints();
+              final topologyMap = mapManager.topologyMap.value;
+              final obstacleEdits =
+                  _tileMapKey.currentState?.getObstacleEdits() ?? {};
+              final editSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+              await httpChannel.updateMapEdit(
+                editSessionId: editSessionId,
+                topologyMap: topologyMap,
+                obstacleEdits: obstacleEdits,
+              );
+              if (!mounted) return;
+              toastification.show(
+                context: context,
+                type: ToastificationType.success,
+                style: ToastificationStyle.flatColored,
+                title: const Text('保存成功'),
+                description: const Text('已发布拓扑地图与栅格地图'),
+                autoCloseDuration: const Duration(seconds: 3),
+              );
+            } catch (e) {
+              if (!mounted) return;
+              toastification.show(
+                context: context,
+                type: ToastificationType.error,
+                style: ToastificationStyle.flatColored,
+                title: const Text('保存失败'),
+                description: Text('$e'),
+                autoCloseDuration: const Duration(seconds: 3),
+              );
+            }
+          },
+        ),
+        Text(
+          _currentMapName.isEmpty ? '未选择' : _currentMapName,
+          style: const TextStyle(color: Colors.white70, fontSize: 10),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveAsButton(HttpChannel httpChannel, MapManager mapManager) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.save_as, color: Colors.white, size: 26),
+          tooltip: '另存为',
+          padding: const EdgeInsets.all(4),
+          constraints: const BoxConstraints(),
+          onPressed: () => _showSaveAsDialog(context, httpChannel, mapManager),
+        ),
+        Text(
+          _currentMapName.isEmpty ? '另存为新地图' : _currentMapName,
+          style: const TextStyle(color: Colors.white70, fontSize: 10),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showSaveAsDialog(
+    BuildContext context,
+    HttpChannel httpChannel,
+    MapManager mapManager,
+  ) async {
+    final controller = TextEditingController(text: _currentMapName);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('另存为'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: '地图名称',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || name == null || name.isEmpty) return;
+    try {
+      _tileMapKey.currentState?.flushDraggingNavPoints();
+      final topologyMap = mapManager.topologyMap.value;
+      final obstacleEdits =
+          _tileMapKey.currentState?.getObstacleEdits() ?? {};
+      final editSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+      await httpChannel.updateMapEdit(
+        editSessionId: editSessionId,
+        topologyMap: topologyMap,
+        obstacleEdits: obstacleEdits,
+        mapName: name,
+      );
+      await httpChannel.setCurrentMap(name);
+      final topo = await httpChannel.getTopologyMap(mapName: name);
+      mapManager.updateTopologyMap(topo);
+      _tileMapKey.currentState?.loadMeta();
+      setState(() => _currentMapName = name);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.success,
+        style: ToastificationStyle.flatColored,
+        title: const Text('另存为成功'),
+        description: Text('已保存为: $name'),
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.flatColored,
+        title: const Text('另存为失败'),
+        description: Text('$e'),
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  void _showMapManagementDialog(
+    BuildContext context,
+    ThemeData theme,
+    HttpChannel httpChannel,
+    MapManager mapManager,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _MapManagementDialog(
+        httpChannel: httpChannel,
+        tileServerUrl: globalSetting.tileServerUrl,
+        onSwitchMap: (name) async {
+          await httpChannel.setCurrentMap(name);
+          final topo = await httpChannel.getTopologyMap(mapName: name);
+          mapManager.updateTopologyMap(topo);
+          if (ctx.mounted) Navigator.of(ctx).pop();
+          _tileMapKey.currentState?.loadMeta();
+          setState(() => _currentMapName = name);
+        },
       ),
     );
   }
@@ -928,6 +1078,168 @@ class _MapEditPageState extends State<MapEditPage> {
           ],
         );
       },
+    );
+  }
+}
+
+class _MapManagementDialog extends StatefulWidget {
+  final HttpChannel httpChannel;
+  final String tileServerUrl;
+  final Future<void> Function(String name) onSwitchMap;
+
+  const _MapManagementDialog({
+    required this.httpChannel,
+    required this.tileServerUrl,
+    required this.onSwitchMap,
+  });
+
+  @override
+  State<_MapManagementDialog> createState() => _MapManagementDialogState();
+}
+
+class _MapManagementDialogState extends State<_MapManagementDialog> {
+  List<String> _mapNames = [];
+  String _currentMap = '';
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final names = await widget.httpChannel.getAllMapList();
+      final current = await widget.httpChannel.getCurrentMap();
+      if (mounted) {
+        setState(() {
+          _mapNames = names;
+          _currentMap = current;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('地图管理'),
+      content: SizedBox(
+        width: 400,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: _load,
+                        child: const Text('重试'),
+                      ),
+                    ],
+                  )
+                : _mapNames.isEmpty
+                    ? const Text('暂无地图')
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _mapNames.length,
+                        itemBuilder: (context, index) {
+                          final name = _mapNames[index];
+                          final isCurrent = name == _currentMap;
+                          final thumbUrl =
+                              '${widget.tileServerUrl}/tiles/$name/0/0/0.png';
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    thumbUrl,
+                                    width: 64,
+                                    height: 64,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 64,
+                                      height: 64,
+                                      color: Colors.grey.shade300,
+                                      child: const Icon(Icons.map),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: isCurrent
+                                      ? null
+                                      : () async {
+                                          await widget.onSwitchMap(name);
+                                        },
+                                  child: const Text('编辑'),
+                                ),
+                                const SizedBox(width: 4),
+                                if (isCurrent)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade100,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      '当前使用',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  TextButton(
+                                    onPressed: () async {
+                                      await widget.onSwitchMap(name);
+                                    },
+                                    child: const Text('切换地图'),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('关闭'),
+        ),
+      ],
     );
   }
 }

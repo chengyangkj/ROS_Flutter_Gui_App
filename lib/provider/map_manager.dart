@@ -6,19 +6,16 @@ import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:flutter/foundation.dart';
 
 class MapManager extends ChangeNotifier {
-  static const String _topologyMapKey = 'topology_map';
   static const String _occupancyMapKey = 'occupancy_map';
-  
+
   static final MapManager _instance = MapManager._internal();
   factory MapManager() => _instance;
   MapManager._internal();
 
   ValueNotifier<OccupancyMap> occupancyMap = ValueNotifier<OccupancyMap>(OccupancyMap());
   ValueNotifier<TopologyMap> topologyMap = ValueNotifier<TopologyMap>(TopologyMap(points: []));
-  
 
   Future<void> init() async {
-    await loadLocalTopologyMap();
     await loadLocalOccupancyMap();
   }
 
@@ -141,30 +138,6 @@ class MapManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveLocalTopologyMap() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = topologyMap.value.toJson();
-    await prefs.setString(_topologyMapKey, jsonEncode(json));
-    print('MapManager: 拓扑地图已保存到本地');
-  }
-
-  Future<void> loadLocalTopologyMap() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_topologyMapKey);
-    
-    if (jsonStr != null) {
-      try {
-        final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-        topologyMap.value = TopologyMap.fromJson(json);
-        topologyMap.notifyListeners();
-        print('MapManager: 从本地加载拓扑地图，${topologyMap.value.points.length}个点');
-      } catch (e) {
-        print('MapManager: 加载本地拓扑地图失败: $e');
-        topologyMap.value = TopologyMap(points: []);
-      }
-    }
-  }
-
   Future<void> saveLocalOccupancyMap() async {
     final prefs = await SharedPreferences.getInstance();
     final map = occupancyMap.value;
@@ -211,7 +184,6 @@ class MapManager extends ChangeNotifier {
   }
 
   Future<void> saveAll() async {
-    await saveLocalTopologyMap();
     await saveLocalOccupancyMap();
   }
 
@@ -244,7 +216,6 @@ class MapManager extends ChangeNotifier {
       topologyMap.value = TopologyMap.fromJson(json);
       topologyMap.notifyListeners();
       notifyListeners();
-      await saveLocalTopologyMap();
     } catch (e) {
       print('MapManager: 导入拓扑地图失败: $e');
       throw Exception('导入失败：无效的JSON格式');
