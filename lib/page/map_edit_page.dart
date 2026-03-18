@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/display/tile_map.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
+import 'package:ros_flutter_gui_app/page/map_edit_command.dart';
 import 'package:toastification/toastification.dart';
 
 enum EditToolType {
@@ -13,6 +15,10 @@ enum EditToolType {
   AddRoute,
   BrushObstacle,
   EraseObstacle,
+}
+
+class _UndoIntent extends Intent {
+  const _UndoIntent();
 }
 
 class MapEditPage extends StatefulWidget {
@@ -33,13 +39,17 @@ class _MapEditPageState extends State<MapEditPage> {
   RouteInfo? _editingRouteInfo;
   double _obstacleBrushSizeMeters = 0.05;
   late final GlobalState _globalState;
+  final CommandManager _commandManager = CommandManager();
 
   @override
   void initState() {
     super.initState();
     selectedTool = EditToolType.Move;
     _globalState = context.read<GlobalState>();
-    _globalState.mode.value = Mode.mapEdit;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _globalState.mode.value = Mode.mapEdit;
+    });
   }
   
   @override
@@ -60,95 +70,146 @@ class _MapEditPageState extends State<MapEditPage> {
         _globalState.mode.value = Mode.normal;
         return true;
       },
-      child: Scaffold(
-        body: Stack(
-          children: [
-            TileMap(
-              key: _tileMapKey,
-              enableMapInteraction: selectedTool == EditToolType.Move,
-              enableTopologyEdit: true,
-              obstacleEditTool: selectedTool == EditToolType.BrushObstacle
-                  ? ObstacleEditTool.Brush
-                  : selectedTool == EditToolType.EraseObstacle
-                      ? ObstacleEditTool.Eraser
-                      : ObstacleEditTool.None,
-              obstacleBrushSizeMeters: _obstacleBrushSizeMeters,
-              selectedNavPointName: selectedNavPoint?.name,
-              selectedRoute: _selectedRoute,
-              onRouteTap: (route) {
-                setState(() {
-                  _selectedRoute = route;
-                  _editingRouteInfo = RouteInfo(controller: route.routeInfo.controller);
-                });
-              },
-              onNavPointTap: (p) {
-                setState(() {
-                  selectedNavPoint = p;
-                });
-                if (selectedTool == EditToolType.AddRoute) {
-                  _handleAddRouteTap(rosChannel, p);
-                } else {
+      child: Shortcuts(
+        shortcuts: <LogicalKeySet, Intent>{
+          LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyZ):
+              const _UndoIntent(),
+        },
+        child: Actions(
+          actions: <Type, Action<Intent>>{
+            _UndoIntent: CallbackAction<Intent>(
+              onInvoke: (intent) {
+                if (_commandManager.canUndo()) {
                   setState(() {
-                    _routeStartPointName = null;
+                    _commandManager.undo();
                   });
                 }
+                return null;
               },
-              onTapWorld: (worldX, worldY) async {
-                if (selectedTool != EditToolType.AddNavPoint) return;
-
-                final name = await _showAddNavPointDialog(
-                  context,
-                  mapManager,
-                  worldX,
-                  worldY,
-                );
-                if (!mounted) return;
-                if (name == null || name.trim().isEmpty) return;
-
-                final navPoint = NavPoint(
-                  name: name.trim(),
-                  x: worldX,
-                  y: worldY,
-                  theta: 0.0,
-                  type: NavPointType.navGoal,
-                );
-                mapManager.addNavPoint(navPoint);
-                setState(() {
-                  selectedNavPoint = navPoint;
-                });
-              },
-              followRobot: false,
             ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _buildTopToolbar(context, theme),
-            ),
+          },
+          child: Scaffold(
+            body: Stack(
+              children: [
+                TileMap(
+                  key: _tileMapKey,
+                  enableMapInteraction: selectedTool == EditToolType.Move,
+                  editMode: true,
+                  obstacleEditTool: selectedTool == EditToolType.BrushObstacle
+                      ? ObstacleEditTool.Brush
+                      : selectedTool == EditToolType.EraseObstacle
+                          ? ObstacleEditTool.Eraser
+                          : ObstacleEditTool.None,
+                  obstacleBrushSizeMeters: _obstacleBrushSizeMeters,
+                onObstacleEditEnd: (oldEdits, newEdits) {
+                  if (oldEdits.isEmpty && newEdits.isEmpty) return;
+                  _commandManager.executeCommand(
+                    ObstacleEditCommand(
+                      _tileMapKey,
+                      oldEdits,
+                      newEdits,
+                    ),
+                  );
+                },
+                  selectedNavPointName: selectedNavPoint?.name,
+                  selectedRoute: _selectedRoute,
+                  onRouteTap: (route) {
+                    setState(() {
+                      _selectedRoute = route;
+                      _editingRouteInfo = RouteInfo(controller: route.routeInfo.controller);
+                    });
+                  },
+                  onNavPointTap: (p) {
+                    setState(() {
+                      selectedNavPoint = p;
+                    });
+                    if (selectedTool == EditToolType.AddRoute) {
+                      _handleAddRouteTap(rosChannel, p);
+                    } else {
+                      setState(() {
+                        _routeStartPointName = null;
+                      });
+                    }
+                  },
+                  onNavPointEditEnd: (oldPoint, newPoint) {
+                    _commandManager.executeCommand(
+                      ModifyPointCommand(
+                        mapManager.topologyMap.value,
+                        oldPoint,
+                        newPoint,
+                        () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                      ),
+                    );
+                  },
+                  onTapWorld: (worldX, worldY) async {
+                    if (selectedTool != EditToolType.AddNavPoint) return;
+
+                    final name = await _showAddNavPointDialog(
+                      context,
+                      mapManager,
+                      worldX,
+                      worldY,
+                    );
+                    if (!mounted) return;
+                    if (name == null || name.trim().isEmpty) return;
+
+                    final navPoint = NavPoint(
+                      name: name.trim(),
+                      x: worldX,
+                      y: worldY,
+                      theta: 0.0,
+                      type: NavPointType.navGoal,
+                    );
+                _commandManager.executeCommand(
+                  AddPointCommand(
+                    mapManager.topologyMap.value,
+                    navPoint,
+                    () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                  ),
+                );
+                    setState(() {
+                      selectedNavPoint = navPoint;
+                    });
+                  },
+                  followRobot: false,
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildTopToolbar(context, theme),
+                ),
+                Positioned(
+                  left: 10,
+                  top: 80,
+                  child: _buildEditToolbar(theme),
+                ),
+                Positioned(
+                  left: 10,
+                  bottom: 16,
+                  child: _buildObstacleBrushSize(theme),
+                ),
             Positioned(
               left: 10,
-              top: 80,
-              child: _buildEditToolbar(theme),
+              bottom: 64,
+              child: _buildAddRobotPositionButton(theme),
             ),
-            Positioned(
-              left: 10,
-              bottom: 16,
-              child: _buildObstacleBrushSize(theme),
+                Positioned(
+                  top: 80,
+                  right: 10,
+                  child: _buildRoutePanel(theme, rosChannel),
+                ),
+                Positioned(
+                  top: 80,
+                  right: 10,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 220),
+                    child: _buildNavPointPanel(theme),
+                  ),
+                ),
+              ],
             ),
-            Positioned(
-              top: 80,
-              right: 10,
-              child: _buildRoutePanel(theme, rosChannel),
-            ),
-            Positioned(
-              top: 80,
-              right: 10,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 220),
-                child: _buildNavPointPanel(theme),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -174,15 +235,34 @@ class _MapEditPageState extends State<MapEditPage> {
         children: [
           const SizedBox(width: 8),
           IconButton(
+            icon: const Icon(Icons.undo, color: Colors.white, size: 26),
+            tooltip: '撤销',
+            onPressed: _commandManager.canUndo()
+                ? () {
+                    setState(() {
+                      _commandManager.undo();
+                    });
+                  }
+                : null,
+          ),
+          const SizedBox(width: 8),
+          IconButton(
             icon: const Icon(Icons.save, color: Colors.white, size: 26),
             tooltip: '保存并发布到ROS',
             onPressed: () async {
               try {
                 _tileMapKey.currentState?.flushDraggingNavPoints();
                 final topologyMap = mapManager.topologyMap.value;
-                await rosChannel.updateTopologyMap(topologyMap);
+                final obstacleEdits =
+                    _tileMapKey.currentState?.getObstacleEdits() ?? {};
+                final editSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+
                 await mapManager.saveLocalTopologyMap();
-                await rosChannel.publishOccupancyGrid();
+                await rosChannel.updateMapEditHttp(
+                  editSessionId: editSessionId,
+                  topologyMap: topologyMap,
+                  obstacleEdits: obstacleEdits,
+                );
 
                 if (!mounted) return;
                 toastification.show(
@@ -316,6 +396,62 @@ class _MapEditPageState extends State<MapEditPage> {
     );
   }
 
+  Widget _buildAddRobotPositionButton(ThemeData theme) {
+    final show = selectedTool == EditToolType.AddNavPoint;
+    return AnimatedOpacity(
+      opacity: show ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 200),
+      child: SizedBox(
+        width: 220,
+        child: ElevatedButton.icon(
+          onPressed: show ? _onAddRobotPositionPressed : null,
+          icon: const Icon(Icons.my_location, size: 18),
+          label: const Text('添加机器人当前位置'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            elevation: 4,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onAddRobotPositionPressed() {
+    final rosChannel = context.read<RosChannel>();
+    final mapManager = rosChannel.mapManager;
+    final pose = rosChannel.robotPoseMap.value;
+
+    final nextIdFuture = mapManager.getNextPointId();
+    nextIdFuture.then((id) {
+      final navPoint = NavPoint(
+        name: 'NAV_POINT_$id',
+        x: pose.x,
+        y: pose.y,
+        theta: pose.theta,
+        type: NavPointType.navGoal,
+      );
+
+      _commandManager.executeCommand(
+        AddPointCommand(
+          mapManager.topologyMap.value,
+          navPoint,
+          () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+        ),
+      );
+
+      setState(() {
+        selectedNavPoint = navPoint;
+        _selectedRoute = null;
+        _editingRouteInfo = null;
+      });
+    });
+  }
+
   Widget _buildToolButton({
     required IconData icon,
     required String label,
@@ -394,7 +530,13 @@ class _MapEditPageState extends State<MapEditPage> {
       toPoint: p.name,
       routeInfo: RouteInfo(controller: 'FollowPath'),
     );
-    mapManager.addRoute(route);
+    _commandManager.executeCommand(
+      AddRouteCommand(
+        mapManager.topologyMap.value,
+        route,
+        () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+      ),
+    );
     setState(() {
       _routeStartPointName = null;
     });
@@ -409,6 +551,7 @@ class _MapEditPageState extends State<MapEditPage> {
   Widget _buildNavPointPanel(ThemeData theme) {
     final p = selectedNavPoint;
     if (p == null) return const SizedBox.shrink();
+    final mapManager = context.read<RosChannel>().mapManager;
     return Card(
       elevation: 10,
       child: SizedBox(
@@ -441,10 +584,153 @@ class _MapEditPageState extends State<MapEditPage> {
                 ],
               ),
               const SizedBox(height: 8),
-              _buildKv('名称', p.name),
-              _buildKv('X', p.x.toStringAsFixed(3)),
-              _buildKv('Y', p.y.toStringAsFixed(3)),
-              _buildKv('Theta', p.theta.toStringAsFixed(3)),
+              _buildEditableKvText(
+                label: '名称',
+                value: p.name,
+                onCommitted: (newName) {
+                  final oldPoint = p;
+                  if (newName.trim().isEmpty) return;
+                  final trimmed = newName.trim();
+                  if (trimmed == oldPoint.name) return;
+
+                  final newPoint = NavPoint(
+                    name: trimmed,
+                    x: oldPoint.x,
+                    y: oldPoint.y,
+                    theta: oldPoint.theta,
+                    type: oldPoint.type,
+                  );
+                  _commandManager.executeCommand(
+                    RenamePointCommand(
+                      mapManager.topologyMap.value,
+                      oldPoint,
+                      newPoint,
+                      () => mapManager.updateTopologyMap(
+                        mapManager.topologyMap.value,
+                      ),
+                    ),
+                  );
+                  setState(() {
+                    selectedNavPoint = newPoint;
+                    _selectedRoute = null;
+                    _editingRouteInfo = null;
+                    _routeStartPointName = null;
+                  });
+                },
+              ),
+              _buildEditableKvNumber(
+                label: 'X',
+                value: p.x,
+                onCommitted: (newX) {
+                  final oldPoint = p;
+                  final newPoint = NavPoint(
+                    name: oldPoint.name,
+                    x: newX,
+                    y: oldPoint.y,
+                    theta: oldPoint.theta,
+                    type: oldPoint.type,
+                  );
+                  _commandManager.executeCommand(
+                    ModifyPointCommand(
+                      mapManager.topologyMap.value,
+                      oldPoint,
+                      newPoint,
+                      () => mapManager.updateTopologyMap(
+                        mapManager.topologyMap.value,
+                      ),
+                    ),
+                  );
+                  setState(() {
+                    selectedNavPoint = newPoint;
+                  });
+                },
+              ),
+              _buildEditableKvNumber(
+                label: 'Y',
+                value: p.y,
+                onCommitted: (newY) {
+                  final oldPoint = p;
+                  final newPoint = NavPoint(
+                    name: oldPoint.name,
+                    x: oldPoint.x,
+                    y: newY,
+                    theta: oldPoint.theta,
+                    type: oldPoint.type,
+                  );
+                  _commandManager.executeCommand(
+                    ModifyPointCommand(
+                      mapManager.topologyMap.value,
+                      oldPoint,
+                      newPoint,
+                      () => mapManager.updateTopologyMap(
+                        mapManager.topologyMap.value,
+                      ),
+                    ),
+                  );
+                  setState(() {
+                    selectedNavPoint = newPoint;
+                  });
+                },
+              ),
+              _buildEditableKvNumber(
+                label: 'Theta',
+                value: p.theta,
+                onCommitted: (newTheta) {
+                  final oldPoint = p;
+                  final newPoint = NavPoint(
+                    name: oldPoint.name,
+                    x: oldPoint.x,
+                    y: oldPoint.y,
+                    theta: newTheta,
+                    type: oldPoint.type,
+                  );
+                  _commandManager.executeCommand(
+                    ModifyPointCommand(
+                      mapManager.topologyMap.value,
+                      oldPoint,
+                      newPoint,
+                      () => mapManager.updateTopologyMap(
+                        mapManager.topologyMap.value,
+                      ),
+                    ),
+                  );
+                  setState(() {
+                    selectedNavPoint = newPoint;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    final oldPoint = selectedNavPoint;
+                    if (oldPoint == null) return;
+                    _commandManager.executeCommand(
+                      DeletePointCommand(
+                        mapManager.topologyMap.value,
+                        oldPoint,
+                        () => mapManager.updateTopologyMap(
+                          mapManager.topologyMap.value,
+                        ),
+                      ),
+                    );
+                    setState(() {
+                      selectedNavPoint = null;
+                      _selectedRoute = null;
+                      _editingRouteInfo = null;
+                      _routeStartPointName = null;
+                    });
+                  },
+                  icon: const Icon(Icons.delete, size: 18),
+                  label: const Text('删除该点位'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -452,19 +738,70 @@ class _MapEditPageState extends State<MapEditPage> {
     );
   }
 
-  Widget _buildKv(String k, String v) {
+  Widget _buildEditableKvText({
+    required String label,
+    required String value,
+    required ValueChanged<String> onCommitted,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: 64,
             child: Text(
-              k,
+              label,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
-          Expanded(child: Text(v)),
+          Expanded(
+            child: TextField(
+              controller: TextEditingController(text: value),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (s) => onCommitted(s),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditableKvNumber({
+    required String label,
+    required double value,
+    required ValueChanged<double> onCommitted,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: TextEditingController(text: value.toStringAsFixed(3)),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (s) {
+                final parsed = double.tryParse(s);
+                if (parsed == null) return;
+                onCommitted(parsed);
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -529,18 +866,25 @@ class _MapEditPageState extends State<MapEditPage> {
                     .toList(),
                 onChanged: (value) {
                   if (value == null) return;
+                  final oldRoute = mapManager.getRoute(route.fromPoint, route.toPoint);
+                  if (oldRoute == null) return;
+                  final newRoute = TopologyRoute(
+                    fromPoint: route.fromPoint,
+                    toPoint: route.toPoint,
+                    routeInfo: RouteInfo(controller: value),
+                  );
+                  _commandManager.executeCommand(
+                    ModifyRouteCommand(
+                      mapManager.topologyMap.value,
+                      oldRoute,
+                      newRoute,
+                      () =>
+                          mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                    ),
+                  );
                   setState(() {
                     _editingRouteInfo = RouteInfo(controller: value);
                   });
-                  mapManager.updateRoute(
-                    route.fromPoint,
-                    route.toPoint,
-                    TopologyRoute(
-                      fromPoint: route.fromPoint,
-                      toPoint: route.toPoint,
-                      routeInfo: RouteInfo(controller: value),
-                    ),
-                  );
                 },
               ),
               const SizedBox(height: 12),
@@ -549,7 +893,16 @@ class _MapEditPageState extends State<MapEditPage> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        mapManager.removeRoute(route.fromPoint, route.toPoint);
+                        final oldRoute = mapManager.getRoute(route.fromPoint, route.toPoint);
+                        if (oldRoute != null) {
+                          _commandManager.executeCommand(
+                            DeleteRouteCommand(
+                              mapManager.topologyMap.value,
+                              oldRoute,
+                              () => mapManager.updateTopologyMap(mapManager.topologyMap.value),
+                            ),
+                          );
+                        }
                         setState(() {
                           _selectedRoute = null;
                           _editingRouteInfo = null;

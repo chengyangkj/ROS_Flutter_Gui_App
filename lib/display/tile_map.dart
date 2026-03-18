@@ -33,9 +33,11 @@ class TileMap extends StatefulWidget {
   final VoidCallback? onTap;
   final void Function(double worldX, double worldY)? onTapWorld;
   final bool enableMapInteraction;
-  final bool enableTopologyEdit;
+  final bool editMode;
   final ObstacleEditTool obstacleEditTool;
   final double obstacleBrushSizeMeters;
+  final void Function(NavPoint oldPoint, NavPoint newPoint)? onNavPointEditEnd;
+  final void Function(Map<int, int> oldEdits, Map<int, int> newEdits)? onObstacleEditEnd;
   final String? selectedNavPointName;
   final bool followRobot;
 
@@ -47,9 +49,11 @@ class TileMap extends StatefulWidget {
     this.onTap,
     this.onTapWorld,
     this.enableMapInteraction = true,
-    this.enableTopologyEdit = false,
+    this.editMode = false,
     this.obstacleEditTool = ObstacleEditTool.None,
     this.obstacleBrushSizeMeters = 0.25,
+    this.onNavPointEditEnd,
+    this.onObstacleEditEnd,
     this.selectedNavPointName,
     this.followRobot = false,
   });
@@ -66,7 +70,10 @@ class TileMapState extends State<TileMap> {
   bool _isDarkMode = true;
   RobotPose? _relocPose;
   final Map<String, NavPoint> _draggingNavPoints = {};
+  final Map<String, NavPoint> _draggingNavPointsStart = {};
   final Map<int, int> _obstacleEdits = {};
+  final Map<int, int> _obstacleStrokeOldEdits = {};
+  final Map<int, int> _obstacleStrokeNewEdits = {};
 
   @override
   void initState() {
@@ -136,11 +143,29 @@ class TileMapState extends State<TileMap> {
           behavior: HitTestBehavior.translucent,
           onPointerDown: (e) {
             if (!enableObstacleEdit) return;
+            _obstacleStrokeOldEdits.clear();
+            _obstacleStrokeNewEdits.clear();
             _paintObstacleAtLocal(e.localPosition);
           },
           onPointerMove: (e) {
             if (!enableObstacleEdit) return;
             _paintObstacleAtLocal(e.localPosition);
+          },
+          onPointerUp: (_) {
+            if (!enableObstacleEdit) return;
+            if (widget.onObstacleEditEnd != null &&
+                _obstacleStrokeNewEdits.isNotEmpty) {
+              widget.onObstacleEditEnd!(
+                Map<int, int>.from(_obstacleStrokeOldEdits),
+                Map<int, int>.from(_obstacleStrokeNewEdits),
+              );
+            }
+            _obstacleStrokeOldEdits.clear();
+            _obstacleStrokeNewEdits.clear();
+          },
+          onPointerCancel: (_) {
+            _obstacleStrokeOldEdits.clear();
+            _obstacleStrokeNewEdits.clear();
           },
           child: FlutterMap(
             mapController: _mapController,
@@ -228,6 +253,21 @@ class TileMapState extends State<TileMap> {
     });
   }
 
+  void applyObstacleEdits(Map<int, int> edits) {
+    if (edits.isEmpty) return;
+    setState(() {
+      for (final entry in edits.entries) {
+        final key = entry.key;
+        final value = entry.value;
+        // value 0 表示清除；100 表示障碍物。
+        // 为了让“原图障碍”也能被覆盖，这里要显式存储 0。
+        if (value == 0 || value > 0) {
+          _obstacleEdits[key] = value;
+        }
+      }
+    });
+  }
+
   void _paintObstacleAtLocal(Offset localPosition) {
     final meta = _meta;
     if (meta == null) return;
@@ -246,7 +286,11 @@ class TileMapState extends State<TileMap> {
 
     final tool = widget.obstacleEditTool;
     if (tool == ObstacleEditTool.None) return;
-    final value = tool == ObstacleEditTool.Brush ? 1 : -1;
+    // 障碍物编辑值语义：
+    // 100: 有障碍物（黑色单元）
+    // 0: 无障碍物（白色单元，表示清除）
+    // 100: 有障碍（黑色）；0: 无障碍（白色，覆盖原障碍）
+    final value = tool == ObstacleEditTool.Brush ? 100 : 0;
 
     final res = meta.resolution;
     final radius = widget.obstacleBrushSizeMeters;
@@ -267,9 +311,13 @@ class TileMapState extends State<TileMap> {
         if (ddx * ddx + ddy * ddy > radius * radius) continue;
 
         final key = row * meta.width + col;
-        final prev = _obstacleEdits[key] ?? 0;
-        if (prev == value) continue;
+        final hasPrev = _obstacleEdits.containsKey(key);
+        final prev = hasPrev ? (_obstacleEdits[key] as int) : 0;
+        if (hasPrev && prev == value) continue;
+
+        _obstacleStrokeOldEdits[key] ??= prev;
         _obstacleEdits[key] = value;
+        _obstacleStrokeNewEdits[key] = value;
         changed = true;
       }
     }
@@ -282,18 +330,8 @@ class TileMapState extends State<TileMap> {
       builder: (context, rosChannel, globalState, _) {
         final layers = <Widget>[];
 
-        if (globalState.isLayerVisible('showGrid')) {
-          layers.add(buildGridLayer(
-            resolution: meta.resolution,
-            originX: meta.originX,
-            originY: meta.originY,
-            width: meta.width,
-            height: meta.height,
-            worldToLatLng: toLatLng,
-            isDark: _isDarkMode,
-          ));
-        }
-        if (globalState.isLayerVisible('showGlobalPath')) {
+       
+        if (!widget.editMode && globalState.isLayerVisible('showGlobalPath')) {
           layers.add(ValueListenableBuilder<List<vm.Vector2>>(
             valueListenable: rosChannel.globalPath,
             builder: (_, path, __) => buildPathLayer(
@@ -302,7 +340,8 @@ class TileMapState extends State<TileMap> {
             ),
           ));
         }
-        if (globalState.isLayerVisible('showLocalPath')) {
+
+        if (!widget.editMode && globalState.isLayerVisible('showLocalPath')) {
           layers.add(ValueListenableBuilder<List<vm.Vector2>>(
             valueListenable: rosChannel.localPath,
             builder: (_, path, __) => buildPathLayer(
@@ -311,7 +350,8 @@ class TileMapState extends State<TileMap> {
             ),
           ));
         }
-        if (globalState.isLayerVisible('showTracePath')) {
+
+        if (!widget.editMode &&  globalState.isLayerVisible('showTracePath')) {
           layers.add(ValueListenableBuilder<List<vm.Vector2>>(
             valueListenable: rosChannel.tracePath,
             builder: (_, path, __) => buildPathLayer(
@@ -320,6 +360,7 @@ class TileMapState extends State<TileMap> {
             ),
           ));
         }
+
         if (globalState.isLayerVisible('showLaser')) {
           layers.add(ValueListenableBuilder<Mode>(
             valueListenable: globalState.mode,
@@ -339,7 +380,8 @@ class TileMapState extends State<TileMap> {
             builder: (_, __, ___) => buildPointCloudLayer(rosChannel, toLatLng),
           ));
         }
-        if (globalState.isLayerVisible('showRobotFootprint')) {
+        if (!widget.editMode &&
+            globalState.isLayerVisible('showRobotFootprint')) {
           layers.add(ValueListenableBuilder<List<vm.Vector2>>(
             valueListenable: rosChannel.robotFootprint,
             builder: (_, __, ___) => buildRobotFootprintLayer(rosChannel, toLatLng),
@@ -358,24 +400,33 @@ class TileMapState extends State<TileMap> {
               return ValueListenableBuilder<Mode>(
                 valueListenable: globalState.mode,
                 builder: (_, mode, __) {
-                  final isEdit = mode == Mode.mapEdit && widget.enableTopologyEdit;
+          
                   return buildTopologyLineLayer(
                     navPoints,
                     topologyMap.routes,
                     toLatLng,
                     onNavPointTap: widget.onNavPointTap,
                     onRouteTap: widget.onRouteTap,
-                    isEditMode: isEdit,
+                    isEditMode: widget.editMode ,
                     selectedNavPointName: widget.selectedNavPointName,
                     selectedRoute: widget.selectedRoute,
-                    onNavPointChanged: isEdit
+                    onNavPointChanged: widget.editMode 
                         ? (updated) {
-                            rosChannel.mapManager.updateNavPoint(updated.name, updated);
-                            _draggingNavPoints.remove(updated.name);
+                            final base = _draggingNavPoints[updated.name] ?? updated;
+                            final dragging = NavPoint(
+                              name: updated.name,
+                              x: base.x,
+                              y: base.y,
+                              theta: updated.theta,
+                              type: base.type,
+                            );
+                            _draggingNavPoints[updated.name] = dragging;
+                            _draggingNavPointsStart[updated.name] ??=
+                                rosChannel.mapManager.getNavPoint(updated.name) ?? updated;
                             setState(() {});
                           }
                         : null,
-                    onNavPointMoveDelta: isEdit
+                    onNavPointMoveDelta: widget.editMode 
                         ? (point, delta) {
                             final meta = _meta;
                             if (meta == null) return;
@@ -398,7 +449,32 @@ class TileMapState extends State<TileMap> {
                               type: base.type,
                             );
                             _draggingNavPoints[point.name] = dragging;
+                            _draggingNavPointsStart[point.name] ??= point;
                             widget.onNavPointTap?.call(dragging);
+                            setState(() {});
+                          }
+                        : null,
+                    onNavPointThetaEnd: widget.editMode 
+                        ? (p) {
+                            final start = _draggingNavPointsStart[p.name];
+                            final current = _draggingNavPoints[p.name] ?? p;
+                            if (start != null) {
+                              widget.onNavPointEditEnd?.call(start, current);
+                            }
+                            _draggingNavPoints.remove(p.name);
+                            _draggingNavPointsStart.remove(p.name);
+                            setState(() {});
+                          }
+                        : null,
+                    onNavPointMoveEnd: widget.editMode 
+                        ? (p) {
+                            final start = _draggingNavPointsStart[p.name];
+                            final current = _draggingNavPoints[p.name] ?? p;
+                            if (start != null) {
+                              widget.onNavPointEditEnd?.call(start, current);
+                            }
+                            _draggingNavPoints.remove(p.name);
+                            _draggingNavPointsStart.remove(p.name);
                             setState(() {});
                           }
                         : null,
@@ -409,8 +485,9 @@ class TileMapState extends State<TileMap> {
           ));
         }
 
+        // 障碍物编辑层：放到最底层，避免遮挡其他图层
         if (_obstacleEdits.isNotEmpty) {
-          layers.add(_buildObstacleEditLayer(meta, toLatLng));
+          layers.insert(0, _buildObstacleEditLayer(meta, toLatLng));
         }
         if (globalState.isLayerVisible('showLocalCostmap')) {
           layers.add(ValueListenableBuilder(
@@ -419,6 +496,8 @@ class TileMapState extends State<TileMap> {
                 buildLocalCostMapOverlayLayer(cm, 0.5),
           ));
         }
+
+        if(!widget.editMode) {
 
         layers.add(ValueListenableBuilder(
           valueListenable: rosChannel.robotPoseMap,
@@ -462,6 +541,7 @@ class TileMapState extends State<TileMap> {
             },
           ),
         ));
+        }
 
         return Stack(children: layers);
       },
@@ -477,7 +557,6 @@ class TileMapState extends State<TileMap> {
 
     final markers = <Marker>[];
     _obstacleEdits.forEach((key, value) {
-      if (value == 0) return;
       final col = key % meta.width;
       final row = key ~/ meta.width;
       final cx = meta.originX + col * res;

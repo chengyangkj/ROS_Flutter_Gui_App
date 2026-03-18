@@ -73,6 +73,8 @@ Widget buildTopologyLineLayer(
   bool isEditMode = false,
   ValueChanged<NavPoint>? onNavPointChanged,
   void Function(NavPoint point, Offset delta)? onNavPointMoveDelta,
+  ValueChanged<NavPoint>? onNavPointThetaEnd,
+  ValueChanged<NavPoint>? onNavPointMoveEnd,
   String? selectedNavPointName,
   TopologyRoute? selectedRoute,
 }) {
@@ -85,6 +87,8 @@ Widget buildTopologyLineLayer(
     isEditMode: isEditMode,
     onNavPointChanged: onNavPointChanged,
     onNavPointMoveDelta: onNavPointMoveDelta,
+    onNavPointThetaEnd: onNavPointThetaEnd,
+    onNavPointMoveEnd: onNavPointMoveEnd,
     selectedNavPointName: selectedNavPointName,
     selectedRoute: selectedRoute,
   );
@@ -99,6 +103,8 @@ class _TopologyLineLayer extends StatefulWidget {
   final bool isEditMode;
   final ValueChanged<NavPoint>? onNavPointChanged;
   final void Function(NavPoint point, Offset delta)? onNavPointMoveDelta;
+  final ValueChanged<NavPoint>? onNavPointThetaEnd;
+  final ValueChanged<NavPoint>? onNavPointMoveEnd;
   final String? selectedNavPointName;
   final TopologyRoute? selectedRoute;
 
@@ -111,6 +117,8 @@ class _TopologyLineLayer extends StatefulWidget {
     required this.isEditMode,
     this.onNavPointChanged,
     this.onNavPointMoveDelta,
+    this.onNavPointThetaEnd,
+    this.onNavPointMoveEnd,
     this.selectedNavPointName,
     this.selectedRoute,
   });
@@ -305,8 +313,22 @@ class _TopologyLineLayerState extends State<_TopologyLineLayer> {
                             );
                           }
                         : null,
+                    onThetaEnd: widget.onNavPointThetaEnd != null
+                        ? (theta) => widget.onNavPointThetaEnd!(
+                              NavPoint(
+                                name: p.name,
+                                x: p.x,
+                                y: p.y,
+                                theta: theta,
+                                type: p.type,
+                              ),
+                            )
+                        : null,
                     onMoveDelta: widget.onNavPointMoveDelta != null
                         ? (delta) => widget.onNavPointMoveDelta!(p, delta)
+                        : null,
+                    onMoveEnd: widget.onNavPointMoveEnd != null
+                        ? () => widget.onNavPointMoveEnd!(p)
                         : null,
                   ),
                   const SizedBox(height: 2),

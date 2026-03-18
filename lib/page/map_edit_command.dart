@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/display/map.dart';
+import 'package:ros_flutter_gui_app/display/tile_map.dart';
 
 abstract class MapEditCommand {
   void execute();
@@ -135,6 +136,59 @@ class DeletePointCommand extends MapEditCommand {
   }
 }
 
+class RenamePointCommand extends MapEditCommand {
+  final TopologyMap topologyMap;
+  final NavPoint oldPoint;
+  final NavPoint newPoint;
+  final VoidCallback onUpdate;
+
+  RenamePointCommand(this.topologyMap, this.oldPoint, this.newPoint, this.onUpdate);
+
+  void _apply() {
+    final index = topologyMap.points.indexWhere((p) => p.name == oldPoint.name);
+    if (index != -1) {
+      topologyMap.points[index] = newPoint;
+    }
+
+    for (final route in topologyMap.routes) {
+      if (route.fromPoint == oldPoint.name) {
+        route.fromPoint = newPoint.name;
+      }
+      if (route.toPoint == oldPoint.name) {
+        route.toPoint = newPoint.name;
+      }
+    }
+  }
+
+  void _applyUndo() {
+    final index = topologyMap.points.indexWhere((p) => p.name == newPoint.name);
+    if (index != -1) {
+      topologyMap.points[index] = oldPoint;
+    }
+
+    for (final route in topologyMap.routes) {
+      if (route.fromPoint == newPoint.name) {
+        route.fromPoint = oldPoint.name;
+      }
+      if (route.toPoint == newPoint.name) {
+        route.toPoint = oldPoint.name;
+      }
+    }
+  }
+
+  @override
+  void execute() {
+    _apply();
+    onUpdate();
+  }
+
+  @override
+  void undo() {
+    _applyUndo();
+    onUpdate();
+  }
+}
+
 class ModifyPointCommand extends MapEditCommand {
   final TopologyMap topologyMap;
   final NavPoint oldPoint;
@@ -148,6 +202,7 @@ class ModifyPointCommand extends MapEditCommand {
     final index = topologyMap.points.indexWhere((p) => p.name == oldPoint.name);
     if (index != -1) {
       topologyMap.points[index] = newPoint;
+      onUpdate();
     }
   }
 
@@ -191,6 +246,24 @@ class CommandManager {
 
   void clear() {
     _undoStack.clear();
+  }
+}
+
+class ObstacleEditCommand extends MapEditCommand {
+  final GlobalKey<TileMapState> tileMapKey;
+  final Map<int, int> oldEdits;
+  final Map<int, int> newEdits;
+
+  ObstacleEditCommand(this.tileMapKey, this.oldEdits, this.newEdits);
+
+  @override
+  void execute() {
+    tileMapKey.currentState?.applyObstacleEdits(newEdits);
+  }
+
+  @override
+  void undo() {
+    tileMapKey.currentState?.applyObstacleEdits(oldEdits);
   }
 }
 

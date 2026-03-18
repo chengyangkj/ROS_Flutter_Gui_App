@@ -25,6 +25,8 @@ import 'package:ros_flutter_gui_app/basic/diagnostic_array.dart';
 import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
 import 'package:ros_flutter_gui_app/provider/map_manager.dart';
 import 'package:oktoast/oktoast.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 
 class LaserData {
@@ -213,7 +215,6 @@ class RosChannel {
   Future<void> initChannel() async {
     // 使用RosBridgePlayer的订阅接口
     rosBridgePlayer.subscribe(globalSetting.topologyMapTopic, "topology_msgs/TopologyMap", topologyMapCallback);
-    rosBridgePlayer.subscribe(globalSetting.mapTopic, "nav_msgs/OccupancyGrid", mapCallback);
     rosBridgePlayer.subscribe(globalSetting.navToPoseStatusTopic, "action_msgs/GoalStatusArray", navStatusCallback);
     rosBridgePlayer.subscribe(globalSetting.navThroughPosesStatusTopic, "action_msgs/GoalStatusArray", navStatusCallback);
     rosBridgePlayer.subscribe("/tf", "tf2_msgs/TFMessage", tfCallback);
@@ -704,30 +705,6 @@ class RosChannel {
 
   DateTime? _lastMapCallbackTime;
 
-  Future<void> mapCallback(Map<String, dynamic> msg) async {
-    OccupancyMap map = OccupancyMap();
-    map.mapConfig.resolution = msg["info"]["resolution"];
-    map.mapConfig.width = msg["info"]["width"];
-    map.mapConfig.height = msg["info"]["height"];
-    map.mapConfig.originX = msg["info"]["origin"]["position"]["x"];
-    map.mapConfig.originY = msg["info"]["origin"]["position"]["y"];
-    List<int> dataList = List<int>.from(msg["data"]);
-    map.data = List.generate(
-      map.mapConfig.height,
-      (i) => List.generate(
-        map.mapConfig.width,
-        (j) => 0,
-      ),
-    );
-    for (int i = 0; i < dataList.length; i++) {
-      int x = i ~/ map.mapConfig.width;
-      int y = i % map.mapConfig.width;
-      map.data[x][y] = dataList[i];
-    }
-    map.setFlip();
-    mapManager.updateOccupancyMapFromRos(map);
-  }
-
   Future<void> topologyMapCallback(Map<String, dynamic> msg) async {
     await Future.delayed(Duration(seconds: 1));
     
@@ -766,64 +743,60 @@ class RosChannel {
     }
   }
 
-  Future<void> publishOccupancyGrid() async {
-    final map = map_.value.copy();
-    if (map.data.isEmpty) {
-      print("栅格地图数据为空，无法发布");
-      return;
-    }
-    map.setFlip();
-    
-    try {
-      // 构建 nav_msgs/OccupancyGrid 消息
-      final now = DateTime.now();
-      final timestamp = {
-        "sec": now.millisecondsSinceEpoch ~/ 1000,
-        "nanosec": (now.millisecondsSinceEpoch % 1000) * 1000000,
-      };
+  Uri _buildHttpUri(String path, {Map<String, String>? queryParameters}) {
+    final base = globalSetting.tileServerUrl;
+    return Uri.parse('$base$path').replace(queryParameters: queryParameters);
+  }
 
-      // 将二维数组转换为一维数组（按行扫描）
-      List<int> mapData = [];
-      for (int row = 0; row < map.Rows(); row++) {
-        for (int col = 0; col < map.Cols(); col++) {
-          mapData.add(map.data[row][col]);
-        }
-      }
+  /// 发送一次“地图编辑结果”给后端（GET /updateMapEdit）。
+  ///
+  /// 用途：
+  /// - 在地图编辑页面点击“保存并发布”时，将当前拓扑地图
+  ///   与障碍栅格编辑增量一次性提交给后端。
+  /// - 后端完成落库/发布与栅格覆盖（前端不在这里直接触发 ROS 发布）。
+  ///
+  /// HTTP：
+  /// - method: GET
+  /// - path: `/updateMapEdit`
+  /// - query 参数（均为字符串）：
+  ///   - `session_id`: 编辑会话 id（用于后端先清空再应用本次结果）
+  ///   - `map_name`: 拓扑地图名称（来自 `TopologyMap.mapName`）
+  ///   - `topology_json`: 拓扑地图 JSON 字符串（`jsonEncode(topologyMap.toJson())`）
+  ///   - `obstacle_edits_json`: 障碍物编辑增量 JSON 字符串（`jsonEncode(obstacleEdits)`）
+  ///
+  /// obstacle_edits_json 的含义（前端实际传输的 schema）：
+  /// - JSON Object: `{ "<cellIndex>": <value>, ... }`
+  /// - cellIndex: int，栅格 cell 的索引，由刷/擦笔时计算得到：
+  ///   - `key = row * meta.width + col`
+  /// - value: int
+  ///   - `100` 代表 Brush：该 cell 应标记为障碍（黑色单元）
+  ///   - `0` 代表 Eraser：该 cell 应被清除障碍（白色单元）
+  ///   - `-1` 代表“未作更改/占位值”：后端在应用时可以忽略该值
+  Future<void> updateMapEditHttp({
+    required String editSessionId,
+    required TopologyMap topologyMap,
+    required Map<int, int> obstacleEdits,
+  }) async {
+    final obstacleEditsJson = obstacleEdits
+        .map((cellIndex, value) => MapEntry(cellIndex.toString(), value));
+    final uri = _buildHttpUri(
+      '/updateMapEdit',
+      queryParameters: <String, String>{
+        'session_id': editSessionId,
+        'map_name': "./map",
+        'topology_json': jsonEncode(topologyMap.toJson()),
+        'obstacle_edits_json': jsonEncode(obstacleEditsJson),
+      },
+    );
 
-      // 构建消息
-      final msg = {
-        "header": {
-          "stamp": timestamp,
-          "frame_id": "map",
-        },
-        "info": {
-          "map_load_time": timestamp,
-          "resolution": map.mapConfig.resolution,
-          "width": map.mapConfig.width,
-          "height": map.mapConfig.height,
-          "origin": {
-            "position": {
-              "x": map.mapConfig.originX,
-              "y": map.mapConfig.originY,
-              "z": 0.0,
-            },
-            "orientation": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 0.0,
-              "w": 1.0,
-            },
-          },
-        },
-        "data": mapData,
-      };
+    print("obstacle_edits_json uri: $obstacleEditsJson");
 
-      rosBridgePlayer.publish("/map/update", msg);
-      print("栅格地图已发布到 /map/update: ${map.mapConfig.width}x${map.mapConfig.height}, ${mapData.length} 个数据点");
-    } catch (e) {
-      print("发布栅格地图失败: $e");
+    final res = await http.get(uri);
+    if (res.statusCode != 200) {
+      throw Exception('updateMapEdit failed: ${res.statusCode} ${res.body}');
     }
   }
+
 
   Future<void> navStatusCallback(Map<String, dynamic> msg) async {
     GoalStatusArray goalStatusArray = GoalStatusArray.fromJson(msg);

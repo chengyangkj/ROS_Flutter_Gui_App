@@ -171,7 +171,9 @@ class PoseMarkerWidget extends StatefulWidget {
     required this.theta,
     required this.type,
     this.onThetaChanged,
+    this.onThetaEnd,
     this.onMoveDelta,
+    this.onMoveEnd,
     this.color = const Color(0xFF0080ff),
     this.count = 2,
     this.isEditMode = false,
@@ -181,7 +183,9 @@ class PoseMarkerWidget extends StatefulWidget {
   final double theta;
   final PoseMarkerType type;
   final ValueChanged<double>? onThetaChanged;
+  final ValueChanged<double>? onThetaEnd;
   final ValueChanged<Offset>? onMoveDelta;
+  final VoidCallback? onMoveEnd;
   final Color color;
   final int count;
   final bool isEditMode;
@@ -273,12 +277,16 @@ class _PoseMarkerWidgetState extends State<PoseMarkerWidget>
             ? (_) {
                 _isRotating = false;
                 _isMoving = false;
+              widget.onThetaEnd?.call(_theta);
+              widget.onMoveEnd?.call();
               }
             : null,
         onPanCancel: widget.isEditMode
             ? () {
                 _isRotating = false;
                 _isMoving = false;
+                widget.onThetaEnd?.call(_theta);
+                widget.onMoveEnd?.call();
               }
             : null,
         child: AnimatedBuilder(
