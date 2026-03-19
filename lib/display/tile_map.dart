@@ -75,6 +75,7 @@ class TileMapState extends State<TileMap> {
   final Map<int, int> _obstacleEdits = {};
   final Map<int, int> _obstacleStrokeOldEdits = {};
   final Map<int, int> _obstacleStrokeNewEdits = {};
+  Offset? _lastObstaclePaintLocal;
 
   @override
   void initState() {
@@ -146,14 +147,31 @@ class TileMapState extends State<TileMap> {
             if (!enableObstacleEdit) return;
             _obstacleStrokeOldEdits.clear();
             _obstacleStrokeNewEdits.clear();
+            _lastObstaclePaintLocal = e.localPosition;
             _paintObstacleAtLocal(e.localPosition);
           },
           onPointerMove: (e) {
             if (!enableObstacleEdit) return;
-            _paintObstacleAtLocal(e.localPosition);
+            final prev = _lastObstaclePaintLocal;
+            _lastObstaclePaintLocal = e.localPosition;
+            if (prev != null) {
+              const stepPx = 6.0;
+              final d = (e.localPosition - prev).distance;
+              final steps = (d / stepPx).ceil().clamp(1, 64);
+              for (var i = 1; i <= steps; i++) {
+                final t = i / steps;
+                _paintObstacleAtLocal(Offset(
+                  prev.dx + (e.localPosition.dx - prev.dx) * t,
+                  prev.dy + (e.localPosition.dy - prev.dy) * t,
+                ));
+              }
+            } else {
+              _paintObstacleAtLocal(e.localPosition);
+            }
           },
           onPointerUp: (_) {
             if (!enableObstacleEdit) return;
+            _lastObstaclePaintLocal = null;
             if (widget.onObstacleEditEnd != null &&
                 _obstacleStrokeNewEdits.isNotEmpty) {
               widget.onObstacleEditEnd!(
@@ -165,6 +183,7 @@ class TileMapState extends State<TileMap> {
             _obstacleStrokeNewEdits.clear();
           },
           onPointerCancel: (_) {
+            _lastObstaclePaintLocal = null;
             _obstacleStrokeOldEdits.clear();
             _obstacleStrokeNewEdits.clear();
           },
@@ -557,13 +576,8 @@ class TileMapState extends State<TileMap> {
   }
 
   Widget _buildObstacleEditLayer(MapMeta meta, WorldToLatLngFn toLatLng) {
-    final camera = _mapController.camera;
     final res = meta.resolution;
-    final px0 = camera.getOffsetFromOrigin(toLatLng(meta.originX, meta.originY));
-    final px1 = camera.getOffsetFromOrigin(toLatLng(meta.originX + res, meta.originY));
-    final cellSizePx = (px1 - px0).distance.abs().clamp(2.0, 80.0);
-
-    final markers = <Marker>[];
+    final polygons = <Polygon>[];
     _obstacleEdits.forEach((key, value) {
       final col = key % meta.width;
       final row = key ~/ meta.width;
@@ -572,23 +586,21 @@ class TileMapState extends State<TileMap> {
       final color = value > 0
           ? const Color(0xFF000000)
           : const Color(0xFFFFFFFF);
-      markers.add(Marker(
-        point: toLatLng(cx, cy),
-        width: cellSizePx,
-        height: cellSizePx,
-        alignment: Alignment.center,
-        child: IgnorePointer(
-          child: Container(
-            decoration: BoxDecoration(
-              color: color,
-            ),
-          ),
-        ),
+      polygons.add(Polygon(
+        points: [
+          toLatLng(cx, cy),
+          toLatLng(cx + res, cy),
+          toLatLng(cx + res, cy + res),
+          toLatLng(cx, cy + res),
+        ],
+        color: color,
+        borderColor: color,
+        borderStrokeWidth: 0,
       ));
     });
 
-    if (markers.isEmpty) return const SizedBox.shrink();
-    return MarkerLayer(markers: markers);
+    if (polygons.isEmpty) return const SizedBox.shrink();
+    return PolygonLayer(polygons: polygons);
   }
 
   void moveToRobot() {
