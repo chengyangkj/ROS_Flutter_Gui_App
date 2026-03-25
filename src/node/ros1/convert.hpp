@@ -2,13 +2,13 @@
 
 #include <cmath>
 
-#include "core/occupancy_grid.hpp"
+#include "core/map/occupancy_grid.hpp"
 #include "nav_msgs/OccupancyGrid.h"
 #include "ros/ros.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
-namespace nav2_map_server {
+namespace ros_gui_backend {
 
 inline void Convert(const OccupancyGridData& from, nav_msgs::OccupancyGrid& to,
     const std::string& frame_id) {
@@ -41,4 +41,4 @@ inline void Convert(const nav_msgs::OccupancyGrid& from, OccupancyGridData& to) 
   to.data = from.data;
 }
 
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend

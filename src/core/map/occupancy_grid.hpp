@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace nav2_map_server {
+namespace ros_gui_backend {
 
 struct OccupancyGridData {
   uint32_t width{0};
@@ -15,4 +15,4 @@ struct OccupancyGridData {
   std::vector<int8_t> data;
 };
 
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend

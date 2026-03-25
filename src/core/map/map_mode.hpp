@@ -17,7 +17,7 @@
 
 #include <string>
 #include <vector>
-namespace nav2_map_server
+namespace ros_gui_backend
 {
 enum class MapMode
 {
@@ -28,6 +28,6 @@ enum class MapMode
 
 const char * map_mode_to_string(MapMode map_mode);
 MapMode map_mode_from_string(std::string map_mode_name);
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend
 
 #endif  // NAV2_MAP_SERVER__MAP_MODE_HPP_

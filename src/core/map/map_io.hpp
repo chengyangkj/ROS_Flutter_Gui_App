@@ -18,11 +18,11 @@
 #include <string>
 #include <vector>
 
-#include "core/occupancy_grid.hpp"
-#include "core/topology_map.hpp"
-#include "core/map_mode.hpp"
+#include "core/map/occupancy_grid.hpp"
+#include "core/map/topology_map.hpp"
+#include "core/map/map_mode.hpp"
 
-namespace nav2_map_server
+namespace ros_gui_backend
 {
 
 struct LoadParameters
@@ -56,11 +56,11 @@ LOAD_MAP_STATUS loadMapFromYaml(
 
 LOAD_MAP_STATUS LoadTopologyMapFromJson(
   const std::string & json_file,
-  nav2_map_server::TopologyMap& topo_map_msg
+  ros_gui_backend::TopologyMap& topo_map_msg
 );
 
 void saveTopologyMapToJson(
-  const nav2_map_server::TopologyMap& topo_map_msg,
+  const ros_gui_backend::TopologyMap& topo_map_msg,
   const std::string & json_file
 );
 
@@ -81,6 +81,6 @@ std::string expand_user_home_dir_if_needed(
   std::string yaml_filename,
   std::string home_dir);
 
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend
 
 #endif  // NAV2_MAP_SERVER__MAP_IO_HPP_

@@ -18,7 +18,7 @@ Logger::Logger() {
   defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "true");
   // filename
   defaultConf.setGlobally(el::ConfigurationType::Filename,
-                          "map_server.log");
+                          "ros_gui_app_backend.log");
   defaultConf.setGlobally(el::ConfigurationType::Format, "[%datetime][%level] %msg");
   // 设置配置文件
   el::Loggers::reconfigureLogger("default", defaultConf);
@@ -27,16 +27,16 @@ Logger::Logger() {
   el::Loggers::addFlag(el::LoggingFlag::DisableApplicationAbortOnFatalLog);
 }
 Logger::~Logger() {}
-void Logger::Log(LogLevel level, const std::stringstream& message, const char* file, int line) {
+void Logger::Log(LogLevel level, std::string message, const char* file, int line) {
   switch (level) {
     case LogLevel::INFO:
-      LOG(INFO) << "[" << file << ":" << line << "] " << message.str();
+      LOG(INFO) << "[" << file << ":" << line << "] " << message;
       break;
     case LogLevel::ERROR:
-      LOG(ERROR) << "[" << file << ":" << line << "] " << message.str();
+      LOG(ERROR) << "[" << file << ":" << line << "] " << message;
       break;
     case LogLevel::WARN:
-      LOG(WARNING) << "[" << file << ":" << line << "] " << message.str();
+      LOG(WARNING) << "[" << file << ":" << line << "] " << message;
       break;
   }
 }

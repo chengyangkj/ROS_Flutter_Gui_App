@@ -1,9 +1,8 @@
 #pragma once
 
-#include "node/map_server_interface.hpp"
-#include "app/map_manager.hpp"
-#include "core/map_io.hpp"
-#include "core/topology_map.hpp"
+#include "node/interface.hpp"
+#include "core/map/map_manager.hpp"
+#include "core/map/map_io.hpp"
 #include "node/ros2/convert.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -11,21 +10,19 @@
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
-#include "topology_msgs/msg/topology_map.hpp"
 
-namespace nav2_map_server {
+namespace ros_gui_backend {
 
-class MapServerNode : public rclcpp::Node, public IMapServerNode {
-public:
-  explicit MapServerNode(const MapServerConfig& config);
-  ~MapServerNode();
+class RosGuiNode : public rclcpp::Node, public IRosGuiNode {
+ public:
+  explicit RosGuiNode(const GuiBackendConfig& config);
+  ~RosGuiNode() override;
 
-  bool Init(const MapServerConfig& config, MapManager* map_manager) override;
+  bool Init(const GuiBackendConfig& config) override;
   void Run() override;
   void Shutdown() override;
 
-private:
-
+ private:
   bool LoadMapResponseFromYaml(const std::string& yaml_file,
       std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
   void GetMapCallback(const std::shared_ptr<rmw_request_id_t>,
@@ -44,13 +41,11 @@ private:
   rclcpp::Service<nav2_msgs::srv::LoadMap>::SharedPtr load_map_service_;
   rclcpp::Service<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;
   rclcpp::Publisher<OccGridPubAdaptedType>::SharedPtr occ_pub_;
-  rclcpp::Publisher<TopoMapAdaptedType>::SharedPtr topo_map_pub_;
   rclcpp::Subscription<OccGridDataAdaptedType>::SharedPtr raw_occ_map_sub_;
 
-  MapManager* map_manager_{nullptr};
-  MapServerConfig config_;
+  GuiBackendConfig config_;
 
   void PublishMapUpdate();
 };
 
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend

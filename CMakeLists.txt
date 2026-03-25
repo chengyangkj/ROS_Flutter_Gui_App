@@ -1,16 +1,20 @@
-cmake_minimum_required(VERSION 3.5)
-project(nav2_map_server)
+cmake_minimum_required(VERSION 3.16)
+project(ros_gui_backend)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 if(NOT DEFINED ROS_VERSION)
   set(ROS_VERSION 2)
 endif()
 
-include(${CMAKE_SOURCE_DIR}/cmake_modules/GetYamlCpp.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake_modules/GetHttplib.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/GetYamlCpp.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/GetFmt.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/GetDrogon.cmake)
 
-find_package(Boost REQUIRED program_options filesystem)
+find_package(Boost REQUIRED filesystem)
 find_package(OpenCV REQUIRED COMPONENTS core imgcodecs)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED sdl2)

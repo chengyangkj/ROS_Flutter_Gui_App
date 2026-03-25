@@ -1,4 +1,4 @@
-#include "core/tiles_map_generator.h"
+#include "core/map/tiles_map_generator.h"
 
 #include "common/logger/logger.h"
 
@@ -8,7 +8,7 @@
 #include <boost/filesystem.hpp>
 #include <cmath>
 
-namespace nav2_map_server {
+namespace ros_gui_backend {
 
 namespace {
 
@@ -47,11 +47,12 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
   double world_max_x = map.origin_x + map.width * map.resolution;
   double world_max_y = map.origin_y + map.height * map.resolution;
 
-  LOG_INFO("TilesGen: map " << map.width << "x" << map.height
-      << " res=" << map.resolution << " origin=(" << map.origin_x << "," << map.origin_y << ") extra_zoom_levels=" << extra_zoom_levels);
-  LOG_INFO("TilesGen: world bounds x=[" << world_min_x << "," << world_max_x
-      << "] y=[" << world_min_y << "," << world_max_y << "]");
-  LOG_INFO("TilesGen: max_zoom=" << max_z << " padded=" << padded_w << "x" << padded_h);
+  LOGGER_INFO(
+      "TilesGen: map {}x{} res={} origin=({},{}) extra_zoom_levels={}", map.width, map.height,
+      map.resolution, map.origin_x, map.origin_y, extra_zoom_levels);
+  LOGGER_INFO("TilesGen: world bounds x=[{},{}] y=[{},{}]", world_min_x, world_max_x, world_min_y,
+      world_max_y);
+  LOGGER_INFO("TilesGen: max_zoom={} padded={}x{}", max_z, padded_w, padded_h);
 
   int scale = 1 << extra_zoom_levels;
 
@@ -106,8 +107,8 @@ bool TilesMapGenerator::GenerateAllTilesToDir(const OccupancyGridData& map,
     //     << " x=[0," << (tiles_per_axis - 1) << "] y=[0," << (tiles_per_axis - 1) << "] "
     //     << tile_list);
   }
-  LOG_INFO("TilesGen: total " << total << " tiles written to " << output_dir);
+  LOGGER_INFO("TilesGen: total {} tiles written to {}", total, output_dir);
   return total > 0;
 }
 
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/occupancy_grid.hpp"
+#include "core/map/occupancy_grid.hpp"
 
 #include <string>
 
-namespace nav2_map_server {
+namespace ros_gui_backend {
 
 class TilesMapGenerator {
 public:
@@ -16,4 +16,4 @@ public:
   int GetMaxZoom(uint32_t width, uint32_t height, int extra_zoom_levels) const;
 };
 
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend

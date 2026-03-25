@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "core/map_io.hpp"
+#include "core/map/map_io.hpp"
 #include "common/logger/logger.h"
 
 #include <chrono>
@@ -47,7 +47,7 @@
 
 #include "yaml-cpp/yaml.h"
 
-namespace nav2_map_server {
+namespace ros_gui_backend {
 
 constexpr int8_t OCC_GRID_UNKNOWN = -1;
 constexpr int8_t OCC_GRID_FREE = 0;
@@ -84,7 +84,8 @@ std::string expand_user_home_dir_if_needed(
     return yaml_filename;
   }
   if (home_variable_value.empty()) {
-    LOG_INFO("Map yaml file name starts with '~/' but no HOME variable set, "
+    LOGGER_INFO(
+        "Map yaml file name starts with '~/' but no HOME variable set, "
         "user home dir will be not expanded");
     return yaml_filename;
   }
@@ -133,11 +134,11 @@ LoadParameters loadMapYaml(const std::string &yaml_filename) {
     load_parameters.negate = yaml_get_value<bool>(doc, "negate");
   }
 
-  LOG_INFO("resolution: " << load_parameters.resolution << " origin: [" <<
-      load_parameters.origin[0] << "," << load_parameters.origin[1] << "," <<
-      load_parameters.origin[2] << "] free_thresh: " << load_parameters.free_thresh <<
-      " occupied_thresh: " << load_parameters.occupied_thresh <<
-      " mode: " << map_mode_to_string(load_parameters.mode) << " negate: " << load_parameters.negate);
+  LOGGER_INFO(
+      "resolution: {} origin: [{},{},{}] free_thresh: {} occupied_thresh: {} mode: {} negate: {}",
+      load_parameters.resolution, load_parameters.origin[0], load_parameters.origin[1],
+      load_parameters.origin[2], load_parameters.free_thresh, load_parameters.occupied_thresh,
+      map_mode_to_string(load_parameters.mode), load_parameters.negate);
 
   return load_parameters;
 }
@@ -145,7 +146,7 @@ LoadParameters loadMapYaml(const std::string &yaml_filename) {
 void loadMapFromFile(
     const LoadParameters &load_parameters,
     OccupancyGridData &map) {
-  LOG_INFO("Loading image_file: " << load_parameters.image_file_name);
+  LOGGER_INFO("Loading image_file: {}", load_parameters.image_file_name);
 
   SDL_Surface* img = IMG_Load(load_parameters.image_file_name.c_str());
   if (!img) {
@@ -231,48 +232,47 @@ void loadMapFromFile(
 
   SDL_FreeSurface(img);
 
-  LOG_INFO("Read map " << load_parameters.image_file_name
-      << ": " << msg.width << " X " << msg.height << " map @ "
-      << msg.resolution << " m/cell");
+  LOGGER_INFO("Read map {}: {} X {} map @ {} m/cell", load_parameters.image_file_name, msg.width,
+      msg.height, msg.resolution);
 
   map = msg;
 }
 
 void saveTopologyMapToJson(
-  const nav2_map_server::TopologyMap& topo_map_msg,
+  const ros_gui_backend::TopologyMap& topo_map_msg,
   const std::string & json_file
 ){
   std::ofstream ofs(json_file);
   if (!ofs.is_open()) {
-    LOG_ERROR("无法打开拓扑地图JSON文件: " << json_file);
+    LOGGER_ERROR("无法打开拓扑地图JSON文件: {}", json_file);
     return;
   }
   nlohmann::json j=topo_map_msg;
   ofs << j.dump(2);
   ofs.close();
-  LOG_INFO("保存拓扑地图JSON文件成功: " << json_file);
+  LOGGER_INFO("保存拓扑地图JSON文件成功: {}", json_file);
 }
 
-LOAD_MAP_STATUS LoadTopologyMapFromJson(const std::string & json_file, nav2_map_server::TopologyMap& topo_map_msg) {
+LOAD_MAP_STATUS LoadTopologyMapFromJson(const std::string & json_file, ros_gui_backend::TopologyMap& topo_map_msg) {
 
-    LOG_INFO("start to load topology map from json file: " << json_file);
+    LOGGER_INFO("start to load topology map from json file: {}", json_file);
     std::string file_path = expand_user_home_dir_if_needed(json_file, get_home_dir());
     std::ifstream ifs(file_path);
     if (!ifs.is_open()) {
-        LOG_ERROR("无法打开拓扑地图JSON文件: " << file_path);
+        LOGGER_ERROR("无法打开拓扑地图JSON文件: {}", file_path);
         return MAP_DOES_NOT_EXIST;
     }
     try {
-        LOG_INFO("start to parse topology map from json file: " << json_file);
+        LOGGER_INFO("start to parse topology map from json file: {}", json_file);
         nlohmann::json j;
         ifs >> j;
         topo_map_msg = j.get<TopologyMap>();
         
-        LOG_INFO("成功加载拓扑地图: " << topo_map_msg.points.size() << " 个点, "
-            << topo_map_msg.routes.size() << " 条路由");  
+        LOGGER_INFO("成功加载拓扑地图: {} 个点, {} 条路由", topo_map_msg.points.size(),
+            topo_map_msg.routes.size());  
             
     } catch (const std::exception& e) {
-        LOG_ERROR("解析拓扑地图JSON文件失败: " << e.what());
+        LOGGER_ERROR("解析拓扑地图JSON文件失败: {}", e.what());
         return INVALID_MAP_DATA;
     }
     return LOAD_MAP_SUCCESS;
@@ -283,25 +283,26 @@ LOAD_MAP_STATUS loadMapFromYaml(
     const std::string &yaml_file,
     OccupancyGridData &map) {
   if (yaml_file.empty()) {
-    LOG_ERROR("YAML file name is empty, can't load!");
+    LOGGER_ERROR("YAML file name is empty, can't load!");
     return MAP_DOES_NOT_EXIST;
   }
-  LOG_INFO("Loading yaml file: " << yaml_file);
+  LOGGER_INFO("Loading yaml file: {}", yaml_file);
   LoadParameters load_parameters;
   try {
     load_parameters = loadMapYaml(yaml_file);
   } catch (YAML::Exception &e) {
-    LOG_ERROR("Failed processing YAML file " << yaml_file << " at position (" <<
-        e.mark.line << ":" << e.mark.column << ") for reason: " << e.what());
+    LOGGER_ERROR("Failed processing YAML file {} at position ({}:{}) for reason: {}", yaml_file,
+        e.mark.line, e.mark.column, e.what());
     return INVALID_MAP_METADATA;
   } catch (std::exception &e) {
-    LOG_ERROR("Failed to parse map YAML loaded from file " << yaml_file << " for reason: " << e.what());
+    LOGGER_ERROR("Failed to parse map YAML loaded from file {} for reason: {}", yaml_file, e.what());
     return INVALID_MAP_METADATA;
   }
   try {
     loadMapFromFile(load_parameters, map);
   } catch (std::exception &e) {
-    LOG_ERROR("Failed to load image file " << load_parameters.image_file_name << " for reason: " << e.what());
+    LOGGER_ERROR("Failed to load image file {} for reason: {}", load_parameters.image_file_name,
+        e.what());
     return INVALID_MAP_DATA;
   }
 
@@ -322,35 +323,36 @@ void checkSaveParameters(SaveParameters &save_parameters) {
     auto now = std::chrono::system_clock::now();
     save_parameters.map_file_name = "map_" +
         std::to_string(std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count());
-    LOG_WARN("Map file unspecified. Map will be saved to " << save_parameters.map_file_name << " file");
+    LOGGER_WARN("Map file unspecified. Map will be saved to {} file", save_parameters.map_file_name);
   }
 
   // Checking thresholds
   if (save_parameters.occupied_thresh == 0.0) {
     save_parameters.occupied_thresh = 0.65;
-    LOG_WARN("Occupied threshold unspecified. Setting it to default value: " << save_parameters.occupied_thresh);
+    LOGGER_WARN("Occupied threshold unspecified. Setting it to default value: {}",
+        save_parameters.occupied_thresh);
   }
   if (save_parameters.free_thresh == 0.0) {
     save_parameters.free_thresh = 0.25;
-    LOG_WARN("Free threshold unspecified. Setting it to default value: " << save_parameters.free_thresh);
+    LOGGER_WARN("Free threshold unspecified. Setting it to default value: {}", save_parameters.free_thresh);
   }
   if (1.0 < save_parameters.occupied_thresh) {
-    LOG_ERROR("Threshold_occupied must be 1.0 or less");
+    LOGGER_ERROR("Threshold_occupied must be 1.0 or less");
     throw std::runtime_error("Incorrect thresholds");
   }
   if (save_parameters.free_thresh < 0.0) {
-    LOG_ERROR("Free threshold must be 0.0 or greater");
+    LOGGER_ERROR("Free threshold must be 0.0 or greater");
     throw std::runtime_error("Incorrect thresholds");
   }
   if (save_parameters.occupied_thresh <= save_parameters.free_thresh) {
-    LOG_ERROR("Threshold_free must be smaller than threshold_occupied");
+    LOGGER_ERROR("Threshold_free must be smaller than threshold_occupied");
     throw std::runtime_error("Incorrect thresholds");
   }
 
   // Checking image format
   if (save_parameters.image_format == "") {
     save_parameters.image_format = save_parameters.mode == MapMode::Scale ? "png" : "pgm";
-    LOG_WARN("Image format unspecified. Setting it to: " << save_parameters.image_format);
+    LOGGER_WARN("Image format unspecified. Setting it to: {}", save_parameters.image_format);
   }
 
   std::transform(
@@ -372,7 +374,9 @@ void checkSaveParameters(SaveParameters &save_parameters) {
       ss << "'" << format_name << "'";
       first = false;
     }
-    LOG_WARN("Requested image format '" << save_parameters.image_format << "' is not one of the recommended formats: " << ss.str());
+    LOGGER_WARN(
+        "Requested image format '{}' is not one of the recommended formats: {}", save_parameters.image_format,
+        ss.str());
     save_parameters.image_format = "png";
   }
 
@@ -382,7 +386,9 @@ void checkSaveParameters(SaveParameters &save_parameters) {
       (save_parameters.image_format == "pgm" ||
        save_parameters.image_format == "jpg" ||
        save_parameters.image_format == "jpeg")) {
-    LOG_WARN("Map mode 'scale' requires transparency, but format '" << save_parameters.image_format << "' does not support it. Consider switching to 'png'.");
+    LOGGER_WARN(
+        "Map mode 'scale' requires transparency, but format '{}' does not support it. Consider switching to 'png'.",
+        save_parameters.image_format);
   }
 }
 
@@ -522,10 +528,10 @@ static void WritePngOrBmp(const OccupancyGridData& map,
 void tryWriteMapToFile(
     const OccupancyGridData &map,
     const SaveParameters &save_parameters) {
-  LOG_INFO("Received a " << map.width << " X " << map.height << " map @ " << map.resolution << " m/pix");
+  LOGGER_INFO("Received a {} X {} map @ {} m/pix", map.width, map.height, map.resolution);
 
   std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
-  LOG_INFO("Writing map occupancy data to " << mapdatafile);
+  LOGGER_INFO("Writing map occupancy data to {}", mapdatafile);
   if (save_parameters.image_format == "pgm") {
     WritePgm(map, save_parameters, mapdatafile);
   } else {
@@ -552,13 +558,13 @@ void tryWriteMapToFile(
     e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
 
     if (!e.good()) {
-      LOG_ERROR("YAML writer failed with an error " << e.GetLastError() << ". The map metadata may be invalid.");
+      LOGGER_ERROR("YAML writer failed with an error {}. The map metadata may be invalid.", e.GetLastError());
     }
 
-    LOG_INFO("Writing map metadata to " << mapmetadatafile);
+    LOGGER_INFO("Writing map metadata to {}", mapmetadatafile);
     std::ofstream(mapmetadatafile) << e.c_str();
   }
-  LOG_INFO("Map saved");
+  LOGGER_INFO("Map saved");
 }
 
 bool saveMapToFile(
@@ -573,10 +579,10 @@ bool saveMapToFile(
 
     tryWriteMapToFile(map, save_parameters_loc);
   } catch (std::exception &e) {
-    LOG_ERROR("Failed to write map for reason: " << e.what());
+    LOGGER_ERROR("Failed to write map for reason: {}", e.what());
     return false;
   }
   return true;
 }
 
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend

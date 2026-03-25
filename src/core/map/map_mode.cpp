@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/map_mode.hpp"
+#include "core/map/map_mode.hpp"
 
 #include <stdexcept>
 #include <string>
 
-namespace nav2_map_server {
+namespace ros_gui_backend {
 const char* map_mode_to_string(MapMode map_mode) {
   switch (map_mode) {
     case MapMode::Trinary:
@@ -46,4 +46,4 @@ MapMode map_mode_from_string(std::string map_mode_name) {
     throw std::invalid_argument("map_mode_name");
   }
 }
-}  // namespace nav2_map_server
+}  // namespace ros_gui_backend

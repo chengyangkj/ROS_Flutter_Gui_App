@@ -150,5 +150,5 @@ main.cpp                    # 入口：解析参数，初始化 MapManager 与 R
 ## 依赖
 
 - ROS1 或 ROS2
-- Boost、OpenCV、yaml-cpp、cpp-httplib
+- Boost、OpenCV、yaml-cpp、Drogon
 - topology_msgs（ROS2）

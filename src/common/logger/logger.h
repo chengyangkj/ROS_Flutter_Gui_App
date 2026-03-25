@@ -1,38 +1,35 @@
 #pragma once
 
-#include <iostream>
-#include <sstream>
+#include <fmt/format.h>
+#include <string>
 
 #include "common/macros.h"
 enum class LogLevel { INFO,
                       ERROR,
                       WARN };
-#define LOG_INFO(message)                        \
-  do {                                           \
-    std::stringstream ss;                        \
-    ss << message;                               \
-    Logger::Instance()->Log(LogLevel::INFO, ss, __FILE__, __LINE__); \
-  } while (0);
 
-#define LOG_ERROR(message)                        \
-  do {                                            \
-    std::stringstream ss;                         \
-    ss << message;                                \
-    Logger::Instance()->Log(LogLevel::ERROR, ss, __FILE__, __LINE__); \
-  } while (0);
+#define LOGGER_INFO(...)                                                        \
+  do {                                                                          \
+    Logger::Instance()->Log(LogLevel::INFO, fmt::format(__VA_ARGS__), __FILE__, \
+        __LINE__);                                                              \
+  } while (0)
 
-#define LOG_WARN(message)                        \
-  do {                                           \
-    std::stringstream ss;                        \
-    ss << message;                               \
-    Logger::Instance()->Log(LogLevel::WARN, ss, __FILE__, __LINE__); \
-  } while (0);
+#define LOGGER_ERROR(...)                                                       \
+  do {                                                                          \
+    Logger::Instance()->Log(LogLevel::ERROR, fmt::format(__VA_ARGS__), __FILE__, \
+        __LINE__);                                                              \
+  } while (0)
+
+#define LOGGER_WARN(...)                                                        \
+  do {                                                                          \
+    Logger::Instance()->Log(LogLevel::WARN, fmt::format(__VA_ARGS__), __FILE__, \
+        __LINE__);                                                              \
+  } while (0)
 
 class Logger {
  public:
-
   ~Logger();
-  void Log(LogLevel level, const std::stringstream& message, const char* file = nullptr, int line = 0);
+  void Log(LogLevel level, std::string message, const char* file = nullptr, int line = 0);
 
   DEFINE_SINGLETON(Logger)
 };

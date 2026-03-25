@@ -7,3 +7,5 @@ target_include_directories(common PUBLIC
   ${CMAKE_SOURCE_DIR}/src
 )
 
+target_link_libraries(common PUBLIC fmt::fmt-header-only)
+

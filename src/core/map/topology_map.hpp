@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/json.hpp"
+#include "core/map/json.hpp"
 #include <map>
 #include <algorithm>
 
-namespace nav2_map_server
+namespace ros_gui_backend
 {
 
 enum class TopologyMapPointType{

@@ -1,27 +1,27 @@
-add_executable(map_manager main.cpp map_manager.cpp)
+set(TARGET_NAME ros_gui_backend)
 
-target_compile_definitions(map_manager PRIVATE ROS_VERSION=${ROS_VERSION})
+add_executable(${TARGET_NAME}
+  main.cpp
+  application.cpp
+)
 
-target_include_directories(map_manager PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(${TARGET_NAME} PRIVATE ROS_VERSION=${ROS_VERSION})
+
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 if(ROS_VERSION EQUAL 1)
-  target_include_directories(map_manager PRIVATE ${catkin_INCLUDE_DIRS})
+  target_include_directories(${TARGET_NAME} PRIVATE ${catkin_INCLUDE_DIRS})
 endif()
 
-target_link_libraries(map_manager PRIVATE
-  map_io
-  common
-  map_server_node
-  Boost::program_options
+target_link_libraries(${TARGET_NAME} PRIVATE
+  map
+  web_server
+  ros_gui_node
   Boost::filesystem
-  httplib::httplib
-  opencv_core
-  opencv_imgcodecs
-  ${SDL2_DEPS}
   yaml-cpp::yaml-cpp
 )
 
-install(TARGETS map_manager DESTINATION bin)
+install(TARGETS ${TARGET_NAME} DESTINATION bin)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/install/bin/
-    DESTINATION bin
-    USE_SOURCE_PERMISSIONS)
+  DESTINATION bin
+  USE_SOURCE_PERMISSIONS)
