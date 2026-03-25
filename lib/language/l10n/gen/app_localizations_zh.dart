@@ -30,6 +30,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get port => '端口';
 
   @override
+  String get tile_server_port => '瓦片服务端口';
+
+  @override
   String get robot_type => '机器人类型';
 
   @override

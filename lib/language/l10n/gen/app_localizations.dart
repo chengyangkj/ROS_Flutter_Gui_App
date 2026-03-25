@@ -140,6 +140,9 @@ abstract class AppLocalizations {
   /// **'端口'**
   String get port;
 
+  /// No description provided for @tile_server_port.
+  String get tile_server_port;
+
   /// No description provided for @robot_type.
   ///
   /// In zh, this message translates to:

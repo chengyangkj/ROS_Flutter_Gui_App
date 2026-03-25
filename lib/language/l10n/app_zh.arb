@@ -6,6 +6,7 @@
   "connect_robot_subtitle": "输入ROS Bridge IP 以连接 ROS 机器人系统",
   "ip_address": "IP地址",
   "port": "端口",
+  "tile_server_port": "瓦片服务端口",
   "robot_type": "机器人类型",
   "default_config_template": "默认配置模版",
   "max_speed": "最大前进速度",

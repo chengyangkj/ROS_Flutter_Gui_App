@@ -31,6 +31,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get port => 'Port';
 
   @override
+  String get tile_server_port => 'Tile Server Port';
+
+  @override
   String get robot_type => 'Robot Type';
 
   @override

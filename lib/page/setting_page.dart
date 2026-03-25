@@ -100,6 +100,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final Map<String, String> displayNames = {
       'robotIp': AppLocalizations.of(context)!.ip_address,
       'robotPort': AppLocalizations.of(context)!.port,
+      'tileServerPort': AppLocalizations.of(context)!.tile_server_port,
       'mapTopic': AppLocalizations.of(context)!.map_topic,
       'laserTopic': AppLocalizations.of(context)!.laser_topic,
       'globalPathTopic': AppLocalizations.of(context)!.global_path_topic,
@@ -130,6 +131,20 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveSettings(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (key == 'tileServerPort') {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty || trimmed == '7684') {
+        globalSetting.setTileServerPort('');
+      } else {
+        final n = int.tryParse(trimmed);
+        if (n != null && n >= 1 && n <= 65535) {
+          globalSetting.setTileServerPort(trimmed);
+        }
+      }
+      _loadSettings();
+      return;
+    }
 
     await prefs.setString(key, value);
     switch (key) {
@@ -218,20 +233,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _applyTemplate(TempConfigType type) async {
     switch (type) {
-      case TempConfigType.ROS2Default:
+      case TempConfigType.ROS2:
         globalSetting.setDefaultCfgRos2();
         break;
       case TempConfigType.ROS1:
         globalSetting.setDefaultCfgRos1();
-        break;
-      case TempConfigType.TurtleBot3:
-        globalSetting.setDefaultCfgRos2TB3();
-        break;
-      case TempConfigType.TurtleBot4:
-        globalSetting.setDefaultCfgRos2TB4();
-        break;
-      case TempConfigType.Jackal:
-        globalSetting.setDefaultCfgRos2Jackal();
         break;
     }
     setState(() {
@@ -454,6 +460,8 @@ class _SettingsPageState extends State<SettingsPage> {
       [
         _buildSettingItem('robotIp', _settings['robotIp'] ?? '127.0.0.1'),
         _buildSettingItem('robotPort', _settings['robotPort'] ?? '9090'),
+        _buildSettingItem(
+            'tileServerPort', _settings['tileServerPort'] ?? '7684'),
         _buildSettingItem('MaxVx', _settings['MaxVx'] ?? '0.1'),
         _buildSettingItem('MaxVy', _settings['MaxVy'] ?? '0.1'),
         _buildSettingItem('MaxVw', _settings['MaxVw'] ?? '0.3'),

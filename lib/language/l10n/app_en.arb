@@ -6,6 +6,7 @@
   "connect_robot_subtitle": "Enter ROS Bridge IP to connect to ROS robot system",
   "ip_address": "IP Address",
   "port": "Port",
+  "tile_server_port": "Tile Server Port",
   "robot_type": "Robot Type",
   "default_config_template": "Default Config Template",
   "max_speed": "Max Speed",

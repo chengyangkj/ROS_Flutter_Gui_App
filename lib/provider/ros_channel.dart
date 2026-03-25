@@ -464,8 +464,7 @@ class RosChannel {
           Point32 point = polygonStamped.polygon!.points[i];
           RobotPose pose = RobotPose(point.x, point.y, 0);
           RobotPose poseMap = absoluteSum(transPose, pose);
-          vm.Vector2 poseScene = map_.value.xy2idx(vm.Vector2(poseMap.x, poseMap.y));
-          newPoints.add(poseScene);
+          newPoints.add(vm.Vector2(poseMap.x, poseMap.y));
         }
       }
       robotFootprint.value = newPoints;

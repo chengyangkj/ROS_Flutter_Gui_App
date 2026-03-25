@@ -13,7 +13,7 @@ Widget buildRobotFootprintLayer(RosChannel rosChannel, WorldToLatLngFn worldToLa
     polygons: [
       Polygon(
         points: pts,
-        color: Colors.green.withOpacity(0.2),
+        color: Colors.green.withValues(alpha: 0.2),
         borderColor: Colors.green,
         borderStrokeWidth: 1,
       ),

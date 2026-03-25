@@ -35,11 +35,8 @@ class JoyStickEvent {
 }
 
 enum TempConfigType {
-  ROS2Default,
+  ROS2,
   ROS1,
-  TurtleBot3,
-  TurtleBot4,
-  Jackal,
 }
 
 String tempConfigTypeToString(TempConfigType type) {
@@ -223,95 +220,8 @@ class Setting {
     await prefs.setString('gamepadMapping', jsonEncode(mapping));
   }
 
-  void setDefaultCfgRos2Jackal() {
-    prefs.setInt("tempConfig", TempConfigType.Jackal.index);
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "/sensors/lidar_0/scan");
-    prefs.setString('pointCloud2Topic', "/sensors/lidar_0/points");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/plan");
-        prefs.setString('tracePathTopic', "/transformed_global_plan");
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/platform/odom/filtered");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
-    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
-    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
-    prefs.setString('MaxVx', "0.9");
-    prefs.setString('MaxVy', "0.9");
-    prefs.setString('MaxVw', "0.9");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
-    prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw");
-    prefs.setString('diagnosticTopic', "/diagnostics");
-    prefs.setDouble('imageWidth', 640);
-    prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 30.0);
-  }
-
-  void setDefaultCfgRos2TB4() {
-    prefs.setInt("tempConfig", TempConfigType.TurtleBot4.index);
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "scan");
-    prefs.setString('pointCloud2Topic', "points");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/local_plan");
-    prefs.setString('tracePathTopic', "/transformed_global_plan");
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/odom");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
-    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
-    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
-    prefs.setString('MaxVx', "0.9");
-    prefs.setString('MaxVy', "0.9");
-    prefs.setString('MaxVw', "0.9");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
-    prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw");
-    prefs.setString('diagnosticTopic', "/diagnostics");
-    prefs.setDouble('imageWidth', 640);
-    prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 30.0);
-  }
-
-  void setDefaultCfgRos2TB3() {
-    prefs.setInt("tempConfig", TempConfigType.TurtleBot3.index);
-    prefs.setString('mapTopic', "map");
-    prefs.setString('laserTopic', "scan");
-    prefs.setString('pointCloud2Topic', "points");
-    prefs.setString('globalPathTopic', "/plan");
-    prefs.setString('localPathTopic', "/local_plan");
-    
-    prefs.setString('relocTopic', "/initialpose");
-    prefs.setString('navGoalTopic', "/goal_pose");
-    prefs.setString('OdometryTopic', "/odom");
-    prefs.setString('SpeedCtrlTopic', "/cmd_vel");
-    prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
-    prefs.setString('localCostmapTopic', "/local_costmap/costmap");
-    prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
-    prefs.setString('MaxVx', "0.9");
-    prefs.setString('MaxVy', "0.9");
-    prefs.setString('MaxVw', "0.9");
-    prefs.setString('mapFrameName', "map");
-    prefs.setString('baseLinkFrameName', "base_link");
-    prefs.setString('imagePort', "8080");
-    prefs.setString('imageTopic', "/camera/image_raw");
-    prefs.setString('diagnosticTopic', "/diagnostics");
-    prefs.setDouble('imageWidth', 640);
-    prefs.setDouble('imageHeight', 480);
-    prefs.setDouble('robotSize', 30.0);
-  }
-
   void setDefaultCfgRos2() {
-    prefs.setInt("tempConfig", TempConfigType.ROS2Default.index);
+    prefs.setInt("tempConfig", TempConfigType.ROS2.index);
     prefs.setString('mapTopic', "map");
     prefs.setString('laserTopic', "scan");
     prefs.setString('pointCloud2Topic', "points");
@@ -381,13 +291,23 @@ class Setting {
     return prefs.getString("robotIp") ?? "127.0.0.1";
   }
 
-  String get tileServerUrl {
-    return prefs.getString("tileServerUrl") ??
-        "http://${prefs.getString("robotIp") ?? "127.0.0.1"}:7684";
+  String get tileServerPort {
+    return prefs.getString("tileServerPort") ?? "7684";
   }
 
-  void setTileServerUrl(String url) {
-    prefs.setString("tileServerUrl", url);
+  void setTileServerPort(String port) {
+    final t = port.trim();
+    if (t.isEmpty || t == "7684") {
+      prefs.remove("tileServerPort");
+    } else {
+      prefs.setString("tileServerPort", t);
+    }
+    prefs.remove("tileServerUrl");
+  }
+
+  String get tileServerUrl {
+    final host = prefs.getString("robotIp") ?? "127.0.0.1";
+    return "http://$host:$tileServerPort";
   }
 
   String get imagePort {
@@ -554,7 +474,11 @@ class Setting {
   }
 
   TempConfigType get tempConfig {
-    return TempConfigType.values[prefs.getInt("tempConfig") ?? 0];
+    final i = prefs.getInt("tempConfig") ?? 0;
+    if (i == TempConfigType.ROS1.index) {
+      return TempConfigType.ROS1;
+    }
+    return TempConfigType.ROS2;
   }
 
   // 添加最大速度获取方法

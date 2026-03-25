@@ -126,7 +126,7 @@ python -m http.server 8000
 
 ### 配置
 
-1. 启动 rosbridge:
+1. 启动 **rosbridge** (机器人侧):
 
 ```bash
 # ROS1
@@ -136,9 +136,74 @@ roslaunch rosbridge_server rosbridge_websocket.launch
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 ```
 
-2. 运行应用并配置连接参数
+2. 启动 **ros_gui_backend**（机器人侧）
 
-详细使用说明参见：[使用说明](docs/usage.md) 
+自 v2.0 起，大地图通过 HTTP 瓦片加载，需与 [ros_gui_backend](https://github.com/chengyangkj/ros_gui_backend) 配套使用（仅需 rosbridge 的旧体验请使用 v1.x）。
+
+
+在机器人（或同一局域网能订阅到 `/map` 的机器）上安装运行，以后端仓库 [README](https://github.com/chengyangkj/ros_gui_backend/blob/main/README.md) 为准；典型流程如下。
+
+**编译安装**（仓库根目录，需已安装对应 ROS 并 `source` 其 `setup.bash`）：
+
+```bash
+sudo apt-get install libsdl2-dev libsdl2-image-dev -y
+./build.sh
+```
+
+产物在 `build/install/`，可执行文件一般在 `build/install/bin/` 下
+
+**启动** ：
+
+```bash
+cd build/install/bin
+export LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH
+./ros_gui_backend --config ./cfg/config.yaml
+```
+
+若安装包内提供 `start.sh`，也可在同一目录执行 `./start.sh`（内部一般为设置 `LD_LIBRARY_PATH` 后带默认配置启动）。不传 `--config` 时程序使用内置默认：HTTP 瓦片端口 **7684**，订阅 **`/map`**，发布 **`/map_manager/map`** 等；可通过 YAML 的 `web_server.port`、`ros_gui_node.sub_map_topic` 等覆盖（字段含义见后端仓库说明）。
+
+**使用要点**：进程需与导航栈同机或能收到地图 topic；默认在 `0.0.0.0:7684` 提供瓦片与 REST（地图列表、切换、拓扑等，详见后端 README）。确保防火墙放行该端口（及 rosbridge 端口）。
+
+**与 App 对接**：瓦片与地图管理 HTTP 基址恒为 `http://<连接页机器人 IP>:<瓦片服务端口>`，默认端口 **7684**。若后端 HTTP 端口不同，在 **设置 → 基础设置 → 瓦片服务端口** 中修改；留空或填 **7684** 表示使用默认。请保证 `ros_gui_backend` 在该 IP 与端口上可达（与 rosbridge 不同机时需自行保证网络可达，应用侧主机名始终与连接页 IP 一致）。
+
+3. 在连接页填写 rosbridge 的 IP 与端口（一般为 **9090**），连接成功后进入 **设置** 页完成适配。
+
+### 适配说明（设置页）
+
+先在 **机器人类型** 中选择 **ROS1** 或 **ROS2** 默认模版，再按实际话题名修改下列项。界面为中文时，名称与下表 **设置项** 一致。下表 **ROS2 默认模版** 列为选用 **ROS2** 模版后的写入值；未写入 prefs 的项取应用内代码回退默认值。
+
+**基础设置**
+
+| 设置项 | 对应功能 | ROS2 默认模版 |
+| ------ | -------- | ------------- |
+| 瓦片服务端口 | 与连接页 IP 组成 `http://<IP>:<端口>`，用于瓦片与 REST | `7684` |
+| 地图坐标系 | 与 OccupancyGrid 的 `frame_id` 一致，用于地图与 TF 对齐 | `map` |
+| 机器人基座坐标系 | 与里程计、机器人模型所用 base 系一致（常见为 `base_link`） | `base_link` |
+| 图像端口 | `web_video_server` 的 HTTP 端口，与 **图像话题** 一起用于相机画面 | `8080` |
+
+**话题设置**
+
+| 设置项 | 对应功能 | ROS2 默认模版 |
+| ------ | -------- | ------------- |
+| 地图话题 | 订阅栅格地图（`nav_msgs/OccupancyGrid`） | `map` |
+| 激光雷达话题 | 主界面激光扫描显示（`sensor_msgs/LaserScan`） | `scan` |
+| 点云话题 | 点云图层（`sensor_msgs/PointCloud2`） | `points` |
+| 全局路径话题 | 全局规划路径线（`nav_msgs/Path`） | `/plan` |
+| 局部路径话题 | 局部规划路径线（`nav_msgs/Path`） | `/local_plan` |
+| 轨迹路径话题 | 已执行/变换后的全局轨迹等路径显示（`nav_msgs/Path`） | `/transformed_global_plan` |
+| 重定位话题 | 发布初始位姿（ROS2 多为 `/initialpose`，ROS1 同名或栈定义话题） | `/initialpose` |
+| 导航目标话题 | 单点导航目标（ROS2 多为 `/goal_pose`，ROS1 常见 `move_base_simple/goal`） | `/goal_pose` |
+| 里程计话题 | 机器人位姿与速度（`nav_msgs/Odometry`） | `/wheel/odometry` |
+| 速度控制话题 | 摇杆/遥控发布的 `geometry_msgs/Twist`（常见 `/cmd_vel`） | `/cmd_vel` |
+| 电池状态话题 | 电池电量显示（`sensor_msgs/BatteryState`，使用字段 `percentage`，代码按 0–1 比例换算为百分比） | `/battery_status` |
+| 图像话题 | 供 `web_video_server` 拉流的图像 topic | `/camera/image_raw` |
+| 机器人尺寸话题 | 代价地图上机器人 footprint 多边形（如 `PolygonStamped`） | `/local_costmap/published_footprint` |
+| 局部代价地图话题 | 局部 costmap 叠加显示 | `/local_costmap/costmap` |
+| 全局代价地图话题 | 全局 costmap 叠加显示 | `/global_costmap/costmap` |
+
+选用 **ROS1** 模版时，与上表不同的默认话题为：全局路径 `/move_base/DWAPlannerROS/global_plan`，局部路径 `/move_base/DWAPlannerROS/local_plan`，导航目标 `move_base_simple/goal`，里程计 `/odom`，图像 `/camera/rgb/image_raw`；其余与 ROS2 默认模版相同（含轨迹路径回退 `/transformed_global_plan`）。
+
+若某功能不用（例如未接电池话题），可保留默认或改为机器人侧实际发布的名称，避免订阅无效 topic。
 
 ## Star History
 
