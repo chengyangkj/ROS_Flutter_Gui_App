@@ -51,7 +51,7 @@ message RobotMessage {
   oneof payload {
     ImageFrame image = 1;
     Heartbeat heartbeat = 3;
-    LaserScanMapFrame laser_scan_map = 4;
+    LaserScanBaseLink laser_scan = 4;
     PoseStamped robot_pose_map = 5;
     Path path_local = 6;
     Path path_global = 7;

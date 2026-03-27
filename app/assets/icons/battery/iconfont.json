@@ -1,0 +1,23 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "3282349",
+      "name": "电量",
+      "font_class": "dianliang",
+      "unicode": "e634",
+      "unicode_decimal": 58932
+    },
+    {
+      "icon_id": "18170247",
+      "name": "电,闪电,电力,电量",
+      "font_class": "lightning-full",
+      "unicode": "e995",
+      "unicode_decimal": 59797
+    }
+  ]
+}

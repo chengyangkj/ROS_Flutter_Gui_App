@@ -331,7 +331,7 @@ void RosGuiNode::OnLaser(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
     return;
   }
   ros_gui_backend::pb::RobotMessage out;
-  auto* lm = out.mutable_laser_scan_map();
+  auto* lm = out.mutable_laser_scan();
   lm->mutable_header()->set_frame_id(gui_settings_.BaseLinkFrameName);
   lm->mutable_header()->mutable_stamp()->set_sec(static_cast<int32_t>(msg->header.stamp.sec));
   lm->mutable_header()->mutable_stamp()->set_nanosec(static_cast<uint32_t>(msg->header.stamp.nanosec));

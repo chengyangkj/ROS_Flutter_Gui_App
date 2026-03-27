@@ -1,0 +1,58 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "5634082",
+      "name": "gamepad",
+      "font_class": "gamepad",
+      "unicode": "efe3",
+      "unicode_decimal": 61411
+    },
+    {
+      "icon_id": "5994074",
+      "name": "gamepad",
+      "font_class": "gamepad1",
+      "unicode": "e635",
+      "unicode_decimal": 58933
+    },
+    {
+      "icon_id": "11270382",
+      "name": "gamepad",
+      "font_class": "gamepad2",
+      "unicode": "e8a5",
+      "unicode_decimal": 59557
+    },
+    {
+      "icon_id": "12002832",
+      "name": "gamepad",
+      "font_class": "gamepad3",
+      "unicode": "ea45",
+      "unicode_decimal": 59973
+    },
+    {
+      "icon_id": "12194373",
+      "name": "gamepad xbox",
+      "font_class": "gamepadxbox",
+      "unicode": "ec34",
+      "unicode_decimal": 60468
+    },
+    {
+      "icon_id": "12194390",
+      "name": "sega gamepad",
+      "font_class": "segagamepad",
+      "unicode": "ec38",
+      "unicode_decimal": 60472
+    },
+    {
+      "icon_id": "37721555",
+      "name": "Gamepad",
+      "font_class": "Gamepad",
+      "unicode": "e643",
+      "unicode_decimal": 58947
+    }
+  ]
+}

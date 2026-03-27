@@ -1,0 +1,278 @@
+{
+  "auto": "Auto",
+  "light": "Light",
+  "dark": "Dark",
+  "connect_robot": "Connect To Robot",
+  "connect_robot_subtitle": "Enter ROS Bridge IP to connect to ROS robot system",
+  "ip_address": "IP Address",
+  "port": "Port",
+  "http_server_port": "HTTP Server Port",
+  "robot_type": "Robot Type",
+  "default_config_template": "Default Config Template",
+  "max_speed": "Max Speed",
+  "max_y_speed": "Max Y Speed",
+  "max_angular_speed": "Max Angular Speed",
+  "map_frame": "Map Frame",
+  "odom_frame": "Odom Frame",
+  "base_frame": "Base Frame",
+  "laser_frame": "Laser Frame",
+  "map_topic": "Map Topic",
+  "laser_topic": "Laser Topic",
+  "global_path_topic": "Global Path Topic",
+  "local_path_topic": "Local Path Topic",
+  "trace_path_topic": "Trace Path Topic",
+  "reloc_topic": "Reloc Topic",
+  "nav_goal_topic": "Nav Goal Topic",
+  "odometry_topic": "Odometry Topic",
+  "speed_ctrl_topic": "Speed Ctrl Topic",
+  "battery_topic": "Battery Topic",
+  "save": "Save",
+  "cancel": "Cancel",
+  "image_topic": "Image Topic",
+  "screen_orientation": "Screen Orientation",
+  "connect_error": "Connect ROS failed, please check IP and port",
+  "edit": "Edit",
+  "config_saved": "Config saved, restart app to take effect",
+  "ok": "OK",
+  "image_port": "Image Port",
+  "image_width": "Image Width",
+  "image_height": "Image Height",
+  "confirm_change": "Confirm Change",
+  "switch_template_will_reset_all_settings": "Switch template will reset all settings",
+  "portrait": "Portrait",
+  "landscape": "Landscape",
+  "language": "Language",
+  "switch_language": "Switch Language",
+  "zh": "Chinese",
+  "en": "English",
+  "setting": "Setting",
+  "basic_setting": "Basic Setting",
+  "topic_setting": "Topic Setting",
+  "app_setting": "APP Setting",
+  "robot_footprint_topic": "Robot Footprint Topic",
+  "local_cost_map_topic": "Local Cost Map Topic",
+  "pointcloud2_topic": "Point Cloud Topic",
+  "global_costmap_topic": "Global Cost Map Topic",
+  "robot_size": "Robot Icon Size",
+  "not_allow_send_nav_goal": "Current mode is not allow to send navigation goal, please checkout to normal mode!",
+  "gamepad_mapping": "Gamepad Mapping",
+  "remap": "Remap",
+  "start_mapping_message": "Please push the joystick or button to this position to start mapping",
+  "mapping_reset": "Mapping has been reset to default settings",
+  "left_stick_x": "Left Stick X",
+  "left_stick_y": "Left Stick Y",
+  "right_stick_x": "Right Stick X",
+  "right_stick_y": "Right Stick Y",
+  "button_a": "Button A",
+  "button_b": "Button B",
+  "button_x": "Button X",
+  "button_y": "Button Y",
+  "camera_fixed_no_layer": "Cannot adjust layers when camera view is fixed!",
+  "switch_to_normal_mode": "Please switch to normal mode first, then click navigation point",
+  "emergency_stop_triggered": "Emergency stop triggered!",
+  "stop_nav": "Stop Navigation",
+  "stop": "Stop",
+  "layer_grid": "Grid Layer",
+  "layer_global_costmap": "Global Cost Map",
+  "layer_local_costmap": "Local Cost Map",
+  "layer_laser": "Laser Data",
+  "layer_pointcloud": "Point Cloud Data",
+  "layer_global_path": "Global Path",
+  "layer_local_path": "Local Path",
+  "layer_topology": "Topology Map",
+  "map_edit": "Map Edit",
+  "zoom_in": "Zoom In",
+  "zoom_out": "Zoom Out",
+  "center_on_robot": "Center on Robot",
+  "exit": "Exit",
+  "layers": "Layers",
+  "layer_color": "Color",
+  "layer_dot_size": "Dot size",
+  "reloc": "Relocalization",
+  "camera": "Camera",
+  "manual_control": "Manual Control",
+  "emergency_stop": "Emergency Stop",
+  "stop_navigation": "Stop Navigation",
+  "open_file": "Open File",
+  "save_file": "Save File",
+  "undo": "Undo",
+  "redo": "Redo",
+  "exit_edit_mode": "Exit Edit Mode",
+  "add_nav_point": "Add Navigation Point",
+  "draw_obstacle": "Draw Obstacle",
+  "erase_obstacle": "Erase Obstacle",
+  "add_current_position": "Add Current Position",
+  "map_management": "Map Management",
+  "save_success": "Save Success",
+  "save_success_desc": "Topology map and occupancy map published",
+  "save_failed": "Save Failed",
+  "save_as": "Save As",
+  "map_name": "Map Name",
+  "save_as_success": "Save As Success",
+  "save_as_desc": "Saved as: {name}",
+  "@save_as_desc": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "save_as_failed": "Save As Failed",
+  "tool_move": "Move",
+  "tool_point": "Point",
+  "tool_route": "Route",
+  "tool_brush": "Brush",
+  "tool_eraser": "Eraser",
+  "route_start_selected": "Start selected: {name}",
+  "@route_start_selected": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "route_created": "Route created: {from} -> {to}",
+  "@route_created": {
+    "placeholders": {
+      "from": {},
+      "to": {}
+    }
+  },
+  "route_properties": "Route Properties",
+  "direction": "Direction: {from} -> {to}",
+  "@direction": {
+    "placeholders": {
+      "from": {},
+      "to": {}
+    }
+  },
+  "controller": "Controller",
+  "controller_readonly": "Controller (Read Only)",
+  "close": "Close",
+  "delete_route": "Delete This Direction",
+  "point_properties": "Point Properties",
+  "name": "Name",
+  "delete_point": "Delete This Point",
+  "retry": "Retry",
+  "no_map": "No Map",
+  "current_in_use": "In Use",
+  "switch_map": "Switch Map",
+  "delete_map_tooltip_current": "In use, cannot delete",
+  "delete": "Delete",
+  "confirm_delete": "Confirm Delete",
+  "confirm_delete_map": "Delete map \"{name}\"? This cannot be undone.",
+  "@confirm_delete_map": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "map_deleted": "Deleted: {name}",
+  "@map_deleted": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "delete_failed": "Delete failed: {e}",
+  "@delete_failed": {
+    "placeholders": {
+      "e": {}
+    }
+  },
+  "position_label": "Position",
+  "position_format": "Position: ({x}, {y})",
+  "@position_format": {
+    "placeholders": {
+      "x": {},
+      "y": {}
+    }
+  },
+  "init_error": "Error: {error}",
+  "@init_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "diagnostic_warning": "Warning",
+  "diagnostic_error": "Error",
+  "diagnostic_stale": "Stale",
+  "diagnostic_normal": "Normal",
+  "diagnostic_health": "Diagnostic: [{level}] {component}",
+  "@diagnostic_health": {
+    "placeholders": {
+      "level": {},
+      "component": {}
+    }
+  },
+  "diagnostic_hardware": "Hardware ID: {id}\nMessage: {msg}",
+  "@diagnostic_hardware": {
+    "placeholders": {
+      "id": {},
+      "msg": {}
+    }
+  },
+  "error_count": "Errors: {count}",
+  "@error_count": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "warn_count": "Warnings: {count}",
+  "@warn_count": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "nav_point_info": "Nav Point Info",
+  "position_coords": "Position Coords",
+  "coord_x": "X",
+  "coord_y": "Y",
+  "heading": "Heading",
+  "stop_manual_first": "Please stop manual control first",
+  "nav_goal_sent": "Nav goal sent to {name}",
+  "@nav_goal_sent": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "send_nav_goal": "Send Nav Goal",
+  "emergency_stopped": "Emergency Stop Triggered",
+  "nav_stopped": "Navigation Stopped",
+  "legend_free": "Free",
+  "legend_occupied": "Occupied",
+  "legend_unknown": "Unknown",
+  "nav_goal": "Nav Goal",
+  "charge_station": "Charge Station",
+  "layer_trace": "Trace Path",
+  "layer_robot_footprint": "Robot Footprint",
+  "camera_image": "Camera Image",
+  "no_map_available": "No map available, please select or create one first",
+  "invalid_json": "Import failed: invalid JSON format",
+  "data_stale": "No data update for over 5s",
+  "unknown_hardware": "Unknown hardware",
+  "status": "Status",
+  "update_time": "Update time",
+  "no_detail": "No details available",
+  "last_update": "Last update",
+  "no_diagnostic_data": "No diagnostic data",
+  "no_matching_diagnostic": "No matching diagnostic data found",
+  "all": "All",
+  "clear_filter": "Clear filter",
+  "show_hardware_count": "Showing {count} hardware groups",
+  "@show_hardware_count": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "clear_all_filter": "Clear all filters",
+  "component_count": "Components: {count}",
+  "system_diagnostic": "System Diagnostic",
+  "refresh": "Refresh",
+  "search_component_hint": "Search component...",
+  "status_filter": "Status filter",
+  "table_key": "Key",
+  "table_value": "Value",
+  "detail_info": "Detail",
+  "diagnostic_overview": "Diagnostic Overview",
+  "hardware_id": "Hardware ID",
+  "@component_count": {
+    "placeholders": {
+      "count": {}
+    }
+  }
+}

@@ -1,0 +1,41 @@
+@font-face {
+  font-family: "iconfont"; /* Project id  */
+  src: url('iconfont.ttf?t=1720531460424') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-gamepad:before {
+  content: "\efe3";
+}
+
+.icon-gamepad1:before {
+  content: "\e635";
+}
+
+.icon-gamepad2:before {
+  content: "\e8a5";
+}
+
+.icon-gamepad3:before {
+  content: "\ea45";
+}
+
+.icon-gamepadxbox:before {
+  content: "\ec34";
+}
+
+.icon-segagamepad:before {
+  content: "\ec38";
+}
+
+.icon-Gamepad:before {
+  content: "\e643";
+}
+
