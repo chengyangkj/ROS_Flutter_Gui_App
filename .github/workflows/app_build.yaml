@@ -1,0 +1,236 @@
+name: App — Web / Linux / APK / Windows + Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.27.4'
+
+jobs:
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Generate Dart protobuf
+        run: |
+          set -euo pipefail
+          dart pub global activate protoc_plugin
+          export PATH="${PATH}:${HOME}/.pub-cache/bin"
+          PROTO_ROOT="${GITHUB_WORKSPACE}/protocol"
+          PB_OUT="${GITHUB_WORKSPACE}/app/lib/protobuf"
+          mkdir -p "${PB_OUT}"
+          mapfile -t PROTO_FILES < <(find "${PROTO_ROOT}" -maxdepth 1 -name '*.proto' -print | sort)
+          if [[ ${#PROTO_FILES[@]} -eq 0 ]]; then echo "no .proto files"; exit 1; fi
+          protoc --experimental_allow_proto3_optional \
+            -I"${PROTO_ROOT}" \
+            --dart_out="${PB_OUT}" \
+            "${PROTO_FILES[@]}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dart-protobuf
+          path: app/lib/protobuf/
+
+  build-web:
+    needs: codegen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dart-protobuf
+          path: app/lib/protobuf
+
+      - name: Build web
+        run: |
+          set -euo pipefail
+          cd app
+          flutter pub get
+          flutter build web --release
+
+      - name: Pack web
+        run: |
+          set -euo pipefail
+          cd app
+          tar -czvf "${GITHUB_WORKSPACE}/ros_flutter_gui_web.tar.gz" -C build/web .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-web
+          path: ros_flutter_gui_web.tar.gz
+
+  build-linux:
+    needs: codegen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev
+
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dart-protobuf
+          path: app/lib/protobuf
+
+      - name: Build Linux
+        run: |
+          set -euo pipefail
+          cd app
+          flutter pub get
+          flutter build linux --release
+
+      - name: Pack Linux bundle
+        run: |
+          set -euo pipefail
+          tar -czvf "${GITHUB_WORKSPACE}/ros_flutter_gui_linux_x64.tar.gz" \
+            -C app/build/linux/x64/release/bundle .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-linux
+          path: ros_flutter_gui_linux_x64.tar.gz
+
+  build-apk:
+    needs: codegen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dart-protobuf
+          path: app/lib/protobuf
+
+      - name: Build APK
+        run: |
+          set -euo pipefail
+          cd app
+          flutter pub get
+          flutter build apk --release
+
+      - run: cp app/build/app/outputs/flutter-apk/app-release.apk "${GITHUB_WORKSPACE}/ros_flutter_gui.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: ros_flutter_gui.apk
+
+  build-windows:
+    needs: codegen
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2.16.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dart-protobuf
+          path: app/lib/protobuf
+
+      - name: Build Windows
+        run: |
+          cd app
+          flutter pub get
+          flutter build windows --release
+
+      - name: Pack Windows
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "app/build/windows/x64/runner/Release/*" `
+            -DestinationPath "${env:GITHUB_WORKSPACE}/ros_flutter_gui_windows_x64.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-windows
+          path: ros_flutter_gui_windows_x64.zip
+
+  release:
+    needs: [build-web, build-linux, build-apk, build-windows]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Layout release files
+        run: |
+          set -euo pipefail
+          mkdir -p upload
+          mv release-assets/app-web/ros_flutter_gui_web.tar.gz \
+            "upload/ros_flutter_gui-${GITHUB_REF_NAME}-web.tar.gz"
+          mv release-assets/app-linux/ros_flutter_gui_linux_x64.tar.gz \
+            "upload/ros_flutter_gui-${GITHUB_REF_NAME}-linux-x64.tar.gz"
+          mv release-assets/app-apk/ros_flutter_gui.apk \
+            "upload/ros_flutter_gui-${GITHUB_REF_NAME}.apk"
+          mv release-assets/app-windows/ros_flutter_gui_windows_x64.zip \
+            "upload/ros_flutter_gui-${GITHUB_REF_NAME}-windows-x64.zip"
+          ls -la upload/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: |
+            upload/ros_flutter_gui-${{ github.ref_name }}-web.tar.gz
+            upload/ros_flutter_gui-${{ github.ref_name }}-linux-x64.tar.gz
+            upload/ros_flutter_gui-${{ github.ref_name }}.apk
+            upload/ros_flutter_gui-${{ github.ref_name }}-windows-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

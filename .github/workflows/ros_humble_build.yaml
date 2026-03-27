@@ -1,0 +1,104 @@
+name: ROS2 Humble — backend + Flutter web
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_ROOT: /opt/flutter
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: osrf/ros:humble-desktop
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            git \
+            curl \
+            ca-certificates \
+            unzip \
+            xz-utils \
+            zip \
+            libglu1-mesa \
+            protobuf-compiler \
+            libprotobuf-dev \
+            libboost-filesystem-dev \
+            libopencv-dev \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libjsoncpp-dev \
+            libssl-dev \
+            zlib1g-dev \
+            uuid-dev \
+            libc-ares-dev \
+            libbrotli-dev \
+            sudo
+
+      - name: Install Flutter (stable)
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "${FLUTTER_ROOT}"
+          "${FLUTTER_ROOT}/bin/flutter" config --no-analytics --enable-web
+          "${FLUTTER_ROOT}/bin/flutter" precache --web
+
+      - name: Run ./build.sh
+        run: |
+          set -euo pipefail
+          export PATH="${FLUTTER_ROOT}/bin:${PATH}"
+          dart pub global activate protoc_plugin
+          export PATH="${PATH}:${HOME}/.pub-cache/bin"
+          source /opt/ros/humble/setup.bash
+          cd "${GITHUB_WORKSPACE}"
+          ./build.sh 
+
+      - name: Package release tarball
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}/backend/build/install"
+          tar -czvf "ros_gui_backend-${TAG_NAME}-humble-web-x86_64.tar.gz" -C bin .
+
+      - name: Upload workflow artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: ros_gui_backend_humble_web_x86_64
+          path: backend/build/install/ros_gui_backend-${{ github.ref_name }}-humble-web-x86_64.tar.gz
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: backend/build/install/ros_gui_backend-${{ github.ref_name }}-humble-web-x86_64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
