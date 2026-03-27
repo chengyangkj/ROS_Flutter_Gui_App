@@ -38,7 +38,7 @@ add_subdirectory(src/app)
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated" "${CMAKE_BINARY_DIR}/cpack")
 configure_file(
-  "${CMAKE_SOURCE_DIR}/src/app/install/service/ros_gui_backend.system.service.in"
+  "${CMAKE_SOURCE_DIR}/src/app/install/bin/service/ros_gui_backend.system.service.in"
   "${CMAKE_BINARY_DIR}/generated/ros_gui_backend.service"
   @ONLY)
 configure_file(
