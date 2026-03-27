@@ -17,7 +17,7 @@ class _ConnectPageState extends State<ConnectPage>
   final TextEditingController _ipController =
       TextEditingController(text: '127.0.0.1');
   final TextEditingController _portController =
-      TextEditingController(text: '7684');
+      TextEditingController(text: '8080');
   bool _isConnecting = false;
   late AnimationController _animationController;
   late CurvedAnimation _fadeAnimation;
@@ -224,7 +224,7 @@ class _ConnectPageState extends State<ConnectPage>
     setState(() => _isConnecting = true);
     try {
       final String ip = _ipController.text.trim();
-      final int port = int.tryParse(_portController.text) ?? 7684;
+      final int port = int.tryParse(_portController.text) ?? 8080;
 
       final provider = Provider.of<WsChannel>(context, listen: false);
       globalSetting.setRobotIp(ip);

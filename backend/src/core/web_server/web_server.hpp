@@ -3,12 +3,13 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <string>
 #include <thread>
 
 namespace ros_gui_backend {
 
 struct WebServerConfig {
-  int port{7684};
+  int port{8080};
   std::string document_root;
 };
 

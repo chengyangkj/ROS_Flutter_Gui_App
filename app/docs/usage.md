@@ -24,7 +24,7 @@ ros2 run web_video_server web_video_server
 
 ## 连接设置
 
-输入后端所在主机与 **HTTP 端口**（与 `config.yaml` 中 `web_server.port` 一致，默认 **7684**）并点击连接：
+输入后端所在主机与 **HTTP 端口**（与 `config.yaml` 中 `web_server.port` 一致，默认 **8080**）并点击连接：
 ![camera](../doc/image/connect_page.png) 
 
 ## 功能使用

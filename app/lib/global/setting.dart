@@ -425,12 +425,12 @@ class Setting {
   }
 
   String get httpServerPort {
-    return prefs.getString("httpServerPort") ?? "7684";
+    return prefs.getString("httpServerPort") ?? "8080";
   }
 
   void setHttpServerPort(String port) {
     final t = port.trim();
-    if (t.isEmpty || t == "7684") {
+    if (t.isEmpty || t == "8080") {
       prefs.remove("httpServerPort");
     } else {
       prefs.setString("httpServerPort", t);
@@ -452,7 +452,7 @@ class Setting {
   }
 
   String get robotPort {
-    return prefs.getString("robotPort") ?? "7684";
+    return prefs.getString("robotPort") ?? "8080";
   }
 
   String get robotFootprintTopic {

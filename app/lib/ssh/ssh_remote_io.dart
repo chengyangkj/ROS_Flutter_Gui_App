@@ -92,7 +92,7 @@ Future<Object?> sshConnect({
   required String password,
 }) async {
   final backendHost = globalSetting.robotIp.trim();
-  final backendPort = int.tryParse(globalSetting.httpServerPort.trim()) ?? 7684;
+  final backendPort = int.tryParse(globalSetting.httpServerPort.trim()) ?? 8080;
   final uri = WsChannel.sshTunnelWebSocketUri(backendHost, backendPort);
   final channel = WebSocketChannel.connect(uri);
   final socket = _SshOverWsSocket(channel);

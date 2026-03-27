@@ -78,7 +78,7 @@ export LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH
 | `--config <path>` | YAML 配置文件路径 |
 | `--config=<path>` | 同上 |
 
-未指定 **`--config`** 时，不读文件，**`MapManager`**、**`NodeConfig`**、**`WebServerConfig`** 使用代码内建默认值（例如 HTTP **7684**，发布 **`/map_manager/map`**，订阅 **`/map`** 等，与示例 `cfg/config.yaml` 一致）。
+未指定 **`--config`** 时，不读文件，**`MapManager`**、**`NodeConfig`**、**`WebServerConfig`** 使用代码内建默认值（例如 HTTP **8080**，发布 **`/map_manager/map`**，订阅 **`/map`** 等，与示例 `cfg/config.yaml` 一致）。
 
 ---
 
@@ -131,7 +131,7 @@ GUI 话题等运行时偏好另存为 **`gui_app_settings.json`**（路径由 `A
 
 ## 5. HTTP 接口摘要
 
-默认监听 **`0.0.0.0:<端口>`**（`web_server.port`，默认 **7684**）。已注册 **CORS**（含 `OPTIONS`）。
+默认监听 **`0.0.0.0:<端口>`**（`web_server.port`，默认 **8080**）。已注册 **CORS**（含 `OPTIONS`）。
 
 ### 5.1 瓦片与元数据
 

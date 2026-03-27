@@ -42,9 +42,6 @@ protoc --experimental_allow_proto3_optional \
   "${PROTO_FILES[@]}"
 echo "[build] Dart protobuf -> ${PB_OUT}"
 
-bash "${ROOT}/backend/build.sh" "$@"
-echo "[build] backend done (${BACKEND}/build)"
-
 if ! command -v flutter >/dev/null 2>&1; then
   echo "error: flutter not installed or not on PATH; cannot build app" >&2
   exit 1
@@ -56,4 +53,7 @@ echo "[build] Flutter web done (${APP}/build/web)"
 DIST="${ROOT}/backend/build/install/bin/dist"
 rm -rf "${DIST}"
 cp -r "${APP}/build/web" "${DIST}"
+cp -r  "${APP}/build/web" "${BACKEND}/src/app/install/bin/dist"
 
+bash "${ROOT}/backend/build.sh" "$@"
+echo "[build] backend done (${BACKEND}/build)"
