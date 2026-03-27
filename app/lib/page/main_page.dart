@@ -717,7 +717,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       globalState.mode.value = Mode.normal;
                     } else {
                       globalState.mode.value = Mode.robotFixedCenter;
-                      _tileMapKey.currentState?.moveToRobot();
                     }
                     setState(() {});
                   },
@@ -957,17 +956,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
   }
   
   Widget _buildGamepadWidget(BuildContext context, ThemeData theme) {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Center(
-        child: SizedBox(
-          width: 360,
-          height: 150,
-          child: GamepadWidget(),
-        ),
-      ),
+    return Positioned.fill(
+      child: GamepadWidget(),
     );
   }
 

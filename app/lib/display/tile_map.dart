@@ -78,11 +78,68 @@ class TileMapState extends State<TileMap> {
   final Map<int, int> _obstacleStrokeOldEdits = {};
   final Map<int, int> _obstacleStrokeNewEdits = {};
   Offset? _lastObstaclePaintLocal;
+  WsChannel? _wsChannelRef;
+  bool _robotFollowListenerAttached = false;
 
   @override
   void initState() {
     super.initState();
     loadMeta();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _wsChannelRef ??= context.read<WsChannel>();
+    _syncRobotFollowListener();
+  }
+
+  @override
+  void didUpdateWidget(TileMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncRobotFollowListener();
+    if (widget.followRobot && !oldWidget.followRobot) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _snapCameraToRobot(zoom: 6.0));
+    }
+  }
+
+  void _syncRobotFollowListener() {
+    final ws = _wsChannelRef;
+    if (ws == null) return;
+    final want = widget.followRobot;
+    if (want && !_robotFollowListenerAttached) {
+      _robotFollowListenerAttached = true;
+      ws.robotPoseMap.addListener(_onRobotPoseForFollow);
+    } else if (!want && _robotFollowListenerAttached) {
+      ws.robotPoseMap.removeListener(_onRobotPoseForFollow);
+      _robotFollowListenerAttached = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_robotFollowListenerAttached && _wsChannelRef != null) {
+      _wsChannelRef!.robotPoseMap.removeListener(_onRobotPoseForFollow);
+      _robotFollowListenerAttached = false;
+    }
+    super.dispose();
+  }
+
+  void _onRobotPoseForFollow() {
+    if (!mounted || !widget.followRobot || _meta == null) return;
+    final zoom = _mapController.camera.zoom;
+    _snapCameraToRobot(zoom: zoom);
+  }
+
+  void _snapCameraToRobot({required double zoom}) {
+    final meta = _meta;
+    final ws = _wsChannelRef;
+    if (!mounted || meta == null || ws == null) return;
+    final pose = ws.robotPoseMap.value;
+    _mapController.move(
+      worldToLatLng(meta, pose.x, pose.y),
+      zoom,
+    );
   }
 
   Future<void> loadMeta() async {
@@ -96,6 +153,10 @@ class TileMapState extends State<TileMap> {
           _error = null;
           _currentMapName = mapName;
         });
+        if (widget.followRobot && _meta != null) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _snapCameraToRobot(zoom: 6.0));
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -613,13 +674,8 @@ class TileMapState extends State<TileMap> {
   }
 
   void moveToRobot() {
-    final wsChannel = context.read<WsChannel>();
-    final pose = wsChannel.robotPoseMap.value;
     if (_meta != null) {
-      _mapController.move(
-        worldToLatLng(_meta!, pose.x, pose.y),
-        6.0,
-      );
+      _snapCameraToRobot(zoom: 6.0);
     }
   }
 

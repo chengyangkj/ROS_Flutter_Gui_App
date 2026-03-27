@@ -25,13 +25,13 @@ target_link_libraries(ros_gui_node PUBLIC
   robot_proto
   rclcpp::rclcpp
   tf2_ros::tf2_ros
-  ${geometry_msgs_TARGETS}
-  ${std_msgs_TARGETS}
-  ${diagnostic_msgs_TARGETS}
-  ${action_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  ${sensor_msgs_TARGETS}
+  geometry_msgs::geometry_msgs__rosidl_typesupport_cpp
+  std_msgs::std_msgs__rosidl_typesupport_cpp
+  diagnostic_msgs::diagnostic_msgs__rosidl_typesupport_cpp
+  action_msgs::action_msgs__rosidl_typesupport_cpp
+  nav_msgs::nav_msgs__rosidl_typesupport_cpp
+  nav2_msgs::nav2_msgs__rosidl_typesupport_cpp
+  sensor_msgs::sensor_msgs__rosidl_typesupport_cpp
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   opencv_imgcodecs

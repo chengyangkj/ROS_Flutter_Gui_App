@@ -60,6 +60,7 @@ jobs:
             libc-ares-dev \
             libbrotli-dev \
             ros-humble-nav2-msgs \
+            ros-humble-fastcdr \
             sudo
 
       - name: Install Flutter

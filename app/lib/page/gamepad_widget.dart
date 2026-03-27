@@ -97,74 +97,72 @@ class _GamepadWidgetState extends State<GamepadWidget> {
     _subscription?.cancel();
   }
 
+  static const double _sideToolbarClearance = 64;
+  static const double _bottomClearance = 12;
+
   @override
   Widget build(BuildContext context) {
+    final manualOn =
+        Provider.of<GlobalState>(context, listen: false).isManualCtrl.value;
+    final pad = MediaQuery.paddingOf(context);
+    final bottom =
+        _bottomClearance + pad.bottom;
+
     return Visibility(
-        visible:
-            Provider.of<GlobalState>(context, listen: false).isManualCtrl.value,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 30,
-              bottom: 10,
-              child: Opacity(
-                opacity: 1,
-                child: Container(
-                  width: joystickWidgetSize,
-                  height: joystickWidgetSize,
-                  child: Joystick(
-                    controller: leftJoystickController,
-                    mode: JoystickMode.all,
-                    includeInitialAnimation: false,
-                    listener: (details) {
-                      double max_vx =
-                          double.parse(globalSetting.getConfig('MaxVx'));
-                      double vx = max_vx * details.y * -1;
-                      Provider.of<WsChannel>(context, listen: false).setVx(vx);
+      visible: manualOn,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            left: _sideToolbarClearance,
+            bottom: bottom,
+            child: SizedBox(
+              width: joystickWidgetSize,
+              height: joystickWidgetSize,
+              child: Joystick(
+                controller: leftJoystickController,
+                mode: JoystickMode.all,
+                includeInitialAnimation: false,
+                listener: (details) {
+                  double max_vx =
+                      double.parse(globalSetting.getConfig('MaxVx'));
+                  double vx = max_vx * details.y * -1;
+                  Provider.of<WsChannel>(context, listen: false).setVx(vx);
 
-                      double max_vy =
-                          double.parse(globalSetting.getConfig('MaxVy'));
-                      double vy = max_vy * details.x * -1;
-                      Provider.of<WsChannel>(context, listen: false).setVy(vy);
-                    },
-                  ),
-                ),
+                  double max_vy =
+                      double.parse(globalSetting.getConfig('MaxVy'));
+                  double vy = max_vy * details.x * -1;
+                  Provider.of<WsChannel>(context, listen: false).setVy(vy);
+                },
               ),
             ),
+          ),
+          Positioned(
+            right: _sideToolbarClearance,
+            bottom: bottom,
+            child: SizedBox(
+              width: joystickWidgetSize,
+              height: joystickWidgetSize,
+              child: Joystick(
+                controller: rightJoystickController,
+                mode: JoystickMode.horizontal,
+                includeInitialAnimation: false,
+                listener: (details) {
+                  double max_vw =
+                      double.parse(globalSetting.getConfig('MaxVw'));
 
-            //右摇杆单制角速度
-            Positioned(
-              right: 30,
-              bottom: 10,
-              child: Container(
-                  width: joystickWidgetSize,
-                  height: joystickWidgetSize,
-                  child: Joystick(
-                    controller: rightJoystickController,
-                    mode: JoystickMode.horizontal,
-                    includeInitialAnimation: false,
-                    listener: (details) {
-                      double max_vw =
-                          double.parse(globalSetting.getConfig('MaxVw'));
+                  double vw = max_vw * details.x * -1;
+                  Provider.of<WsChannel>(context, listen: false).setVw(vw);
 
-                      double vw = max_vw * details.x * -1;
-                      Provider.of<WsChannel>(context, listen: false).setVw(vw);
-
-                      if (details.x.abs() <= 0.2) {
-                        Provider.of<WsChannel>(context, listen: false)
-                            .setVw(0);
-                      }
-                    },
-                  )),
-            ),
-            Positioned(
-              bottom: 10,
-              right: 10,
-              child: Container(
-                child: Text("${eventString.value}"),
+                  if (details.x.abs() <= 0.2) {
+                    Provider.of<WsChannel>(context, listen: false).setVw(0);
+                  }
+                },
               ),
-            )
-          ],
-        ));
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
