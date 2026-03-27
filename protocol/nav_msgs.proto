@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ros_gui_backend.pb;
+
+import "geometry_msgs.proto";
+
+message MapMetaData {
+  Time map_load_time = 1;
+  float resolution = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  Pose origin = 5;
+}
+
+message OccupancyGridProto {
+  Header header = 1;
+  MapMetaData info = 2;
+  string frame_id = 3;
+  repeated int32 data = 4;
+}
+
+message Path {
+  Header header = 1;
+  repeated PoseStamped poses = 2;
+}
+
+message Odometry {
+  Header header = 1;
+  string child_frame_id = 2;
+  PoseWithCovariance pose = 3;
+  Twist twist = 4;
+}

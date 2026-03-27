@@ -1,0 +1,5 @@
+find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs tf2 tf2_geometry_msgs)
+add_library(ros_gui_node STATIC node.cpp ../node_manager.cpp)
+target_compile_definitions(ros_gui_node PRIVATE ROS_VERSION=1)
+target_include_directories(ros_gui_node PUBLIC ${CMAKE_SOURCE_DIR}/src ${catkin_INCLUDE_DIRS})
+target_link_libraries(ros_gui_node PUBLIC map common ${catkin_LIBRARIES})

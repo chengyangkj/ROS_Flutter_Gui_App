@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package ros_gui_backend.pb;
+
+import "geometry_msgs.proto";
+import "sensor_msg.proto";
+import "nav_msgs.proto";
+import "diagnostic_msgs.proto";
+import "action_msgs.proto";
+
+message ImageFrame {
+  string encoding = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+  uint32 step = 4;
+  bytes data = 5;
+  int64 stamp_sec = 6;
+  uint32 stamp_nanosec = 7;
+  string frame_id = 8;
+  string topic = 9;
+}
+
+message Heartbeat {
+  int64 server_time_ms = 1;
+  uint32 seq = 2;
+}
+
+message ControlSubscribeImage {
+  string topic = 1;
+  bool subscribe = 2;
+}
+
+message CancelNav {
+}
+
+message TransformLookupRequest {
+  string target_frame = 1;
+  string source_frame = 2;
+  uint32 seq = 3;
+}
+
+message TransformLookupResponse {
+  uint32 seq = 1;
+  bool ok = 2;
+  string error = 3;
+  TransformStamped transform = 4;
+}
+
+message RobotMessage {
+  reserved 2;
+  oneof payload {
+    ImageFrame image = 1;
+    Heartbeat heartbeat = 3;
+    LaserScanMapFrame laser_scan_map = 4;
+    PoseStamped robot_pose_map = 5;
+    Path path_local = 6;
+    Path path_global = 7;
+    Path path_trace = 8;
+    Odometry odometry = 9;
+    BatteryState battery = 10;
+    PolygonStamped footprint = 11;
+    OccupancyGridProto local_costmap = 12;
+    OccupancyGridProto global_costmap = 13;
+    PointCloud2MapFrame pointcloud_map = 14;
+    DiagnosticArray diagnostic = 15;
+    GoalStatusArray nav_status = 17;
+    TransformLookupResponse transform_lookup_response = 18;
+  }
+}
+
+message ClientRobotMessage {
+  oneof payload {
+    ControlSubscribeImage control_subscribe_image = 1;
+    Twist cmd_vel = 2;
+    PoseStamped nav_goal = 3;
+    CancelNav cancel_nav = 4;
+    PoseWithCovarianceStamped reloc = 5;
+    TransformLookupRequest transform_lookup_request = 7;
+  }
+}

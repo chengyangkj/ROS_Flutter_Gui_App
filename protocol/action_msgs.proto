@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ros_gui_backend.pb;
+
+import "geometry_msgs.proto";
+
+message GoalID {
+  string uuid = 1;
+}
+
+message GoalInfo {
+  GoalID goal_id = 1;
+  Time stamp = 2;
+}
+
+message GoalStatus {
+  GoalInfo goal_info = 1;
+  uint32 status = 2;
+  string text = 3;
+}
+
+message GoalStatusArray {
+  Header header = 1;
+  repeated GoalStatus status_list = 2;
+}

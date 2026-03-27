@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package ros_gui_backend.pb;
+
+message TopologyRouteInfoPb {
+  string controller = 1;
+  string goal_checker = 2;
+  float speed_limit = 3;
+}
+
+message TopologyRoutePb {
+  string from_point = 1;
+  string to_point = 2;
+  TopologyRouteInfoPb route_info = 3;
+}
+
+message TopologyPointPb {
+  double x = 1;
+  double y = 2;
+  double theta = 3;
+  string name = 4;
+  string type = 5;
+}
+
+message TopologyMapPropertyPb {
+  repeated string support_controllers = 1;
+  repeated string support_goal_checkers = 2;
+}
+
+message TopologyMapPb {
+  string map_name = 1;
+  TopologyMapPropertyPb map_property = 2;
+  repeated TopologyPointPb points = 3;
+  repeated TopologyRoutePb routes = 4;
+}

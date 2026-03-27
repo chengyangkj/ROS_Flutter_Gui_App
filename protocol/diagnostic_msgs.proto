@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ros_gui_backend.pb;
+
+import "geometry_msgs.proto";
+
+message KeyValue {
+  string key = 1;
+  string value = 2;
+}
+
+message DiagnosticStatus {
+  int32 level = 1;
+  string name = 2;
+  string message = 3;
+  string hardware_id = 4;
+  repeated KeyValue values = 5;
+}
+
+message DiagnosticArray {
+  Header header = 1;
+  repeated DiagnosticStatus status = 2;
+}

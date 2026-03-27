@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ros_gui_backend.pb;
+
+import "geometry_msgs.proto";
+
+message LaserScan {
+  Header header = 1;
+  float angle_min = 2;
+  float angle_max = 3;
+  float angle_increment = 4;
+  float time_increment = 5;
+  float scan_time = 6;
+  float range_min = 7;
+  float range_max = 8;
+  repeated float ranges = 9;
+  repeated float intensities = 10;
+}
+
+message BatteryState {
+  Header header = 1;
+  float voltage = 2;
+  float temperature = 3;
+  float current = 4;
+  float charge = 5;
+  float capacity = 6;
+  float design_capacity = 7;
+  int32 percentage = 8;
+  int32 power_supply_status = 9;
+  int32 power_supply_health = 10;
+  int32 power_supply_technology = 11;
+  bool present = 12;
+  repeated float cell_voltage = 13;
+  string location = 14;
+  string serial_number = 15;
+}
+
+message PointCloud2MapFrame {
+  Header header = 1;
+  repeated double x = 2;
+  repeated double y = 3;
+  repeated double z = 4;
+}
+
+message LaserScanMapFrame {
+  Header header = 1;
+  repeated float x = 2;
+  repeated float y = 3;
+}

@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package ros_gui_backend.pb;
+
+message Time {
+  int32 sec = 1;
+  uint32 nanosec = 2;
+}
+
+message Header {
+  Time stamp = 1;
+  string frame_id = 2;
+}
+
+message Point {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message Quaternion {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+  double w = 4;
+}
+
+message Vector3 {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message Pose {
+  Point position = 1;
+  Quaternion orientation = 2;
+  optional double yaw = 3;
+  optional double pitch = 4;
+  optional double roll = 5;
+}
+
+message Twist {
+  Vector3 linear = 1;
+  Vector3 angular = 2;
+}
+
+message PoseStamped {
+  Header header = 1;
+  Pose pose = 2;
+}
+
+message PoseWithCovariance {
+  Pose pose = 1;
+  repeated double covariance = 2;
+}
+
+message PoseWithCovarianceStamped {
+  Header header = 1;
+  PoseWithCovariance pose = 2;
+}
+
+message Polygon {
+  repeated Point points = 1;
+}
+
+message PolygonStamped {
+  Header header = 1;
+  Polygon polygon = 2;
+}
+
+message Transform {
+  Vector3 translation = 1;
+  Quaternion rotation = 2;
+}
+
+message TransformStamped {
+  Header header = 1;
+  string child_frame_id = 2;
+  Transform transform = 3;
+}
