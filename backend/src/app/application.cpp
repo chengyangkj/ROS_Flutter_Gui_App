@@ -63,6 +63,7 @@ void FillSettingsFromYaml(const YAML::Node& root, AppYamlSettings* out) {
     if (w["port"]) {
       out->web_server.port = w["port"].as<int>();
     }
+    YamlString(w, "document_root", &out->web_server.document_root);
   }
 }
 

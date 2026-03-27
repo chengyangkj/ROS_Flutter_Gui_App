@@ -18,6 +18,10 @@
 #include <string>
 #include <vector>
 
+#if defined(__linux__)
+#include <unistd.h>
+#endif
+
 namespace fs = boost::filesystem;
 
 using namespace std::placeholders;
@@ -45,6 +49,30 @@ std::string JsonErrorBody(const std::string& msg) {
   nlohmann::json j;
   j["error"] = msg;
   return j.dump();
+}
+
+std::string ExecutableDirectory() {
+#if defined(__linux__)
+  char buf[4096];
+  const ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+  if (n > 0) {
+    buf[n] = '\0';
+    return fs::path(buf).parent_path().string();
+  }
+#endif
+  return fs::current_path().string();
+}
+
+std::string ResolvedDocumentRoot(const WebServerConfig& cfg) {
+  const std::string base = ExecutableDirectory();
+  if (!cfg.document_root.empty()) {
+    fs::path p(cfg.document_root);
+    if (p.is_absolute()) {
+      return p.string();
+    }
+    return (fs::path(base) / p).string();
+  }
+  return (fs::path(base) / "dist").string();
 }
 
 }  // namespace
@@ -598,6 +626,33 @@ void WebServer::RunImpl(WebServerConfig config) {
         serve_tile(tiles_dir, z, x, y, std::move(callback));
       },
       {Get});
+
+  const std::string doc_root = ResolvedDocumentRoot(config);
+  if (fs::is_directory(doc_root)) {
+    drogon::app().setDocumentRoot(doc_root);
+    drogon::app().setFileTypes({"html", "htm", "js", "mjs", "css", "json", "png", "jpg", "jpeg", "gif",
+        "svg", "ico", "wasm", "txt", "map", "woff", "woff2", "ttf", "eot", "otf", "webmanifest"});
+    drogon::app().setDefaultHandler(
+        [&json_cb, &add_cors](const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) {
+          const auto method = req->getMethod();
+          if (method != drogon::Get && method != drogon::Head) {
+            json_cb(std::move(callback), JsonErrorBody("not found"), drogon::k404NotFound);
+            return;
+          }
+          const std::string& root = drogon::app().getDocumentRoot();
+          const std::string index_path = (fs::path(root) / "index.html").string();
+          if (!fs::is_regular_file(index_path)) {
+            json_cb(std::move(callback), JsonErrorBody("index.html missing"), drogon::k503ServiceUnavailable);
+            return;
+          }
+          const HttpResponsePtr resp = HttpResponse::newFileResponse(index_path);
+          add_cors(resp);
+          callback(resp);
+        });
+    LOGGER_INFO("HTTP static files from {}", doc_root);
+  } else {
+    LOGGER_WARN("HTTP document_root is not a directory, static UI disabled: {}", doc_root);
+  }
 
   LOGGER_INFO(
       "Tiles HTTP server at http://0.0.0.0:{}, URL: /tiles/{{z}}/{{x}}/{{y}}.png", config.port);

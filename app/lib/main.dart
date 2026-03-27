@@ -120,7 +120,12 @@ class _MyAppState extends State<MyApp> {
       routes: {
         "/connect": ((context) => ConnectPage()),
         "/map": ((context) => MainFlamePage()),
-        "/setting": ((context) => SettingsPage()),
+        "/setting": ((context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          return SettingsPage(
+            scrollToLayerSection: args == kSettingsRouteArgLayers,
+          );
+        }),
         // "/gamepad":((context) => GamepadPage()),
       },
       themeMode: ThemeMode.light,

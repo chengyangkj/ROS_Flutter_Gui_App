@@ -133,9 +133,9 @@ final $typed_data.Uint8List pointCloud2MapFrameDescriptor = $convert.base64Decod
     '5wYi5IZWFkZXJSBmhlYWRlchIMCgF4GAIgAygBUgF4EgwKAXkYAyADKAFSAXkSDAoBehgEIAMo'
     'AVIBeg==');
 
-@$core.Deprecated('Use laserScanBaseLinkDescriptor instead')
-const LaserScanBaseLink$json = {
-  '1': 'LaserScanBaseLink',
+@$core.Deprecated('Use laserScanBaseFrameDescriptor instead')
+const LaserScanBaseFrame$json = {
+  '1': 'LaserScanBaseFrame',
   '2': [
     {
       '1': 'header',
@@ -150,7 +150,7 @@ const LaserScanBaseLink$json = {
   ],
 };
 
-/// Descriptor for `LaserScanBaseLink`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List laserScanBaseLinkDescriptor = $convert.base64Decode(
-    'ChFMYXNlclNjYW5CYXNlTGluaxIyCgZoZWFkZXIYASABKAsyGi5yb3NfZ3VpX2JhY2tlbmQucG'
-    'IuSGVhZGVyUgZoZWFkZXISDAoBeBgCIAMoAlIBeBIMCgF5GAMgAygCUgF5');
+/// Descriptor for `LaserScanBaseFrame`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List laserScanBaseFrameDescriptor = $convert.base64Decode(
+    'ChJMYXNlclNjYW5CYXNlRnJhbWUSMgoGaGVhZGVyGAEgASgLMhoucm9zX2d1aV9iYWNrZW5kLn'
+    'BiLkhlYWRlclIGaGVhZGVyEgwKAXgYAiADKAJSAXgSDAoBeRgDIAMoAlIBeQ==');

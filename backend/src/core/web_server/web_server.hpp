@@ -9,6 +9,7 @@ namespace ros_gui_backend {
 
 struct WebServerConfig {
   int port{7684};
+  std::string document_root;
 };
 
 class WebServer {

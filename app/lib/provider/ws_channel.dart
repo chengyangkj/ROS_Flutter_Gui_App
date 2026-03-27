@@ -255,8 +255,8 @@ class WsChannel {
         break;
       case RobotMessage_Payload.heartbeat:
         break;
-      case RobotMessage_Payload.laserScanMap:
-        _onLaserScanMap(msg.laserScanMap);
+      case RobotMessage_Payload.laserScan:
+        _onLaserScanMap(msg.laserScan);
         break;
       case RobotMessage_Payload.robotPoseMap:
         _onRobotPoseMap(msg.robotPoseMap);
@@ -294,55 +294,8 @@ class WsChannel {
       case RobotMessage_Payload.navStatus:
         _onNavStatusPb(msg.navStatus);
         break;
-      case RobotMessage_Payload.dynamicLayer:
-        _onDynamicLayer(msg.dynamicLayer);
-        break;
       case RobotMessage_Payload.transformLookupResponse:
       case RobotMessage_Payload.notSet:
-        break;
-    }
-  }
-
-  ValueNotifier<List<vm.Vector2>>? _pathNotifierForLayerId(String id) {
-    switch (id) {
-      case 'globalPath':
-        return globalPath;
-      case 'localPath':
-        return localPath;
-      case 'tracePath':
-        return tracePath;
-      default:
-        return null;
-    }
-  }
-
-  void _onDynamicLayer(DynamicLayerStream dl) {
-    final id = dl.layerId;
-    switch (dl.whichStream()) {
-      case DynamicLayerStream_Stream.laserScan:
-        _onLaserScanMap(dl.laserScan);
-        break;
-      case DynamicLayerStream_Stream.path:
-        final out = _pathNotifierForLayerId(id);
-        if (out != null) {
-          _onPathPb(dl.path, out);
-        }
-        break;
-      case DynamicLayerStream_Stream.costmap:
-        final occ = _occupancyFromProto(dl.costmap);
-        if (id == 'globalCostmap') {
-          globalCostmap.value = occ;
-        } else if (id == 'localCostmap' || id.isEmpty) {
-          localCostmap.value = occ;
-        }
-        break;
-      case DynamicLayerStream_Stream.pointcloud:
-        _onPointcloudMap(dl.pointcloud);
-        break;
-      case DynamicLayerStream_Stream.footprint:
-        _onFootprintPb(dl.footprint);
-        break;
-      case DynamicLayerStream_Stream.notSet:
         break;
     }
   }
@@ -359,7 +312,7 @@ class WsChannel {
     imageData.value = u8;
   }
 
-  void _onLaserScanMap(sensor_msg.LaserScanMapFrame lm) {
+  void _onLaserScanMap(sensor_msg.LaserScanBaseFrame lm) {
     final pose = robotPoseMap.value;
     final n = lm.x.length < lm.y.length ? lm.x.length : lm.y.length;
     final pts = <vm.Vector2>[];
@@ -472,6 +425,7 @@ class WsChannel {
     final header = arr.hasHeader()
         ? darr.Header(frameId: arr.header.frameId)
         : null;
+    print('diagnosticData: $diagnosticData');
     diagnosticData.value =
         darr.DiagnosticArray(header: header, status: list);
     diagnosticManager.updateDiagnosticStates(diagnosticData.value);

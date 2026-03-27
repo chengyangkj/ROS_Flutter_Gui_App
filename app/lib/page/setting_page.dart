@@ -7,9 +7,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:flutter/services.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
+import 'package:ros_flutter_gui_app/page/layer_settings_panel.dart';
+
+const String kSettingsRouteArgLayers = 'layers';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.scrollToLayerSection = false});
+
+  final bool scrollToLayerSection;
 
   @override
   _SettingsPageState createState() => _SettingsPageState();
@@ -17,6 +22,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final Map<String, String> _settings = {};
+  final GlobalKey _layersSectionKey = GlobalKey();
   late TempConfigType _selectedTempConfigType;
   String _version = '';
   Orientation _selectedOrientation = Orientation.landscape;
@@ -28,6 +34,34 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadVersion();
     _loadOrientation();
     _selectedTempConfigType = globalSetting.tempConfig;
+    if (widget.scrollToLayerSection) {
+      _scheduleScrollToLayersSection();
+    }
+  }
+
+  void _scheduleScrollToLayersSection() {
+    void run() {
+      if (!mounted) return;
+      _scrollToLayersSection();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      run();
+      WidgetsBinding.instance.addPostFrameCallback((_) => run());
+    });
+  }
+
+  void _scrollToLayersSection() {
+    if (!mounted) return;
+    final ctx = _layersSectionKey.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeOutCubic,
+      alignment: 0.0,
+      alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+    );
   }
 
   Future<void> _loadVersion() async {
@@ -229,7 +263,8 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildLanguageSection(),
       _buildTempConfigTypeSection(),
       _buildBasicSection(),
-      _buildTopicSection(),
+      _buildLayersSection(),
+      _buildOtherTopicsSection(),
       _buildOrientationSection(),
       // ... 其他设置组
     ];
@@ -458,15 +493,41 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildTopicSection() {
+  Widget _buildLayersSection() {
+    return Column(
+      key: _layersSectionKey,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            AppLocalizations.of(context)!.layers,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: const LayerSettingsPanel(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOtherTopicsSection() {
     return _buildSection(
       AppLocalizations.of(context)!.topic_setting,
       [
         _buildSettingItem('mapTopic', _settings['mapTopic'] ?? 'map'),
-        _buildSettingItem('laserTopic', globalSetting.laserTopic),
-        _buildSettingItem('globalPathTopic', globalSetting.globalPathTopic),
-        _buildSettingItem('localPathTopic', globalSetting.localPathTopic),
-        _buildSettingItem('tracePathTopic', globalSetting.tracePathTopic),
         _buildSettingItem('relocTopic', globalSetting.relocTopic),
         _buildSettingItem('navGoalTopic', globalSetting.navGoalTopic),
         _buildSettingItem('OdometryTopic', globalSetting.odomTopic),
@@ -474,12 +535,6 @@ class _SettingsPageState extends State<SettingsPage> {
         _buildSettingItem('BatteryTopic', globalSetting.batteryTopic),
         _buildSettingItem(
             'imageTopic', _settings['imageTopic'] ?? '/image_raw'),
-        _buildSettingItem(
-            'robotFootprintTopic', globalSetting.robotFootprintTopic),
-        _buildSettingItem('localCostmapTopic', globalSetting.localCostmapTopic),
-        _buildSettingItem(
-            'globalCostmapTopic', globalSetting.globalCostmapTopic),
-        _buildSettingItem('pointCloud2Topic', globalSetting.pointCloud2Topic),
       ],
     );
   }
@@ -566,8 +621,11 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ],
       ),
-      body: ListView(
-        children: _buildSettingGroups(),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _buildSettingGroups(),
+        ),
       ),
     );
   }

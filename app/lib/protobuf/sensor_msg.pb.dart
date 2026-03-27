@@ -473,8 +473,8 @@ class PointCloud2MapFrame extends $pb.GeneratedMessage {
   $pb.PbList<$core.double> get z => $_getList(3);
 }
 
-class LaserScanBaseLink extends $pb.GeneratedMessage {
-  factory LaserScanBaseLink({
+class LaserScanBaseFrame extends $pb.GeneratedMessage {
+  factory LaserScanBaseFrame({
     $0.Header? header,
     $core.Iterable<$core.double>? x,
     $core.Iterable<$core.double>? y,
@@ -486,17 +486,17 @@ class LaserScanBaseLink extends $pb.GeneratedMessage {
     return result;
   }
 
-  LaserScanBaseLink._();
+  LaserScanBaseFrame._();
 
-  factory LaserScanBaseLink.fromBuffer($core.List<$core.int> data,
+  factory LaserScanBaseFrame.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory LaserScanBaseLink.fromJson($core.String json,
+  factory LaserScanBaseFrame.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'LaserScanBaseLink',
+      _omitMessageNames ? '' : 'LaserScanBaseFrame',
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'ros_gui_backend.pb'),
       createEmptyInstance: create)
@@ -507,23 +507,23 @@ class LaserScanBaseLink extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LaserScanBaseLink clone() => deepCopy();
+  LaserScanBaseFrame clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LaserScanBaseLink copyWith(void Function(LaserScanBaseLink) updates) =>
-      super.copyWith((message) => updates(message as LaserScanBaseLink))
-          as LaserScanBaseLink;
+  LaserScanBaseFrame copyWith(void Function(LaserScanBaseFrame) updates) =>
+      super.copyWith((message) => updates(message as LaserScanBaseFrame))
+          as LaserScanBaseFrame;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static LaserScanBaseLink create() => LaserScanBaseLink._();
+  static LaserScanBaseFrame create() => LaserScanBaseFrame._();
   @$core.override
-  LaserScanBaseLink createEmptyInstance() => create();
+  LaserScanBaseFrame createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static LaserScanBaseLink getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<LaserScanBaseLink>(create);
-  static LaserScanBaseLink? _defaultInstance;
+  static LaserScanBaseFrame getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<LaserScanBaseFrame>(create);
+  static LaserScanBaseFrame? _defaultInstance;
 
   @$pb.TagNumber(1)
   $0.Header get header => $_getN(0);

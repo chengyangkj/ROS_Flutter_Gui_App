@@ -41,11 +41,7 @@ protoc --experimental_allow_proto3_optional \
   "${PROTO_FILES[@]}"
 echo "[build] Dart protobuf -> ${PB_OUT}"
 
-cmake -S "${BACKEND}" -B "${BACKEND}/build" \
-  -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \
-  -DCMAKE_INSTALL_PREFIX="${BACKEND}/build/install" \
-  "$@"
-cmake --build "${BACKEND}/build" --parallel "$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 8)"
+bash "${ROOT}/backend/build.sh" "$@"
 echo "[build] backend done (${BACKEND}/build)"
 
 if ! command -v flutter >/dev/null 2>&1; then
@@ -55,3 +51,8 @@ fi
 
 (cd "${APP}" && flutter pub get && flutter build web)
 echo "[build] Flutter web done (${APP}/build/web)"
+
+DIST="${ROOT}/backend/build/install/bin/dist"
+rm -rf "${DIST}"
+cp -r "${APP}/build/web" "${DIST}"
+

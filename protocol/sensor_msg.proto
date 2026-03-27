@@ -42,7 +42,7 @@ message PointCloud2MapFrame {
   repeated double z = 4;
 }
 
-message LaserScanBaseLink {
+message LaserScanBaseFrame {
   Header header = 1;
   repeated float x = 2;
   repeated float y = 3;

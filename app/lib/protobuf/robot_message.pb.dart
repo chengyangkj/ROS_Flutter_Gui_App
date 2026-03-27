@@ -546,7 +546,7 @@ class RobotMessage extends $pb.GeneratedMessage {
   factory RobotMessage({
     ImageFrame? image,
     Heartbeat? heartbeat,
-    $1.LaserScanBaseLink? laserScan,
+    $1.LaserScanBaseFrame? laserScan,
     $0.PoseStamped? robotPoseMap,
     $2.Path? pathLocal,
     $2.Path? pathGlobal,
@@ -621,8 +621,8 @@ class RobotMessage extends $pb.GeneratedMessage {
         subBuilder: ImageFrame.create)
     ..aOM<Heartbeat>(3, _omitFieldNames ? '' : 'heartbeat',
         subBuilder: Heartbeat.create)
-    ..aOM<$1.LaserScanBaseLink>(4, _omitFieldNames ? '' : 'laserScan',
-        subBuilder: $1.LaserScanBaseLink.create)
+    ..aOM<$1.LaserScanBaseFrame>(4, _omitFieldNames ? '' : 'laserScan',
+        subBuilder: $1.LaserScanBaseFrame.create)
     ..aOM<$0.PoseStamped>(5, _omitFieldNames ? '' : 'robotPoseMap',
         subBuilder: $0.PoseStamped.create)
     ..aOM<$2.Path>(6, _omitFieldNames ? '' : 'pathLocal',
@@ -730,15 +730,15 @@ class RobotMessage extends $pb.GeneratedMessage {
   Heartbeat ensureHeartbeat() => $_ensure(1);
 
   @$pb.TagNumber(4)
-  $1.LaserScanBaseLink get laserScan => $_getN(2);
+  $1.LaserScanBaseFrame get laserScan => $_getN(2);
   @$pb.TagNumber(4)
-  set laserScan($1.LaserScanBaseLink value) => $_setField(4, value);
+  set laserScan($1.LaserScanBaseFrame value) => $_setField(4, value);
   @$pb.TagNumber(4)
   $core.bool hasLaserScan() => $_has(2);
   @$pb.TagNumber(4)
   void clearLaserScan() => $_clearField(4);
   @$pb.TagNumber(4)
-  $1.LaserScanBaseLink ensureLaserScan() => $_ensure(2);
+  $1.LaserScanBaseFrame ensureLaserScan() => $_ensure(2);
 
   @$pb.TagNumber(5)
   $0.PoseStamped get robotPoseMap => $_getN(3);

@@ -151,7 +151,7 @@ bool RosGuiNode::Init(const GuiAppSettings& gui_app) {
       create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, true);
 
   stream_callback_group_ =
-      create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+      create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, true);
 
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, shared_from_this(), false);
