@@ -1,4 +1,4 @@
-name: ROS2 Humble — backend + Flutter web
+name: Backend(ROS2 Humble)
 
 on:
   push:
@@ -17,6 +17,7 @@ permissions:
 
 env:
   FLUTTER_ROOT: /opt/flutter
+  FLUTTER_VERSION: '3.29.3'
 
 jobs:
   build:
@@ -60,22 +61,25 @@ jobs:
             libbrotli-dev \
             sudo
 
-      - name: Install Flutter (stable)
+      - name: Install Flutter
         run: |
-          set -euo pipefail
-          git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "${FLUTTER_ROOT}"
+          set -eo pipefail
+          git clone --depth 1 --branch "${FLUTTER_VERSION}" \
+            https://github.com/flutter/flutter.git "${FLUTTER_ROOT}"
           "${FLUTTER_ROOT}/bin/flutter" config --no-analytics --enable-web
           "${FLUTTER_ROOT}/bin/flutter" precache --web
 
       - name: Run ./build.sh
         run: |
-          set -euo pipefail
+          set -eo pipefail
           export PATH="${FLUTTER_ROOT}/bin:${PATH}"
           dart pub global activate protoc_plugin
           export PATH="${PATH}:${HOME}/.pub-cache/bin"
+          set +u
           source /opt/ros/humble/setup.bash
+          set -u
           cd "${GITHUB_WORKSPACE}"
-          ./build.sh 
+          ./build.sh
 
       - name: Package release tarball
         if: startsWith(github.ref, 'refs/tags/v')

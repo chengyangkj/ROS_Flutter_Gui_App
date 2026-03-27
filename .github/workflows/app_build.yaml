@@ -1,4 +1,4 @@
-name: App — Web / Linux / APK / Windows + Release
+name: App
 
 on:
   push:
@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 env:
-  FLUTTER_VERSION: '3.27.4'
+  FLUTTER_VERSION: '3.29.3'
 
 jobs:
   codegen:
