@@ -125,6 +125,7 @@ void RosGuiNode::PublishMapUpdate() {
 }
 
 bool RosGuiNode::Init(const GuiAppSettings& gui_app) {
+  rclcpp::init(0, nullptr);
   gui_settings_ = gui_app;
   MapManager::Instance()->SetOnMapUpdateCallback([this]() { PublishMapUpdate(); });
 

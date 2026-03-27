@@ -21,7 +21,6 @@ class Application {
  private:
   std::string ParseConfigYamlPathFromArgs(int argc, char** argv) const;
   bool LoadSettingsFromYaml(std::string* error_message);
-  void ShutdownRuntime();
 
   int argc_{0};
   char** argv_{nullptr};
