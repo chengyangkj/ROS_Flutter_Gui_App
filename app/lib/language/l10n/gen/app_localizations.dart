@@ -621,9 +621,15 @@ abstract class AppLocalizations {
   String get layers;
 
   /// No description provided for @layer_color.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示颜色'**
   String get layer_color;
 
   /// No description provided for @layer_dot_size.
+  ///
+  /// In zh, this message translates to:
+  /// **'点大小'**
   String get layer_dot_size;
 
   /// No description provided for @reloc.
