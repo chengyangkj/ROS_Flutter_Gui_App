@@ -50,7 +50,10 @@ fi
 (cd "${APP}" && flutter pub get && flutter gen-l10n && flutter build web)
 echo "[build] Flutter web done (${APP}/build/web)"
 
-cp -r  "${APP}/build/web" "${BACKEND}/src/app/install/bin/dist"
+INSTALL_BIN_DIST="${BACKEND}/src/app/install/bin/dist"
+rm -rf "${INSTALL_BIN_DIST}"
+mkdir -p "${INSTALL_BIN_DIST}"
+cp -r "${APP}/build/web" "${INSTALL_BIN_DIST}"
 
 bash "${ROOT}/backend/build.sh" "$@"
 echo "[build] backend done (${BACKEND}/build)"
