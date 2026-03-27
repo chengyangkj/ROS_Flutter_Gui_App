@@ -3,6 +3,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import 'package:ros_flutter_gui_app/basic/ssh_quick_cmd.dart';
+
 enum KeyName {
   None,
   leftAxisX,
@@ -47,6 +49,12 @@ class Setting {
   late SharedPreferences prefs;
 
   final Map<String, String> _backendGuiStrings = {};
+
+  String sshHost = '';
+  int sshPort = 22;
+  String sshUsername = '';
+  String sshPassword = '';
+  List<SshQuickCmd> sshQuickCommands = [];
 
 // 定义一个映射关系，将Dart中的类名映射到JavaScript中的类名
   Map<String, JoyStickEvent> axisMapping = {
@@ -338,7 +346,36 @@ class Setting {
         _backendGuiStrings[k] = v;
       }
     });
+    sshHost = '${j['sshHost'] ?? ''}';
+    final portRaw = j['sshPort'];
+    if (portRaw is int) {
+      sshPort = portRaw.clamp(1, 65535);
+    } else if (portRaw != null) {
+      sshPort = int.tryParse('$portRaw') ?? 22;
+    } else {
+      sshPort = 22;
+    }
+    sshUsername = '${j['sshUsername'] ?? ''}';
+    sshPassword = '${j['sshPassword'] ?? ''}';
+    final qc = j['sshQuickCommands'];
+    if (qc is List) {
+      sshQuickCommands = qc
+          .whereType<Map>()
+          .map((e) => SshQuickCmd.fromJson(Map<String, dynamic>.from(e)))
+          .where((e) => e.name.isNotEmpty && e.cmd.isNotEmpty)
+          .toList();
+    } else {
+      sshQuickCommands = [];
+    }
   }
+
+  bool get sshCredentialsConfigured =>
+      robotIp.trim().isNotEmpty &&
+      sshUsername.trim().isNotEmpty &&
+      sshPassword.isNotEmpty;
+
+  List<SshQuickCmd> get effectiveSshQuickCommands =>
+      sshQuickCommands.isEmpty ? defaultSshQuickCommands() : sshQuickCommands;
 
   void patchBackendGuiSetting(String key, String value) {
     _backendGuiStrings[key] = value;
@@ -367,6 +404,11 @@ class Setting {
       'SpeedCtrlTopic': speedCtrlTopic,
       'mapFrameName': mapFrameName,
       'baseLinkFrameName': baseLinkFrameName,
+      'sshHost': robotIp.trim(),
+      'sshPort': sshPort,
+      'sshUsername': sshUsername,
+      'sshPassword': sshPassword,
+      'sshQuickCommands': sshQuickCommands.map((e) => e.toJson()).toList(),
     };
   }
 

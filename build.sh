@@ -26,6 +26,7 @@ if [[ ! -d "${PROTO_ROOT}" ]]; then
   exit 1
 fi
 
+
 shopt -s nullglob
 mapfile -t PROTO_FILES < <(find "${PROTO_ROOT}" -maxdepth 1 -name '*.proto' -print | sort)
 shopt -u nullglob
@@ -49,7 +50,7 @@ if ! command -v flutter >/dev/null 2>&1; then
   exit 1
 fi
 
-(cd "${APP}" && flutter pub get && flutter build web)
+(cd "${APP}" && flutter pub get && flutter gen-l10n && flutter build web)
 echo "[build] Flutter web done (${APP}/build/web)"
 
 DIST="${ROOT}/backend/build/install/bin/dist"

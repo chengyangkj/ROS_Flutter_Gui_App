@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/page/layer_settings_panel.dart';
+import 'package:ros_flutter_gui_app/page/ssh_widgets.dart';
 
 const String kSettingsRouteArgLayers = 'layers';
 
@@ -263,6 +264,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _buildLanguageSection(),
       _buildTempConfigTypeSection(),
       _buildBasicSection(),
+      _buildSshSection(),
       _buildLayersSection(),
       _buildOtherTopicsSection(),
       _buildOrientationSection(),
@@ -314,6 +316,29 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _saveLanguage(String language) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language', language);
+  }
+
+  Widget _buildSshSection() {
+    final l10n = AppLocalizations.of(context)!;
+    return _buildSection(
+      l10n.ssh_remote_section,
+      [
+        ListTile(
+          title: Text(l10n.ssh_config_list_tile_title),
+          subtitle: Text(
+            globalSetting.sshCredentialsConfigured
+                ? l10n.ssh_user_at_host_port(
+                    globalSetting.sshUsername.trim(),
+                    globalSetting.robotIp.trim(),
+                    globalSetting.sshPort,
+                  )
+                : l10n.ssh_not_configured_hint,
+          ),
+          trailing: const Icon(Icons.keyboard_arrow_right),
+          onTap: () => ShowSshConfigSheet(context),
+        ),
+      ],
+    );
   }
 
   Widget _buildTempConfigTypeSection() {

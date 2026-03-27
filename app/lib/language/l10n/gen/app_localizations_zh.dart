@@ -612,4 +612,89 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hardware_id => '硬件ID';
+
+  @override
+  String get ssh_config_title => 'SSH 配置';
+
+  @override
+  String ssh_target_same_as_robot(String host) {
+    return '目标主机与当前机器人 IP 一致：$host';
+  }
+
+  @override
+  String get ssh_username => '用户名';
+
+  @override
+  String get ssh_password => '密码';
+
+  @override
+  String get ssh_save_to_backend => '保存到后台';
+
+  @override
+  String get ssh_config_saved => 'SSH 配置已保存';
+
+  @override
+  String get ssh_remote_section => 'SSH 远程';
+
+  @override
+  String get ssh_config_list_tile_title => '登录与端口';
+
+  @override
+  String get ssh_not_configured_hint => '未配置（保存在后台 gui_app_settings.json）';
+
+  @override
+  String ssh_user_at_host_port(String user, String host, int port) {
+    return '$user@$host:$port';
+  }
+
+  @override
+  String get ssh_required_title => '需要 SSH 配置';
+
+  @override
+  String get ssh_required_body => '请配置 SSH 端口、用户名与密码（目标主机与当前机器人 IP 一致，保存到后台）。';
+
+  @override
+  String get ssh_go_configure => '去配置';
+
+  @override
+  String get ssh_quick_commands_tooltip => 'SSH 快捷指令';
+
+  @override
+  String get ssh_terminal_tooltip => 'SSH 终端';
+
+  @override
+  String get ssh_quick_page_title => 'SSH 快捷指令';
+
+  @override
+  String get ssh_quick_save_list_tooltip => '保存列表';
+
+  @override
+  String get ssh_quick_platform_unsupported => '当前平台不支持 SSH';
+
+  @override
+  String get ssh_quick_add_title => '添加快捷指令';
+
+  @override
+  String get ssh_quick_label_name => '名称';
+
+  @override
+  String get ssh_quick_label_cmd => '命令';
+
+  @override
+  String get ssh_quick_use_sudo => 'sudo 执行（通过 SSH 密码）';
+
+  @override
+  String get ssh_quick_sudo_need_password => '已开启 sudo 时需填写 SSH 密码';
+
+  @override
+  String get ssh_quick_no_output => '(无输出)';
+
+  @override
+  String get ssh_quick_close => '关闭';
+
+  @override
+  String get ssh_quick_cancel => '取消';
+
+  @override
+  String get ssh_quick_add_btn => '添加';
 }

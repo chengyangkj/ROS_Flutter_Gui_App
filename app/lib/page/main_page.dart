@@ -19,6 +19,9 @@ import 'package:ros_flutter_gui_app/page/diagnostic_page.dart';
 import 'package:ros_flutter_gui_app/provider/diagnostic_manager.dart';
 import 'package:ros_flutter_gui_app/language/l10n/gen/app_localizations.dart';
 import 'package:ros_flutter_gui_app/page/setting_page.dart';
+import 'package:ros_flutter_gui_app/page/ssh_quick_commands_page.dart';
+import 'package:ros_flutter_gui_app/page/ssh_terminal_page.dart';
+import 'package:ros_flutter_gui_app/page/ssh_widgets.dart';
 
 class MainFlamePage extends StatefulWidget {
   @override
@@ -68,6 +71,68 @@ class _MainFlamePageState extends State<MainFlamePage> {
   
   Future<void> _reloadData() async {
     _tileMapKey.currentState?.loadMeta();
+  }
+
+  Future<bool> _pullLatestGuiSettingsForSsh(BuildContext context) async {
+    try {
+      final s = await HttpChannel().getGuiSettings();
+      globalSetting.applyBackendGuiSettings(s);
+      return true;
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e'), duration: const Duration(seconds: 4)),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<bool> _ensureSshCredentialsInteractive(BuildContext context) async {
+    if (globalSetting.sshCredentialsConfigured) return true;
+    final l10n = AppLocalizations.of(context)!;
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.ssh_required_title),
+        content: Text(l10n.ssh_required_body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.ssh_go_configure),
+          ),
+        ],
+      ),
+    );
+    if (go != true || !context.mounted) return false;
+    await ShowSshConfigSheet(context);
+    return globalSetting.sshCredentialsConfigured;
+  }
+
+  Future<void> _openSshQuickCommands(BuildContext context) async {
+    if (!await _pullLatestGuiSettingsForSsh(context)) return;
+    if (!context.mounted) return;
+    if (!await _ensureSshCredentialsInteractive(context)) return;
+    if (!context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SshQuickCommandsPage()),
+    );
+  }
+
+  Future<void> _openSshTerminal(BuildContext context) async {
+    if (!await _pullLatestGuiSettingsForSsh(context)) return;
+    if (!context.mounted) return;
+    if (!await _ensureSshCredentialsInteractive(context)) return;
+    if (!context.mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SshTerminalPage()),
+    );
   }
 
   void _openLayerSettings(BuildContext context) {
@@ -675,9 +740,25 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   tooltip: AppLocalizations.of(context)!.map_edit,
                 ),
               ),
-              
               const SizedBox(height: 8),
-              
+              Card(
+                elevation: 10,
+                child: IconButton(
+                  onPressed: () => _openSshQuickCommands(context),
+                  icon: Icon(Icons.bolt, color: theme.iconTheme.color),
+                  tooltip: AppLocalizations.of(context)!.ssh_quick_commands_tooltip,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                elevation: 10,
+                child: IconButton(
+                  onPressed: () => _openSshTerminal(context),
+                  icon: Icon(Icons.terminal, color: theme.iconTheme.color),
+                  tooltip: AppLocalizations.of(context)!.ssh_terminal_tooltip,
+                ),
+              ),
+              const SizedBox(height: 8),
               // 放大按钮
               Card(
                 elevation: 10,

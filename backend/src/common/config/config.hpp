@@ -5,8 +5,16 @@
 #include "node/node_config.hpp"
 
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace ros_gui_backend {
+
+struct SshQuickCommandEntry {
+  std::string name;
+  std::string cmd;
+  bool use_sudo = false;
+};
 
 struct GuiAppSettings {
   std::string NavToPoseStatusTopic{"/navigate_to_pose/_action/status"};
@@ -30,6 +38,11 @@ struct GuiAppSettings {
   std::string TopologyLiveTopic{"/map/topology"};
   std::string TopologyJsonTopic{};
   std::string TopologyPublishTopic{"/map/topology/update"};
+  std::string SshHost;
+  int SshPort = 22;
+  std::string SshUsername;
+  std::string SshPassword;
+  std::vector<SshQuickCommandEntry> SshQuickCommands;
 };
 
 void GuiAppSettingsToJson(const GuiAppSettings& s, nlohmann::json* out);

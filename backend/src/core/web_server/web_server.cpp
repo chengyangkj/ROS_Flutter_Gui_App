@@ -5,6 +5,7 @@
 #include "core/map/json.hpp"
 #include "core/robot_stream/robot_message_hub.hpp"
 #include "core/robot_stream/robot_ws_controller.hpp"
+#include "core/robot_stream/ssh_tunnel_ws_controller.hpp"
 #include "common/config/config.hpp"
 #include "node/interface.hpp"
 #include "node/node_manager.hpp"
@@ -182,8 +183,8 @@ void WebServer::RunImpl(WebServerConfig config) {
   };
 
   drogon::app().registerSyncAdvice([add_cors](const HttpRequestPtr& req) -> HttpResponsePtr {
-    if (req->path() == "/ws/robot") {
-      LOGGER_INFO("robot ws HTTP {} upgrade={} peer={}", req->getMethodString(),
+    if (req->path() == "/ws/robot" || req->path() == "/ws/ssh") {
+      LOGGER_INFO("ws {} HTTP {} upgrade={} peer={}", req->path(), req->getMethodString(),
           req->getHeader("upgrade"), req->getPeerAddr().toIpPort());
     }
     if (req->getMethod() == drogon::HttpMethod::Options) {

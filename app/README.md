@@ -71,6 +71,21 @@ flutter build web
 | 诊断 | 后端推送 `DiagnosticArray`；主界面可对 ERROR/WARN Toast |
 | 电池 | 后端推送电池状态 |
 | 国际化 | 中/英；横竖屏等应用侧设置 |
+| SSH | 见下文 **§4.1** |
+
+### 4.1 SSH 远程（快捷指令 / 终端）
+
+与地图、遥控使用**同一后端 HTTP 地址**。SSH 不是浏览器直连 TCP，而是：
+
+1. **连接机器人**：在连接页填写后端 IP 与端口并连上后，**SSH 隧道目标主机与当前机器人 IP 一致**（保存到后台的 `sshHost` 与 `robotIp` 同步）。
+2. **隧道**：客户端通过 **`ws://` / `wss://`**（页面为 HTTPS 时用 `wss`）访问后端的 **`/ws/ssh`**，由后端再 **TCP 连接到** `gui_app_settings.json` 中的 `sshHost:sshPort`（一般为远端 `sshd`）。因此需在 **设置 → SSH** 中配置 **端口、SSH 用户名与密码** 并保存到后台。
+3. **快捷指令**：主界面可打开「SSH 快捷指令」列表。每条指令可单独打开 **「sudo 执行」**：开启后，实际远端执行形式为  
+   `echo '<SSH密码>' | sudo -S sh -c '<命令>'`  
+   以便用 **当前填写的 SSH 登录密码** 通过 `sudo -S` 提权（请确保该用户具备 sudo 且密码与 SSH 密码一致，否则应关闭 sudo 选项或改用无 sudo 的命令）。**命令内容可写实际 shell 行**（如 `shutdown -h now`）；若仍带前缀 `sudo `，发送前会自动去掉一层，避免重复。
+4. **SSH 终端**：交互式 shell；Web 与移动端均可使用隧道，无需浏览器原生 TCP。
+5. **安全提示**：密码经 WebSocket 传输时，若页面为 HTTP 则链路未加密；公网请使用 **HTTPS + WSS**。sudo 通过命令行传密码在部分系统上可能被 `ps` 看到，高安全场景请使用密钥或专用运维通道。
+
+配置与指令列表持久化在机器人侧 **`gui_app_settings.json`**（经 **`/api/settings`**），与仓库内后端 **`GuiAppSettings`** 字段一致。
 
 ---
 

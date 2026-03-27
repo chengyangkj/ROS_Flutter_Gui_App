@@ -274,5 +274,52 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "ssh_config_title": "SSH",
+  "ssh_target_same_as_robot": "Target host matches robot IP: {host}",
+  "@ssh_target_same_as_robot": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ssh_username": "Username",
+  "ssh_password": "Password",
+  "ssh_save_to_backend": "Save to server",
+  "ssh_config_saved": "SSH settings saved",
+  "ssh_remote_section": "SSH",
+  "ssh_config_list_tile_title": "Login and port",
+  "ssh_not_configured_hint": "Not configured (stored in gui_app_settings.json on server)",
+  "ssh_user_at_host_port": "{user}@{host}:{port}",
+  "@ssh_user_at_host_port": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      },
+      "host": {
+        "type": "String"
+      },
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "ssh_required_title": "SSH setup required",
+  "ssh_required_body": "Configure SSH port, username and password (target host matches robot IP; saved on server).",
+  "ssh_go_configure": "Configure",
+  "ssh_quick_commands_tooltip": "SSH quick commands",
+  "ssh_terminal_tooltip": "SSH terminal",
+  "ssh_quick_page_title": "SSH quick commands",
+  "ssh_quick_save_list_tooltip": "Save list",
+  "ssh_quick_platform_unsupported": "SSH is not supported on this platform",
+  "ssh_quick_add_title": "Add quick command",
+  "ssh_quick_label_name": "Name",
+  "ssh_quick_label_cmd": "Command",
+  "ssh_quick_use_sudo": "Run with sudo (uses SSH password)",
+  "ssh_quick_sudo_need_password": "SSH password required when sudo is enabled",
+  "ssh_quick_no_output": "(no output)",
+  "ssh_quick_close": "Close",
+  "ssh_quick_cancel": "Cancel",
+  "ssh_quick_add_btn": "Add"
 }

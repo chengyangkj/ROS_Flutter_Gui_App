@@ -1243,6 +1243,168 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'硬件ID'**
   String get hardware_id;
+
+  /// No description provided for @ssh_config_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'SSH 配置'**
+  String get ssh_config_title;
+
+  /// No description provided for @ssh_target_same_as_robot.
+  ///
+  /// In zh, this message translates to:
+  /// **'目标主机与当前机器人 IP 一致：{host}'**
+  String ssh_target_same_as_robot(String host);
+
+  /// No description provided for @ssh_username.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户名'**
+  String get ssh_username;
+
+  /// No description provided for @ssh_password.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码'**
+  String get ssh_password;
+
+  /// No description provided for @ssh_save_to_backend.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存到后台'**
+  String get ssh_save_to_backend;
+
+  /// No description provided for @ssh_config_saved.
+  ///
+  /// In zh, this message translates to:
+  /// **'SSH 配置已保存'**
+  String get ssh_config_saved;
+
+  /// No description provided for @ssh_remote_section.
+  ///
+  /// In zh, this message translates to:
+  /// **'SSH 远程'**
+  String get ssh_remote_section;
+
+  /// No description provided for @ssh_config_list_tile_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'登录与端口'**
+  String get ssh_config_list_tile_title;
+
+  /// No description provided for @ssh_not_configured_hint.
+  ///
+  /// In zh, this message translates to:
+  /// **'未配置（保存在后台 gui_app_settings.json）'**
+  String get ssh_not_configured_hint;
+
+  /// No description provided for @ssh_user_at_host_port.
+  ///
+  /// In zh, this message translates to:
+  /// **'{user}@{host}:{port}'**
+  String ssh_user_at_host_port(String user, String host, int port);
+
+  /// No description provided for @ssh_required_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'需要 SSH 配置'**
+  String get ssh_required_title;
+
+  /// No description provided for @ssh_required_body.
+  ///
+  /// In zh, this message translates to:
+  /// **'请配置 SSH 端口、用户名与密码（目标主机与当前机器人 IP 一致，保存到后台）。'**
+  String get ssh_required_body;
+
+  /// No description provided for @ssh_go_configure.
+  ///
+  /// In zh, this message translates to:
+  /// **'去配置'**
+  String get ssh_go_configure;
+
+  /// No description provided for @ssh_quick_commands_tooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'SSH 快捷指令'**
+  String get ssh_quick_commands_tooltip;
+
+  /// No description provided for @ssh_terminal_tooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'SSH 终端'**
+  String get ssh_terminal_tooltip;
+
+  /// No description provided for @ssh_quick_page_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'SSH 快捷指令'**
+  String get ssh_quick_page_title;
+
+  /// No description provided for @ssh_quick_save_list_tooltip.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存列表'**
+  String get ssh_quick_save_list_tooltip;
+
+  /// No description provided for @ssh_quick_platform_unsupported.
+  ///
+  /// In zh, this message translates to:
+  /// **'当前平台不支持 SSH'**
+  String get ssh_quick_platform_unsupported;
+
+  /// No description provided for @ssh_quick_add_title.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加快捷指令'**
+  String get ssh_quick_add_title;
+
+  /// No description provided for @ssh_quick_label_name.
+  ///
+  /// In zh, this message translates to:
+  /// **'名称'**
+  String get ssh_quick_label_name;
+
+  /// No description provided for @ssh_quick_label_cmd.
+  ///
+  /// In zh, this message translates to:
+  /// **'命令'**
+  String get ssh_quick_label_cmd;
+
+  /// No description provided for @ssh_quick_use_sudo.
+  ///
+  /// In zh, this message translates to:
+  /// **'sudo 执行（通过 SSH 密码）'**
+  String get ssh_quick_use_sudo;
+
+  /// No description provided for @ssh_quick_sudo_need_password.
+  ///
+  /// In zh, this message translates to:
+  /// **'已开启 sudo 时需填写 SSH 密码'**
+  String get ssh_quick_sudo_need_password;
+
+  /// No description provided for @ssh_quick_no_output.
+  ///
+  /// In zh, this message translates to:
+  /// **'(无输出)'**
+  String get ssh_quick_no_output;
+
+  /// No description provided for @ssh_quick_close.
+  ///
+  /// In zh, this message translates to:
+  /// **'关闭'**
+  String get ssh_quick_close;
+
+  /// No description provided for @ssh_quick_cancel.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get ssh_quick_cancel;
+
+  /// No description provided for @ssh_quick_add_btn.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加'**
+  String get ssh_quick_add_btn;
 }
 
 class _AppLocalizationsDelegate

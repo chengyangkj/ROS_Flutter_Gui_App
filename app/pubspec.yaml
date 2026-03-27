@@ -63,6 +63,7 @@ dependencies:
   protobuf: ^6.0.0
   fixnum: ^1.1.0
   web_socket_channel: ^2.4.0
+  dartssh2: ^2.16.0
 
 flutter_icons:
   android: true

@@ -274,5 +274,52 @@
     "placeholders": {
       "count": {}
     }
-  }
+  },
+  "ssh_config_title": "SSH 配置",
+  "ssh_target_same_as_robot": "目标主机与当前机器人 IP 一致：{host}",
+  "@ssh_target_same_as_robot": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "ssh_username": "用户名",
+  "ssh_password": "密码",
+  "ssh_save_to_backend": "保存到后台",
+  "ssh_config_saved": "SSH 配置已保存",
+  "ssh_remote_section": "SSH 远程",
+  "ssh_config_list_tile_title": "登录与端口",
+  "ssh_not_configured_hint": "未配置（保存在后台 gui_app_settings.json）",
+  "ssh_user_at_host_port": "{user}@{host}:{port}",
+  "@ssh_user_at_host_port": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      },
+      "host": {
+        "type": "String"
+      },
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "ssh_required_title": "需要 SSH 配置",
+  "ssh_required_body": "请配置 SSH 端口、用户名与密码（目标主机与当前机器人 IP 一致，保存到后台）。",
+  "ssh_go_configure": "去配置",
+  "ssh_quick_commands_tooltip": "SSH 快捷指令",
+  "ssh_terminal_tooltip": "SSH 终端",
+  "ssh_quick_page_title": "SSH 快捷指令",
+  "ssh_quick_save_list_tooltip": "保存列表",
+  "ssh_quick_platform_unsupported": "当前平台不支持 SSH",
+  "ssh_quick_add_title": "添加快捷指令",
+  "ssh_quick_label_name": "名称",
+  "ssh_quick_label_cmd": "命令",
+  "ssh_quick_use_sudo": "sudo 执行（通过 SSH 密码）",
+  "ssh_quick_sudo_need_password": "已开启 sudo 时需填写 SSH 密码",
+  "ssh_quick_no_output": "(无输出)",
+  "ssh_quick_close": "关闭",
+  "ssh_quick_cancel": "取消",
+  "ssh_quick_add_btn": "添加"
 }

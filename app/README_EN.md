@@ -23,7 +23,13 @@
 
 ## Introduction
 
-ROS Flutter GUI App is a cross-platform ROS robot human-machine interface developed with Flutter, supporting both ROS1/ROS2. It can run on Android, iOS, Web, Linux, Windows and other platforms. Communication with ROS systems is implemented through rosbridge websocket.
+ROS Flutter GUI App is a cross-platform ROS robot human-machine interface developed with Flutter, supporting both ROS1/ROS2. It can run on Android, iOS, Web, Linux, Windows and other platforms. **In this monorepo build**, map/tiles and robot streaming typically go through the bundled **backend** (HTTP + WebSocket protobuf), not only rosbridge; see the Chinese [README.md](README.md) for the full architecture.
+
+### SSH (quick commands & terminal)
+
+After connecting to the backend in the app, you can use **SSH quick commands** and an **SSH shell**. The client opens **`/ws/ssh`** on the same host/port as HTTP; the backend bridges to `sshd` using **`gui_app_settings.json`** (via **`/api/settings`**). Each quick command can enable **sudo**: the app runs  
+`echo '<SSH password>' | sudo -S sh -c '<command>'`  
+on the remote host. Use **HTTPS/WSS** in production. Details and caveats are documented in [README.md](README.md) §4.1 (Chinese). In other deployments, communication with ROS may use rosbridge WebSocket instead.
 
 ### Key Features
 

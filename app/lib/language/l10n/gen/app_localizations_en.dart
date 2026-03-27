@@ -618,4 +618,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hardware_id => 'Hardware ID';
+
+  @override
+  String get ssh_config_title => 'SSH';
+
+  @override
+  String ssh_target_same_as_robot(String host) {
+    return 'Target host matches robot IP: $host';
+  }
+
+  @override
+  String get ssh_username => 'Username';
+
+  @override
+  String get ssh_password => 'Password';
+
+  @override
+  String get ssh_save_to_backend => 'Save to server';
+
+  @override
+  String get ssh_config_saved => 'SSH settings saved';
+
+  @override
+  String get ssh_remote_section => 'SSH';
+
+  @override
+  String get ssh_config_list_tile_title => 'Login and port';
+
+  @override
+  String get ssh_not_configured_hint =>
+      'Not configured (stored in gui_app_settings.json on server)';
+
+  @override
+  String ssh_user_at_host_port(String user, String host, int port) {
+    return '$user@$host:$port';
+  }
+
+  @override
+  String get ssh_required_title => 'SSH setup required';
+
+  @override
+  String get ssh_required_body =>
+      'Configure SSH port, username and password (target host matches robot IP; saved on server).';
+
+  @override
+  String get ssh_go_configure => 'Configure';
+
+  @override
+  String get ssh_quick_commands_tooltip => 'SSH quick commands';
+
+  @override
+  String get ssh_terminal_tooltip => 'SSH terminal';
+
+  @override
+  String get ssh_quick_page_title => 'SSH quick commands';
+
+  @override
+  String get ssh_quick_save_list_tooltip => 'Save list';
+
+  @override
+  String get ssh_quick_platform_unsupported =>
+      'SSH is not supported on this platform';
+
+  @override
+  String get ssh_quick_add_title => 'Add quick command';
+
+  @override
+  String get ssh_quick_label_name => 'Name';
+
+  @override
+  String get ssh_quick_label_cmd => 'Command';
+
+  @override
+  String get ssh_quick_use_sudo => 'Run with sudo (uses SSH password)';
+
+  @override
+  String get ssh_quick_sudo_need_password =>
+      'SSH password required when sudo is enabled';
+
+  @override
+  String get ssh_quick_no_output => '(no output)';
+
+  @override
+  String get ssh_quick_close => 'Close';
+
+  @override
+  String get ssh_quick_cancel => 'Cancel';
+
+  @override
+  String get ssh_quick_add_btn => 'Add';
 }

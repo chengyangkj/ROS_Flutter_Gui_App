@@ -92,6 +92,16 @@ void GuiAppSettingsToJson(const GuiAppSettings& s, nlohmann::json* out) {
   j["SpeedCtrlTopic"] = s.SpeedCtrlTopic;
   j["mapFrameName"] = s.MapFrameName;
   j["baseLinkFrameName"] = s.BaseLinkFrameName;
+  j["sshHost"] = s.SshHost;
+  j["sshPort"] = s.SshPort;
+  j["sshUsername"] = s.SshUsername;
+  j["sshPassword"] = s.SshPassword;
+  nlohmann::json qa = nlohmann::json::array();
+  for (const auto& e : s.SshQuickCommands) {
+    qa.push_back(
+        nlohmann::json{{"name", e.name}, {"cmd", e.cmd}, {"useSudo", e.use_sudo}});
+  }
+  j["sshQuickCommands"] = std::move(qa);
   *out = std::move(j);
 }
 
@@ -117,6 +127,39 @@ void GuiAppSettingsMergeJson(const nlohmann::json& j, GuiAppSettings* s) {
   SetIfString(j, "SpeedCtrlTopic", &s->SpeedCtrlTopic);
   SetIfString(j, "mapFrameName", &s->MapFrameName);
   SetIfString(j, "baseLinkFrameName", &s->BaseLinkFrameName);
+  SetIfString(j, "sshHost", &s->SshHost);
+  SetIfString(j, "sshUsername", &s->SshUsername);
+  SetIfString(j, "sshPassword", &s->SshPassword);
+  if (j.contains("sshPort")) {
+    if (j["sshPort"].is_number_integer()) {
+      s->SshPort = j["sshPort"].get<int>();
+    } else if (j["sshPort"].is_number()) {
+      s->SshPort = static_cast<int>(j["sshPort"].get<double>());
+    }
+  }
+  if (j.contains("sshQuickCommands") && j["sshQuickCommands"].is_array()) {
+    s->SshQuickCommands.clear();
+    for (const auto& item : j["sshQuickCommands"]) {
+      if (!item.is_object() || !item.contains("name") || !item.contains("cmd")) {
+        continue;
+      }
+      if (!item["name"].is_string() || !item["cmd"].is_string()) {
+        continue;
+      }
+      SshQuickCommandEntry ent;
+      ent.name = item["name"].get<std::string>();
+      ent.cmd = item["cmd"].get<std::string>();
+      ent.use_sudo = false;
+      if (item.contains("useSudo")) {
+        if (item["useSudo"].is_boolean()) {
+          ent.use_sudo = item["useSudo"].get<bool>();
+        } else if (item["useSudo"].is_number()) {
+          ent.use_sudo = (item["useSudo"].get<int>() != 0);
+        }
+      }
+      s->SshQuickCommands.push_back(std::move(ent));
+    }
+  }
 }
 
 bool LoadGuiAppSettingsFile(GuiAppSettings* s) {
@@ -125,8 +168,9 @@ bool LoadGuiAppSettingsFile(GuiAppSettings* s) {
   if (!ifs) {
     return true;
   }
+  std::string raw((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
   try {
-    nlohmann::json j = nlohmann::json::parse(ifs);
+    nlohmann::json j = nlohmann::json::parse(raw);
     GuiAppSettingsMergeJson(j, s);
     return true;
   } catch (const std::exception&) {

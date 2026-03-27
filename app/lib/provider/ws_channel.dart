@@ -147,6 +147,13 @@ class WsChannel {
     return Uri.parse('$scheme://$authority/ws/robot');
   }
 
+  static Uri sshTunnelWebSocketUri(String host, int port) {
+    final pageHttps = kIsWeb && Uri.base.scheme == 'https';
+    final scheme = pageHttps ? 'wss' : 'ws';
+    final authority = _wsAuthority(host, port);
+    return Uri.parse('$scheme://$authority/ws/ssh');
+  }
+
   Future<String> connectBackend(String host, int httpPort) async {
     backendHost_ = host.trim();
     backendHttpPort_ = httpPort;
