@@ -113,7 +113,17 @@ constexpr double kOccupiedThreshDefault = 0.65;
 
 }  // namespace
 
-RosGuiNode::RosGuiNode() : rclcpp::Node("ros_gui_app_backend") {}
+namespace detail {
+
+RosGuiNodeRclInit::RosGuiNodeRclInit() {
+  if (!rclcpp::ok()) {
+    rclcpp::init(0, nullptr);
+  }
+}
+
+}  // namespace detail
+
+RosGuiNode::RosGuiNode() : detail::RosGuiNodeRclInit(), rclcpp::Node("ros_gui_app_backend") {}
 
 RosGuiNode::~RosGuiNode() {}
 
@@ -125,7 +135,6 @@ void RosGuiNode::PublishMapUpdate() {
 }
 
 bool RosGuiNode::Init(const GuiAppSettings& gui_app) {
-  rclcpp::init(0, nullptr);
   gui_settings_ = gui_app;
   MapManager::Instance()->SetOnMapUpdateCallback([this]() { PublishMapUpdate(); });
 

@@ -35,8 +35,15 @@
 #include <vector>
 
 namespace ros_gui_backend {
+namespace detail {
 
-class RosGuiNode : public rclcpp::Node, public IRosGuiNode {
+struct RosGuiNodeRclInit {
+  RosGuiNodeRclInit();
+};
+
+}  // namespace detail
+
+class RosGuiNode : private detail::RosGuiNodeRclInit, public rclcpp::Node, public IRosGuiNode {
  public:
   RosGuiNode();
   ~RosGuiNode() override;
