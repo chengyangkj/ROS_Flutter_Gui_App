@@ -41,6 +41,7 @@ class TileMap extends StatefulWidget {
   final void Function(Map<int, int> oldEdits, Map<int, int> newEdits)? onObstacleEditEnd;
   final String? selectedNavPointName;
   final bool followRobot;
+  final bool enlargeNavPointMarkers;
 
   const TileMap({
     super.key,
@@ -57,6 +58,7 @@ class TileMap extends StatefulWidget {
     this.onObstacleEditEnd,
     this.selectedNavPointName,
     this.followRobot = false,
+    this.enlargeNavPointMarkers = false,
   });
 
   @override
@@ -435,89 +437,84 @@ class TileMapState extends State<TileMap> {
               final navPoints = rawNavPoints
                   .map((p) => _draggingNavPoints[p.name] ?? p)
                   .toList();
-              return ValueListenableBuilder<Mode>(
-                valueListenable: globalState.mode,
-                builder: (_, mode, __) {
-          
-                  return buildTopologyLineLayer(
-                    navPoints,
-                    topologyMap.routes,
-                    toLatLng,
-                    onNavPointTap: widget.onNavPointTap,
-                    onRouteTap: widget.onRouteTap,
-                    isEditMode: widget.editMode ,
-                    selectedNavPointName: widget.selectedNavPointName,
-                    selectedRoute: widget.selectedRoute,
-                    onNavPointChanged: widget.editMode 
-                        ? (updated) {
-                            final base = _draggingNavPoints[updated.name] ?? updated;
-                            final dragging = NavPoint(
-                              name: updated.name,
-                              x: base.x,
-                              y: base.y,
-                              theta: updated.theta,
-                              type: base.type,
-                            );
-                            _draggingNavPoints[updated.name] = dragging;
-                            _draggingNavPointsStart[updated.name] ??=
-                                wsChannel.mapManager.getNavPoint(updated.name) ?? updated;
-                            setState(() {});
-                          }
-                        : null,
-                    onNavPointMoveDelta: widget.editMode 
-                        ? (point, delta) {
-                            final meta = _meta;
-                            if (meta == null) return;
-                            final camera = _mapController.camera;
-                            final base = _draggingNavPoints[point.name] ?? point;
-                            final currentLatLng = toLatLng(base.x, base.y);
-                            final currentOffset =
-                                camera.getOffsetFromOrigin(currentLatLng);
-                            final newLatLng = camera.unprojectAtZoom(
-                              currentOffset + delta + camera.pixelOrigin,
-                            );
-                            final world = latLngToWorld(meta, newLatLng);
-                            final newX = world.x;
-                            final newY = world.y;
-                            final dragging = NavPoint(
-                              name: point.name,
-                              x: newX,
-                              y: newY,
-                              theta: base.theta,
-                              type: base.type,
-                            );
-                            _draggingNavPoints[point.name] = dragging;
-                            _draggingNavPointsStart[point.name] ??= point;
-                            widget.onNavPointTap?.call(dragging);
-                            setState(() {});
-                          }
-                        : null,
-                    onNavPointThetaEnd: widget.editMode 
-                        ? (p) {
-                            final start = _draggingNavPointsStart[p.name];
-                            final current = _draggingNavPoints[p.name] ?? p;
-                            if (start != null) {
-                              widget.onNavPointEditEnd?.call(start, current);
-                            }
-                            _draggingNavPoints.remove(p.name);
-                            _draggingNavPointsStart.remove(p.name);
-                            setState(() {});
-                          }
-                        : null,
-                    onNavPointMoveEnd: widget.editMode 
-                        ? (p) {
-                            final start = _draggingNavPointsStart[p.name];
-                            final current = _draggingNavPoints[p.name] ?? p;
-                            if (start != null) {
-                              widget.onNavPointEditEnd?.call(start, current);
-                            }
-                            _draggingNavPoints.remove(p.name);
-                            _draggingNavPointsStart.remove(p.name);
-                            setState(() {});
-                          }
-                        : null,
-                  );
-                },
+              return buildTopologyLineLayer(
+                navPoints,
+                topologyMap.routes,
+                toLatLng,
+                onNavPointTap: widget.onNavPointTap,
+                onRouteTap: widget.onRouteTap,
+                isEditMode: widget.editMode,
+                enlargeNavPointMarkers: widget.enlargeNavPointMarkers,
+                selectedNavPointName: widget.selectedNavPointName,
+                selectedRoute: widget.selectedRoute,
+                onNavPointChanged: widget.editMode
+                    ? (updated) {
+                        final base = _draggingNavPoints[updated.name] ?? updated;
+                        final dragging = NavPoint(
+                          name: updated.name,
+                          x: base.x,
+                          y: base.y,
+                          theta: updated.theta,
+                          type: base.type,
+                        );
+                        _draggingNavPoints[updated.name] = dragging;
+                        _draggingNavPointsStart[updated.name] ??=
+                            wsChannel.mapManager.getNavPoint(updated.name) ?? updated;
+                        setState(() {});
+                      }
+                    : null,
+                onNavPointMoveDelta: widget.editMode
+                    ? (point, delta) {
+                        final meta = _meta;
+                        if (meta == null) return;
+                        final camera = _mapController.camera;
+                        final base = _draggingNavPoints[point.name] ?? point;
+                        final currentLatLng = toLatLng(base.x, base.y);
+                        final currentOffset =
+                            camera.getOffsetFromOrigin(currentLatLng);
+                        final newLatLng = camera.unprojectAtZoom(
+                          currentOffset + delta + camera.pixelOrigin,
+                        );
+                        final world = latLngToWorld(meta, newLatLng);
+                        final newX = world.x;
+                        final newY = world.y;
+                        final dragging = NavPoint(
+                          name: point.name,
+                          x: newX,
+                          y: newY,
+                          theta: base.theta,
+                          type: base.type,
+                        );
+                        _draggingNavPoints[point.name] = dragging;
+                        _draggingNavPointsStart[point.name] ??= point;
+                        widget.onNavPointTap?.call(dragging);
+                        setState(() {});
+                      }
+                    : null,
+                onNavPointThetaEnd: widget.editMode
+                    ? (p) {
+                        final start = _draggingNavPointsStart[p.name];
+                        final current = _draggingNavPoints[p.name] ?? p;
+                        if (start != null) {
+                          widget.onNavPointEditEnd?.call(start, current);
+                        }
+                        _draggingNavPoints.remove(p.name);
+                        _draggingNavPointsStart.remove(p.name);
+                        setState(() {});
+                      }
+                    : null,
+                onNavPointMoveEnd: widget.editMode
+                    ? (p) {
+                        final start = _draggingNavPointsStart[p.name];
+                        final current = _draggingNavPoints[p.name] ?? p;
+                        if (start != null) {
+                          widget.onNavPointEditEnd?.call(start, current);
+                        }
+                        _draggingNavPoints.remove(p.name);
+                        _draggingNavPointsStart.remove(p.name);
+                        setState(() {});
+                      }
+                    : null,
               );
             },
           ));
@@ -553,6 +550,7 @@ class TileMapState extends State<TileMap> {
                 toLatLng,
                 poseOverride: isReloc ? _relocPose : null,
                 isEditMode: isReloc,
+                sizeScale: isReloc ? 1.5 : 1.0,
                 onThetaChanged: isReloc
                     ? (theta) {
                         final current = _relocPose ?? wsChannel.robotPoseMap.value;

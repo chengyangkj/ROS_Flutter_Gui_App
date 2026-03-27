@@ -21,8 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_robot => 'Connect To Robot';
 
   @override
-  String get connect_robot_subtitle =>
-      'Enter ROS Bridge IP to connect to ROS robot system';
+  String get connect_robot_subtitle => 'Please Input Robot Ip And Port';
 
   @override
   String get ip_address => 'IP Address';

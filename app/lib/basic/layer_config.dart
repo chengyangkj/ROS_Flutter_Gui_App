@@ -45,7 +45,7 @@ sealed class LayerConfig {
         return LayerToggleConfig(layerType: t, enable: false);
       case LayerType.laser:
         return LayerLaserConfig(
-          enable: false,
+          enable: true,
           colorArgb: Colors.red.toARGB32().toString(),
           dotRadius: '2.0',
         );

@@ -67,6 +67,9 @@ class _MapEditPageState extends State<MapEditPage> {
   
   @override
   void dispose() {
+    if (_globalState.mode.value == Mode.mapEdit) {
+      _globalState.mode.value = Mode.normal;
+    }
     super.dispose();
   }
 
@@ -108,6 +111,8 @@ class _MapEditPageState extends State<MapEditPage> {
                   key: _tileMapKey,
                   enableMapInteraction: selectedTool == EditToolType.Move,
                   editMode: true,
+                  enlargeNavPointMarkers:
+                      selectedTool == EditToolType.AddNavPoint,
                   obstacleEditTool: selectedTool == EditToolType.BrushObstacle
                       ? ObstacleEditTool.Brush
                       : selectedTool == EditToolType.EraseObstacle

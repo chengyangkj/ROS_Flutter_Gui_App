@@ -3,7 +3,7 @@
   "light": "Light",
   "dark": "Dark",
   "connect_robot": "Connect To Robot",
-  "connect_robot_subtitle": "Enter ROS Bridge IP to connect to ROS robot system",
+  "connect_robot_subtitle": "Please Input Robot Ip And Port",
   "ip_address": "IP Address",
   "port": "Port",
   "http_server_port": "HTTP Server Port",

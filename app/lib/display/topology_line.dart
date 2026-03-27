@@ -78,6 +78,7 @@ Widget buildTopologyLineLayer(
   ValueChanged<NavPoint>? onNavPointMoveEnd,
   String? selectedNavPointName,
   TopologyRoute? selectedRoute,
+  bool enlargeNavPointMarkers = false,
 }) {
   return _TopologyLineLayer(
     points: points,
@@ -86,6 +87,7 @@ Widget buildTopologyLineLayer(
     onNavPointTap: onNavPointTap,
     onRouteTap: onRouteTap,
     isEditMode: isEditMode,
+    enlargeNavPointMarkers: enlargeNavPointMarkers,
     onNavPointChanged: onNavPointChanged,
     onNavPointMoveDelta: onNavPointMoveDelta,
     onNavPointThetaEnd: onNavPointThetaEnd,
@@ -102,6 +104,7 @@ class _TopologyLineLayer extends StatefulWidget {
   final void Function(NavPoint?)? onNavPointTap;
   final ValueChanged<TopologyRoute>? onRouteTap;
   final bool isEditMode;
+  final bool enlargeNavPointMarkers;
   final ValueChanged<NavPoint>? onNavPointChanged;
   final void Function(NavPoint point, Offset delta)? onNavPointMoveDelta;
   final ValueChanged<NavPoint>? onNavPointThetaEnd;
@@ -116,6 +119,7 @@ class _TopologyLineLayer extends StatefulWidget {
     this.onNavPointTap,
     this.onRouteTap,
     required this.isEditMode,
+    this.enlargeNavPointMarkers = false,
     this.onNavPointChanged,
     this.onNavPointMoveDelta,
     this.onNavPointThetaEnd,
@@ -280,12 +284,16 @@ class _TopologyLineLayerState extends State<_TopologyLineLayer> {
         );
       }
     }
- 
+
+    final navScale = widget.enlargeNavPointMarkers ? 1.5 : 1.0;
+    final baseRobotSize = globalSetting.robotSize.toDouble();
+    final poseSize = baseRobotSize * navScale;
+
     final markers = widget.points
         .map((p) => Marker(
             point: widget.worldToLatLng(p.x, p.y),
-            width: globalSetting.robotSize.toDouble() + 90,
-            height: globalSetting.robotSize.toDouble() + 16,
+            width: (baseRobotSize + 90) * navScale,
+            height: (baseRobotSize + 16) * navScale,
             alignment: Alignment.center,
             child: GestureDetector(
               onTap: widget.onNavPointTap != null ? () => widget.onNavPointTap!(p) : null,
@@ -293,7 +301,7 @@ class _TopologyLineLayerState extends State<_TopologyLineLayer> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   PoseMarkerWidget(
-                    size: globalSetting.robotSize.toDouble(),
+                    size: poseSize,
                     theta: -p.theta,
                     type: PoseMarkerType.NavPoint,
                     color: widget.selectedNavPointName != null &&
@@ -332,14 +340,14 @@ class _TopologyLineLayerState extends State<_TopologyLineLayer> {
                         ? () => widget.onNavPointMoveEnd!(p)
                         : null,
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2 * navScale),
                   IgnorePointer(
                     child: Text(
                       p.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 8,
+                      style: TextStyle(
+                        fontSize: 8 * navScale,
                         color: Colors.white,
                         height: 1.0,
                         fontWeight: FontWeight.w600,

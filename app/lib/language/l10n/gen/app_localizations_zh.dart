@@ -21,7 +21,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_robot => '连接机器人';
 
   @override
-  String get connect_robot_subtitle => '输入ROS Bridge IP 以连接 ROS 机器人系统';
+  String get connect_robot_subtitle => '请输入机器人IP与端口';
 
   @override
   String get ip_address => 'IP地址';

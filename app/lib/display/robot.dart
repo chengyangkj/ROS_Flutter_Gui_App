@@ -15,9 +15,11 @@ Widget buildRobotMarkerLayer(
   bool isEditMode = false,
   ValueChanged<double>? onThetaChanged,
   ValueChanged<Offset>? onMoveDelta,
+  double sizeScale = 1.0,
 }) {
   final robotPose = poseOverride ?? wsChannel.robotPoseMap.value;
-  final robotSize = globalSetting.robotSize.toDouble();
+  final robotSize =
+      globalSetting.robotSize.toDouble() * sizeScale.clamp(0.25, 4.0);
   return MarkerLayer(
     markers: [
       Marker(

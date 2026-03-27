@@ -42,18 +42,21 @@ class _MainFlamePageState extends State<MainFlamePage> {
   @override
   void initState() {
     super.initState();
-    Provider.of<GlobalState>(context, listen: false).loadLayerSettings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<GlobalState>().loadLayerSettings();
+      _setupDiagnosticListener();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       try {
-        final httpChannel = Provider.of<HttpChannel>(context, listen: false);
-        final mapManager = Provider.of<WsChannel>(context, listen: false).mapManager;
+        final httpChannel = context.read<HttpChannel>();
+        final mapManager = context.read<WsChannel>().mapManager;
         final topo = await httpChannel.getTopologyMap();
         mapManager.updateTopologyMap(topo);
       } catch (_) {}
     });
 
-    // 初始化相机尺寸
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final screenSize = MediaQuery.of(context).size;
@@ -61,9 +64,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
         camWidgetHeight = camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
       }
     });
-    
-    // 监听诊断数据
-    _setupDiagnosticListener();
   }
   
   Future<void> _reloadData() async {
@@ -80,10 +80,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
 
   // 设置诊断数据监听器
   void _setupDiagnosticListener() {
-    final wsChannel = Provider.of<WsChannel>(context, listen: false);
-    
-    // 设置新错误/警告回调
-    wsChannel.diagnosticManager.setOnNewErrorsWarnings(_onNewErrorsWarnings);
+    context.read<WsChannel>().diagnosticManager.setOnNewErrorsWarnings(_onNewErrorsWarnings);
   }
 
 

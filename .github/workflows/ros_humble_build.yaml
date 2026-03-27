@@ -59,6 +59,7 @@ jobs:
             uuid-dev \
             libc-ares-dev \
             libbrotli-dev \
+            ros-humble-nav2-msgs \
             sudo
 
       - name: Install Flutter

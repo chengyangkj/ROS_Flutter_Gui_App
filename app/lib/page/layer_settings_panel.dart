@@ -171,8 +171,9 @@ class _LayerSettingsPanelState extends State<LayerSettingsPanel> {
     required String layerKey,
   }) {
     return Consumer<GlobalState>(
-      builder: (_, gs, __) {
+      builder: (ctx, gs, __) {
         final open = _openLayerIds.contains(id);
+        final scheme = Theme.of(ctx).colorScheme;
         return _groupRowBorder(
           child: Material(
             color: Colors.transparent,
@@ -198,9 +199,29 @@ class _LayerSettingsPanelState extends State<LayerSettingsPanel> {
                         ),
                       ),
                     ),
-                    Switch.adaptive(
-                      value: gs.isLayerVisible(layerKey),
-                      onChanged: (v) => gs.setLayerState(layerKey, v),
+                    Theme(
+                      data: Theme.of(ctx).copyWith(
+                        switchTheme: SwitchThemeData(
+                          thumbColor:
+                              WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return scheme.onPrimary;
+                            }
+                            return const Color(0xFF616161);
+                          }),
+                          trackColor:
+                              WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return scheme.primary;
+                            }
+                            return const Color(0xFFE0E0E0);
+                          }),
+                        ),
+                      ),
+                      child: Switch.adaptive(
+                        value: gs.isLayerVisible(layerKey),
+                        onChanged: (v) => gs.setLayerState(layerKey, v),
+                      ),
                     ),
                   ],
                 ),
