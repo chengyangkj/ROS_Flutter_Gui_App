@@ -62,7 +62,7 @@ class WsChannel {
   ValueNotifier<RobotSpeed> robotSpeed_ =
       ValueNotifier(RobotSpeed(vx: 0, vy: 0, vw: 0));
   String backendHost_ = "";
-  int backendHttpPort_ = 7684;
+  int backendHttpPort_ = 8080;
   Status rosConnectState_ = Status.none;
   String? _streamError;
   String? _activeImageTopicRaw;

@@ -1,4 +1,5 @@
 include(FetchContent)
+message(STATUS "download drgon ...")
 
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_CTL OFF CACHE BOOL "" FORCE)

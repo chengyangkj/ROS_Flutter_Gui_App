@@ -17,7 +17,7 @@ target_compile_definitions(ros_gui_node PRIVATE ROS_VERSION=2)
 
 target_include_directories(ros_gui_node PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-target_link_libraries(ros_gui_node PUBLIC
+target_link_libraries(ros_gui_node PRIVATE
   Boost::filesystem
   common
   map

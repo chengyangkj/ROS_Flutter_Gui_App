@@ -1,5 +1,5 @@
 include(FetchContent)
-message(STATUS "get yaml-cpp ...")
+message(STATUS "download yaml-cpp ...")
 
 set(yaml-cpp_GIT_REPOSITORY
     "https://github.com/jbeder/yaml-cpp.git"

@@ -170,7 +170,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (key == 'httpServerPort') {
       final trimmed = value.trim();
-      if (trimmed.isEmpty || trimmed == '7684') {
+      if (trimmed.isEmpty || trimmed == '8080') {
         globalSetting.setHttpServerPort('');
       } else {
         final n = int.tryParse(trimmed);
@@ -500,8 +500,8 @@ class _SettingsPageState extends State<SettingsPage> {
       AppLocalizations.of(context)!.basic_setting,
       [
         _buildSettingItem('robotIp', _settings['robotIp'] ?? '127.0.0.1'),
-        _buildSettingItem('robotPort', _settings['robotPort'] ?? '7684'),
-        _buildSettingItem('httpServerPort', _settings['httpServerPort'] ?? '7684'),
+        _buildSettingItem('robotPort', _settings['robotPort'] ?? '8080'),
+        _buildSettingItem('httpServerPort', _settings['httpServerPort'] ?? '8080'),
         _buildSettingItem('MaxVx', _settings['MaxVx'] ?? '0.1'),
         _buildSettingItem('MaxVy', _settings['MaxVy'] ?? '0.1'),
         _buildSettingItem('MaxVw', _settings['MaxVw'] ?? '0.3'),

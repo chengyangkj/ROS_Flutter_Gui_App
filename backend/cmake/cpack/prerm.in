@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+case "$1" in
+remove|upgrade|deconfigure)
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl stop ros_gui_backend.service >/dev/null 2>&1 || true
+    systemctl disable ros_gui_backend.service >/dev/null 2>&1 || true
+    systemctl daemon-reload >/dev/null 2>&1 || true
+  fi
+  ;;
+esac
+exit 0

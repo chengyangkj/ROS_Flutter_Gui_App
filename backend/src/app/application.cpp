@@ -11,11 +11,7 @@
 #include <cstring>
 #include <filesystem>
 
-#if ROS_VERSION == 1
-#include <ros/ros.h>
-#else
-#include <rclcpp/rclcpp.hpp>
-#endif
+
 
 namespace ros_gui_backend {
 
@@ -126,29 +122,11 @@ bool Application::LoadSettingsFromYaml(std::string* error_message) {
   }
 }
 
-void Application::ShutdownRuntime() {
-  WebServer::ClearSigintHook();
-  if (web_server_) {
-    web_server_->Shutdown();
-    web_server_.reset();
-  }
-  NodeManager::Instance()->Reset();
-  if (ros_runtime_inited_) {
-#if ROS_VERSION == 1
-    ros::shutdown();
-#elif ROS_VERSION == 2
-    rclcpp::shutdown();
-#endif
-  }
-  ros_runtime_inited_ = false;
-}
-
 void Application::Stop() {
   if (stopped_) {
     return;
   }
   stopped_ = true;
-  ShutdownRuntime();
 }
 
 int Application::Start() {
@@ -157,13 +135,6 @@ int Application::Start() {
     return -1;
   }
   stopped_ = false;
-
-#if ROS_VERSION == 1
-  ros::init(argc_, argv_, "ros_gui_app_backend");
-#else
-  rclcpp::init(argc_, argv_);
-#endif
-  ros_runtime_inited_ = true;
 
   MapManager* mm = MapManager::Instance();
   mm->SetFrameId(settings_.map_manager.frame_id);
@@ -186,11 +157,7 @@ int Application::Start() {
     return -1;
   }
 
-#if ROS_VERSION == 1
-  WebServer::SetSigintHook([]() { ros::requestShutdown(); });
-#else
-  WebServer::SetSigintHook([]() { rclcpp::shutdown(); });
-#endif
+  WebServer::SetSigintHook([]() {  NodeManager::Instance()->GetNode()->Shutdown(); });
 
   web_server_ = std::make_unique<WebServer>();
   if (!web_server_->Start(settings_.web_server)) {
@@ -200,7 +167,13 @@ int Application::Start() {
 
   NodeManager::Instance()->GetNode()->Run();
 
-  ShutdownRuntime();
+  WebServer::ClearSigintHook();
+  if (web_server_) {
+    web_server_->Shutdown();
+    web_server_.reset();
+  }
+  NodeManager::Instance()->Reset();
+
   stopped_ = true;
   return 0;
 }
