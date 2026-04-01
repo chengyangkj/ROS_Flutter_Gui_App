@@ -26,3 +26,13 @@ install(TARGETS ${TARGET_NAME} DESTINATION bin)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/install/bin/
   DESTINATION bin
   USE_SOURCE_PERMISSIONS)
+
+set(ROS_GUI_BACKEND_PREFIX "${CMAKE_INSTALL_PREFIX}")
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/service/ros_gui_backend.system.service.in
+  ${CMAKE_CURRENT_BINARY_DIR}/ros_gui_backend.system.service
+  @ONLY
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ros_gui_backend.system.service
+  DESTINATION lib/systemd/system
+)

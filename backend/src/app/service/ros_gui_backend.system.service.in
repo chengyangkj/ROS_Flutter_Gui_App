@@ -1,0 +1,13 @@
+[Unit]
+Description=ROS GUI Backend
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@ROS_GUI_BACKEND_PREFIX@/bin
+ExecStart=@ROS_GUI_BACKEND_PREFIX@/bin/ros_gui_backend --config @ROS_GUI_BACKEND_PREFIX@/bin/cfg/config.yaml
+Restart=on-failure
+Environment=LD_LIBRARY_PATH=@ROS_GUI_BACKEND_PREFIX@/lib
+
+[Install]
+WantedBy=multi-user.target
