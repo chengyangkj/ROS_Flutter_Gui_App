@@ -82,12 +82,12 @@ jobs:
         run: |
           set -euo pipefail
           cd app
-          tar -czvf "${GITHUB_WORKSPACE}/ros_flutter_gui_web.tar.gz" -C build/web .
+          tar -czvf "${GITHUB_WORKSPACE}/app-web.tar.gz" -C build/web .
 
       - uses: actions/upload-artifact@v4
         with:
           name: app-web
-          path: ros_flutter_gui_web.tar.gz
+          path: app-web.tar.gz
 
   build-linux:
     needs: codegen
@@ -122,13 +122,13 @@ jobs:
       - name: Pack Linux bundle
         run: |
           set -euo pipefail
-          tar -czvf "${GITHUB_WORKSPACE}/ros_flutter_gui_linux_x64.tar.gz" \
+          tar -czvf "${GITHUB_WORKSPACE}/app-linux-x64.tar.gz" \
             -C app/build/linux/x64/release/bundle .
 
       - uses: actions/upload-artifact@v4
         with:
           name: app-linux
-          path: ros_flutter_gui_linux_x64.tar.gz
+          path: app-linux-x64.tar.gz
 
   build-apk:
     needs: codegen
@@ -160,12 +160,12 @@ jobs:
           flutter pub get
           flutter build apk --release
 
-      - run: cp app/build/app/outputs/flutter-apk/app-release.apk "${GITHUB_WORKSPACE}/ros_flutter_gui.apk"
+      - run: cp app/build/app/outputs/flutter-apk/app-release.apk "${GITHUB_WORKSPACE}/app-android.apk"
 
       - uses: actions/upload-artifact@v4
         with:
           name: app-apk
-          path: ros_flutter_gui.apk
+          path: app-android.apk
 
   build-windows:
     needs: codegen
@@ -193,12 +193,12 @@ jobs:
         shell: pwsh
         run: |
           Compress-Archive -Path "app/build/windows/x64/runner/Release/*" `
-            -DestinationPath "${env:GITHUB_WORKSPACE}/ros_flutter_gui_windows_x64.zip" -Force
+            -DestinationPath "${env:GITHUB_WORKSPACE}/app-windows-x64.zip" -Force
 
       - uses: actions/upload-artifact@v4
         with:
           name: app-windows
-          path: ros_flutter_gui_windows_x64.zip
+          path: app-windows-x64.zip
 
   release:
     needs: [build-web, build-linux, build-apk, build-windows]
@@ -213,14 +213,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p upload
-          mv release-assets/app-web/ros_flutter_gui_web.tar.gz \
-            "upload/ros_flutter_gui-${GITHUB_REF_NAME}-web.tar.gz"
-          mv release-assets/app-linux/ros_flutter_gui_linux_x64.tar.gz \
-            "upload/ros_flutter_gui-${GITHUB_REF_NAME}-linux-x64.tar.gz"
-          mv release-assets/app-apk/ros_flutter_gui.apk \
-            "upload/ros_flutter_gui-${GITHUB_REF_NAME}.apk"
-          mv release-assets/app-windows/ros_flutter_gui_windows_x64.zip \
-            "upload/ros_flutter_gui-${GITHUB_REF_NAME}-windows-x64.zip"
+          mv release-assets/app-web/app-web.tar.gz \
+            "upload/app-${GITHUB_REF_NAME}-web.tar.gz"
+          mv release-assets/app-linux/app-linux-x64.tar.gz \
+            "upload/app-${GITHUB_REF_NAME}-linux-x64.tar.gz"
+          mv release-assets/app-apk/app-android.apk \
+            "upload/app-${GITHUB_REF_NAME}-android.apk"
+          mv release-assets/app-windows/app-windows-x64.zip \
+            "upload/app-${GITHUB_REF_NAME}-windows-x64.zip"
           ls -la upload/
 
       - uses: softprops/action-gh-release@v2
@@ -228,9 +228,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            upload/ros_flutter_gui-${{ github.ref_name }}-web.tar.gz
-            upload/ros_flutter_gui-${{ github.ref_name }}-linux-x64.tar.gz
-            upload/ros_flutter_gui-${{ github.ref_name }}.apk
-            upload/ros_flutter_gui-${{ github.ref_name }}-windows-x64.zip
+            upload/app-${{ github.ref_name }}-web.tar.gz
+            upload/app-${{ github.ref_name }}-linux-x64.tar.gz
+            upload/app-${{ github.ref_name }}-android.apk
+            upload/app-${{ github.ref_name }}-windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -28,11 +28,11 @@ jobs:
           - runner: ubuntu-latest
             container_image: osrf/ros:humble-desktop
             tarball_arch: x86_64
-            artifact_name: ros_gui_backend_humble_web_x86_64
+            artifact_name: backend-x86_64
           - runner: ubuntu-24.04-arm
             container_image: ros:humble-ros-base-jammy
             tarball_arch: arm64
-            artifact_name: ros_gui_backend_humble_web_arm64
+            artifact_name: backend-arm64
     runs-on: ${{ matrix.runner }}
     container:
       image: ${{ matrix.container_image }}
@@ -103,14 +103,14 @@ jobs:
         run: |
           set -euo pipefail
           cd "${GITHUB_WORKSPACE}/backend/build/install"
-          tar -czvf "ros_gui_backend-${TAG_NAME}-humble-web-${TARBALL_ARCH}.tar.gz" -C bin .
+          tar -czvf "backend-${TAG_NAME}-${TARBALL_ARCH}.tar.gz" -C bin .
 
       - name: Upload workflow artifact
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: backend/build/install/ros_gui_backend-${{ github.ref_name }}-humble-web-${{ matrix.tarball_arch }}.tar.gz
+          path: backend/build/install/backend-${{ github.ref_name }}-${{ matrix.tarball_arch }}.tar.gz
 
       - name: Upload to GitHub Release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -118,6 +118,6 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          files: backend/build/install/ros_gui_backend-${{ github.ref_name }}-humble-web-${{ matrix.tarball_arch }}.tar.gz
+          files: backend/build/install/backend-${{ github.ref_name }}-${{ matrix.tarball_arch }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

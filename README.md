@@ -66,11 +66,12 @@ flutter build web --release
 
 | 类型 | 典型文件名 |
 | --- | --- |
-| 后端（含 Web `dist`） | `ros_gui_backend-<tag>-humble-web-x86_64.tar.gz` |
-| Web | `ros_flutter_gui-<tag>-web.tar.gz` |
-| Linux | `ros_flutter_gui-<tag>-linux-x64.tar.gz` |
-| Android | `ros_flutter_gui-<tag>.apk` |
-| Windows | `ros_flutter_gui-<tag>-windows-x64.zip` |
+| 后端（含 Web `dist`，x86_64） | `backend-<tag>-x86_64.tar.gz` |
+| 后端（arm64） | `backend-<tag>-arm64.tar.gz` |
+| Web | `app-<tag>-web.tar.gz` |
+| Linux | `app-<tag>-linux-x64.tar.gz` |
+| Android | `app-<tag>-android.apk` |
+| Windows | `app-<tag>-windows-x64.zip` |
 
 ---
 
