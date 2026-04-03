@@ -103,7 +103,8 @@ jobs:
         run: |
           set -euo pipefail
           cd "${GITHUB_WORKSPACE}/backend/build/install"
-          tar -czvf "backend-${TAG_NAME}-${TARBALL_ARCH}.tar.gz" -C bin .
+          ls ./bin/
+          zip -r "backend-${TAG_NAME}-${TARBALL_ARCH}.zip" ./bin/*
 
       - name: Upload workflow artifact
         if: startsWith(github.ref, 'refs/tags/v')
