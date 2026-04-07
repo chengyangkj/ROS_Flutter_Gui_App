@@ -9,7 +9,7 @@
 ### 1.1 系统依赖（示例：Ubuntu）
 
 ```bash
-sudo apt-get install libsdl2-dev libsdl2-image-dev protobuf-compiler -y
+sudo apt-get install libsdl2-dev libsdl2-image-dev protobuf-compiler libc-ares-dev -y
 ```
 
 - 已安装 **ROS1** 或 **ROS2**，编译与运行前需 `source /opt/ros/<distro>/setup.bash`。
