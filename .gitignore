@@ -1,3 +1,4 @@
 build/
-log/
-install/
+/log/
+/install/
+dist/
