@@ -20,6 +20,7 @@ import 'package:oktoast/oktoast.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initGlobalSetting();
   
   // 设置全局错误处理
   FlutterError.onError = (FlutterErrorDetails details) {

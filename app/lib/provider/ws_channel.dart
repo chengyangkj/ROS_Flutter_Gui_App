@@ -432,7 +432,6 @@ class WsChannel {
     final header = arr.hasHeader()
         ? darr.Header(frameId: arr.header.frameId)
         : null;
-    print('diagnosticData: $diagnosticData');
     diagnosticData.value =
         darr.DiagnosticArray(header: header, status: list);
     diagnosticManager.updateDiagnosticStates(diagnosticData.value);

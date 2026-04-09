@@ -34,6 +34,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
   NavPoint? selectedNavPoint;
   TopologyRoute? _selectedRoute;
   RouteInfo? _editingRouteInfo;
+  bool _isRecoveringConnection = false;
   
   // 相机相关变量
   Offset camPosition = Offset(30, 10); // 初始位置
@@ -45,6 +46,9 @@ class _MainFlamePageState extends State<MainFlamePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _recoverConnectionIfNeeded();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<GlobalState>().loadLayerSettings();
@@ -67,6 +71,53 @@ class _MainFlamePageState extends State<MainFlamePage> {
         camWidgetHeight = camWidgetWidth / (globalSetting.imageWidth / globalSetting.imageHeight);
       }
     });
+  }
+
+  Future<void> _recoverConnectionIfNeeded() async {
+    if (!mounted || _isRecoveringConnection) return;
+    final wsChannel = context.read<WsChannel>();
+    if (wsChannel.rosConnectState_ == Status.connected ||
+        wsChannel.rosConnectState_ == Status.connecting) {
+      return;
+    }
+
+    _isRecoveringConnection = true;
+    try {
+      final host = globalSetting.robotIp.trim();
+      final port = int.tryParse(globalSetting.httpServerPort.trim()) ?? 8080;
+      if (host.isEmpty) {
+        _redirectToConnectPage();
+        return;
+      }
+
+      String error = '';
+      const maxAttempts = 4;
+      for (int i = 0; i < maxAttempts; i++) {
+        if (!mounted) return;
+        error = await wsChannel.connectBackend(host, port);
+        if (error.isEmpty) {
+          return;
+        }
+        if (i < maxAttempts - 1) {
+          await Future<void>.delayed(Duration(milliseconds: 350 * (i + 1)));
+        }
+      }
+
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        title: Text(AppLocalizations.of(context)!.init_error(error)),
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+      _redirectToConnectPage();
+    } finally {
+      _isRecoveringConnection = false;
+    }
+  }
+
+  void _redirectToConnectPage() {
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, "/connect", (route) => false);
   }
   
   Future<void> _reloadData() async {

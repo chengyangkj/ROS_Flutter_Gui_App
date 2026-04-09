@@ -47,6 +47,7 @@ String tempConfigTypeToString(TempConfigType type) {
 
 class Setting {
   late SharedPreferences prefs;
+  bool _initialized = false;
 
   final Map<String, String> _backendGuiStrings = {};
 
@@ -84,6 +85,7 @@ class Setting {
 
   Future<bool> init() async {
     prefs = await SharedPreferences.getInstance();
+    _initialized = true;
 
     // 获取应用版本
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -413,29 +415,35 @@ class Setting {
   }
 
   double get imageWidth {
-    return prefs.getDouble("imageWidth") ?? 640;
+    final p = _prefsOrNull;
+    return p?.getDouble("imageWidth") ?? 640;
   }
 
   double get imageHeight {
-    return prefs.getDouble("imageHeight") ?? 480;
+    final p = _prefsOrNull;
+    return p?.getDouble("imageHeight") ?? 480;
   }
 
   String get robotIp {
-    return prefs.getString("robotIp") ?? "127.0.0.1";
+    final p = _prefsOrNull;
+    return p?.getString("robotIp") ?? "127.0.0.1";
   }
 
   String get httpServerPort {
-    return prefs.getString("httpServerPort") ?? "8080";
+    final p = _prefsOrNull;
+    return p?.getString("httpServerPort") ?? "8080";
   }
 
   void setHttpServerPort(String port) {
+    final p = _prefsOrNull;
+    if (p == null) return;
     final t = port.trim();
     if (t.isEmpty || t == "8080") {
-      prefs.remove("httpServerPort");
+      p.remove("httpServerPort");
     } else {
-      prefs.setString("httpServerPort", t);
+      p.setString("httpServerPort", t);
     }
-    prefs.remove("tileServerUrl");
+    p.remove("tileServerUrl");
   }
 
   String get tileServerUrl {
@@ -452,7 +460,8 @@ class Setting {
   }
 
   String get robotPort {
-    return prefs.getString("robotPort") ?? "8080";
+    final p = _prefsOrNull;
+    return p?.getString("robotPort") ?? "8080";
   }
 
   String get robotFootprintTopic {
@@ -668,11 +677,15 @@ class Setting {
 
   // 基本设置相关方法
   void setRobotIp(String ip) {
-    prefs.setString('robotIp', ip);
+    final p = _prefsOrNull;
+    if (p == null) return;
+    p.setString('robotIp', ip);
   }
 
   void setRobotPort(String port) {
-    prefs.setString('robotPort', port);
+    final p = _prefsOrNull;
+    if (p == null) return;
+    p.setString('robotPort', port);
   }
 
   // 地图相关方法
@@ -778,6 +791,13 @@ class Setting {
     return prefs.getDouble('robotSize') ?? 30.0;
   }
   
+}
+
+extension on Setting {
+  SharedPreferences? get _prefsOrNull {
+    if (!_initialized) return null;
+    return prefs;
+  }
 }
 
 Setting globalSetting = Setting();
