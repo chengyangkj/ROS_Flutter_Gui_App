@@ -65,10 +65,10 @@ dependencies:
   web_socket_channel: ^2.4.0
   dartssh2: ^2.16.0
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/icon.png"  
+  image_path: "assets/icons/icon.png"
 
 dependency_overrides:
   gamepads_windows:
