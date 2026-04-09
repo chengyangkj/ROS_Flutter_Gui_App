@@ -35,7 +35,8 @@ class _MainFlamePageState extends State<MainFlamePage> {
   TopologyRoute? _selectedRoute;
   RouteInfo? _editingRouteInfo;
   bool _isRecoveringConnection = false;
-  
+  bool _sshRailExpanded = false;
+
   // 相机相关变量
   Offset camPosition = Offset(30, 10); // 初始位置
   bool isCamFullscreen = false; // 是否全屏
@@ -119,7 +120,23 @@ class _MainFlamePageState extends State<MainFlamePage> {
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, "/connect", (route) => false);
   }
-  
+
+  Widget _MapToolbarShell(
+    ThemeData theme, {
+    required Widget child,
+    Color? backgroundColor,
+  }) {
+    final ColorScheme scheme = theme.colorScheme;
+    return Material(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.06),
+      borderRadius: BorderRadius.circular(14),
+      color: backgroundColor ?? scheme.surfaceContainerHigh.withOpacity(0.94),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
+  }
+
   Future<void> _reloadData() async {
     try {
       final httpChannel = context.read<HttpChannel>();
@@ -337,7 +354,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
       final info = _editingRouteInfo ?? route.routeInfo;
 
       return Card(
-        elevation: 10,
+        elevation: 3,
+        shadowColor: Colors.black.withOpacity(0.08),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: SizedBox(
           width: 320,
           child: Padding(
@@ -536,24 +558,34 @@ class _MainFlamePageState extends State<MainFlamePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-          Card(
-            elevation: 10,
+          _MapToolbarShell(
+            theme,
             child: IconButton(
-              icon: Icon(Icons.layers, color: theme.iconTheme.color),
+              style: IconButton.styleFrom(
+                minimumSize: const Size(44, 44),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.all(10),
+              ),
+              icon: Icon(Icons.layers_outlined, color: theme.iconTheme.color),
               tooltip: AppLocalizations.of(context)!.layers,
               onPressed: () => _openLayerSettings(context),
             ),
           ),
-
+          const SizedBox(height: 6),
           ValueListenableBuilder(
             valueListenable: Provider.of<GlobalState>(context, listen: false).mode,
             builder: (context, mode, _) {
-              return Card(
-                elevation: 10,
+              return _MapToolbarShell(
+                theme,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(44, 44),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.all(10),
+                      ),
                       onPressed: () {
                         var globalState =
                             Provider.of<GlobalState>(context, listen: false);
@@ -569,6 +601,11 @@ class _MainFlamePageState extends State<MainFlamePage> {
                     ),
                     if (mode == Mode.reloc) ...[
                       IconButton(
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(44, 44),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.all(10),
+                        ),
                         onPressed: () {
                           Provider.of<GlobalState>(context, listen: false)
                               .mode
@@ -582,6 +619,11 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         icon: Icon(Icons.check, color: Colors.green),
                       ),
                       IconButton(
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(44, 44),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.all(10),
+                        ),
                         onPressed: () {
                           Provider.of<GlobalState>(context, listen: false)
                               .mode
@@ -595,15 +637,19 @@ class _MainFlamePageState extends State<MainFlamePage> {
               );
             },
           ),
-          
-          const SizedBox(height: 8),
-          
-          // 显示相机图像
-          Card(
-            elevation: 10,
+          const SizedBox(height: 6),
+          _MapToolbarShell(
+            theme,
             child: IconButton(
-              icon: Icon(Icons.camera_alt),
-              color: showCamera ? Colors.green : theme.iconTheme.color,
+              style: IconButton.styleFrom(
+                minimumSize: const Size(44, 44),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.all(10),
+              ),
+              icon: Icon(
+                Icons.photo_camera_outlined,
+                color: showCamera ? Colors.green : theme.iconTheme.color,
+              ),
               onPressed: () {
                 setState(() {
                   showCamera = !showCamera;
@@ -612,13 +658,15 @@ class _MainFlamePageState extends State<MainFlamePage> {
               tooltip: AppLocalizations.of(context)!.camera_image,
             ),
           ),
-          
-          const SizedBox(height: 8),
-          
-          // 手动控制
-          Card(
-            elevation: 10,
+          const SizedBox(height: 6),
+          _MapToolbarShell(
+            theme,
             child: IconButton(
+              style: IconButton.styleFrom(
+                minimumSize: const Size(44, 44),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.all(10),
+              ),
               icon: Icon(
                 const IconData(0xea45, fontFamily: "GamePad"),
                 color: Provider.of<GlobalState>(context, listen: false)
@@ -764,127 +812,160 @@ class _MainFlamePageState extends State<MainFlamePage> {
   }
 
   Widget _buildRightToolbar(BuildContext context, ThemeData theme) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+    final ButtonStyle tbStyle = IconButton.styleFrom(
+      minimumSize: const Size(44, 44),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.all(10),
+    );
     return Positioned(
       right: 5,
       top: 30,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _MapToolbarShell(
+            theme,
+            child: IconButton(
+              style: tbStyle,
+              icon: Icon(
+                Icons.edit_document,
+                color: (Provider.of<GlobalState>(context, listen: false)
+                            .mode
+                            .value ==
+                        Mode.mapEdit)
+                    ? Colors.orange
+                    : theme.iconTheme.color,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MapEditPage(
+                      onExit: () {
+                        _reloadData();
+                      },
+                    ),
+                  ),
+                );
+              },
+              tooltip: l10n.map_edit,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 地图编辑按钮
-              Card(
-                elevation: 10,
+              AnimatedSize(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.centerRight,
+                child: _sshRailExpanded
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _MapToolbarShell(
+                            theme,
+                            child: IconButton(
+                              style: tbStyle,
+                              onPressed: () async {
+                                setState(() => _sshRailExpanded = false);
+                                await _openSshQuickCommands(context);
+                              },
+                              icon: Icon(Icons.bolt_rounded,
+                                  color: theme.iconTheme.color),
+                              tooltip: l10n.ssh_quick_commands_tooltip,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          _MapToolbarShell(
+                            theme,
+                            child: IconButton(
+                              style: tbStyle,
+                              onPressed: () async {
+                                setState(() => _sshRailExpanded = false);
+                                await _openSshTerminal(context);
+                              },
+                              icon: Icon(Icons.terminal_rounded,
+                                  color: theme.iconTheme.color),
+                              tooltip: l10n.ssh_terminal_tooltip,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                      )
+                    : const SizedBox(height: 44),
+              ),
+              _MapToolbarShell(
+                theme,
                 child: IconButton(
-                  icon: Icon(
-                    Icons.edit_document,
-                    color: (Provider.of<GlobalState>(context, listen: false)
-                                .mode
-                                .value ==
-                            Mode.mapEdit)
-                        ? Colors.orange
-                        : theme.iconTheme.color,
-                  ),
+                  style: tbStyle,
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MapEditPage(
-                          onExit: () {
-                            _reloadData();
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  tooltip: AppLocalizations.of(context)!.map_edit,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                elevation: 10,
-                child: IconButton(
-                  onPressed: () => _openSshQuickCommands(context),
-                  icon: Icon(Icons.bolt, color: theme.iconTheme.color),
-                  tooltip: AppLocalizations.of(context)!.ssh_quick_commands_tooltip,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                elevation: 10,
-                child: IconButton(
-                  onPressed: () => _openSshTerminal(context),
-                  icon: Icon(Icons.terminal, color: theme.iconTheme.color),
-                  tooltip: AppLocalizations.of(context)!.ssh_terminal_tooltip,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 放大按钮
-              Card(
-                elevation: 10,
-                child: IconButton(
-                  onPressed: () {
-                    _tileMapKey.currentState?.zoomIn();
+                    setState(() => _sshRailExpanded = !_sshRailExpanded);
                   },
                   icon: Icon(
-                    Icons.zoom_in,
-                    color: theme.iconTheme.color,
+                    _sshRailExpanded
+                        ? Icons.keyboard_arrow_right_rounded
+                        : Icons.hub_outlined,
+                    color: theme.colorScheme.primary,
                   ),
-                  tooltip: AppLocalizations.of(context)!.zoom_in,
+                  tooltip: l10n.ssh_remote_section,
                 ),
               ),
-              // 缩小按钮
-              Card(
-                elevation: 10,
-                child: IconButton(
-                  onPressed: () {
-                    _tileMapKey.currentState?.zoomOut();
-                  },
-                  icon: Icon(
-                    Icons.zoom_out,
-                    color: theme.iconTheme.color,
-                  ),
-                  tooltip: AppLocalizations.of(context)!.zoom_out,
-                ),
-              ),
-              // 定位到机器人按钮
-              Card(
-                elevation: 10,
-                child: IconButton(
-                  onPressed: () {
-                    var globalState =
-                        Provider.of<GlobalState>(context, listen: false);
-                    if (globalState.mode.value == Mode.robotFixedCenter) {
-                      globalState.mode.value = Mode.normal;
-                    } else {
-                      globalState.mode.value = Mode.robotFixedCenter;
-                    }
-                    setState(() {});
-                  },
-                  icon: Icon(
-                    Icons.location_searching,
-                    color:
-                        Provider.of<GlobalState>(context, listen: false).mode.value ==
-                                Mode.robotFixedCenter
-                            ? Colors.green
-                            : theme.iconTheme.color,
-                  ),
-                ),
-              ),
-              
-              // // 退出按钮
-              // Card(
-              //   elevation: 10,
-              //   child: IconButton(
-              //     onPressed: () {
-              //       Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectPage()));
-              //     },
-              //     icon: Icon(
-              //       Icons.exit_to_app,
-              //       color: theme.iconTheme.color,
-              //     ),
-              //     tooltip: '退出',
-              //   ),
-              // ),
             ],
           ),
+          const SizedBox(height: 6),
+          _MapToolbarShell(
+            theme,
+            child: IconButton(
+              style: tbStyle,
+              onPressed: () {
+                _tileMapKey.currentState?.zoomIn();
+              },
+              icon: Icon(Icons.zoom_in_rounded, color: theme.iconTheme.color),
+              tooltip: l10n.zoom_in,
+            ),
+          ),
+          const SizedBox(height: 6),
+          _MapToolbarShell(
+            theme,
+            child: IconButton(
+              style: tbStyle,
+              onPressed: () {
+                _tileMapKey.currentState?.zoomOut();
+              },
+              icon: Icon(Icons.zoom_out_rounded, color: theme.iconTheme.color),
+              tooltip: l10n.zoom_out,
+            ),
+          ),
+          const SizedBox(height: 6),
+          _MapToolbarShell(
+            theme,
+            child: IconButton(
+              style: tbStyle,
+              onPressed: () {
+                var globalState =
+                    Provider.of<GlobalState>(context, listen: false);
+                if (globalState.mode.value == Mode.robotFixedCenter) {
+                  globalState.mode.value = Mode.normal;
+                } else {
+                  globalState.mode.value = Mode.robotFixedCenter;
+                }
+                setState(() {});
+              },
+              icon: Icon(
+                Icons.location_searching_rounded,
+                color:
+                    Provider.of<GlobalState>(context, listen: false).mode.value ==
+                            Mode.robotFixedCenter
+                        ? Colors.green
+                        : theme.iconTheme.color,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -907,14 +988,19 @@ class _MainFlamePageState extends State<MainFlamePage> {
                         return Visibility(
                           visible: navStatus == ActionStatus.executing ||
                               navStatus == ActionStatus.accepted,
-                          child: Card(
-                            color: Colors.blue,
-                            child: Container(
+                          child: _MapToolbarShell(
+                            theme,
+                            backgroundColor: Colors.blue,
+                            child: SizedBox(
                               width: 50,
                               height: 50,
                               child: IconButton(
+                                style: IconButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
                                 icon: const Icon(
-                                  Icons.stop_circle,
+                                  Icons.stop_circle_rounded,
                                   size: 30,
                                   color: Colors.white,
                                 ),
@@ -1102,24 +1188,40 @@ class _MainFlamePageState extends State<MainFlamePage> {
 
   // 构建地图图例组件
   Widget _buildMapLegend(BuildContext context, ThemeData theme) {
+    final AppLocalizations? l10n = AppLocalizations.of(context);
+    final double maxLegendWidth =
+        MediaQuery.sizeOf(context).width * 0.62;
     return Positioned(
-      right: 10,
+      right: 8,
       top: 2,
-      child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxLegendWidth),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          reverse: true,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 图例项目 - 横着排列
-              _buildCompactLegendItem(AppLocalizations.of(context)!.legend_free, _getFreeAreaColor()),
+              _buildCompactLegendItem(
+                l10n?.legend_free ?? 'Free',
+                _getFreeAreaColor(),
+              ),
               const SizedBox(width: 12),
-              _buildCompactLegendItem(AppLocalizations.of(context)!.legend_occupied, _getOccupiedAreaColor()),
+              _buildCompactLegendItem(
+                l10n?.legend_occupied ?? 'Occupied',
+                _getOccupiedAreaColor(),
+              ),
               const SizedBox(width: 12),
-              _buildCompactLegendItem(AppLocalizations.of(context)!.legend_unknown, _getUnknownAreaColor()),
+              _buildCompactLegendItem(
+                l10n?.legend_unknown ?? 'Unknown',
+                _getUnknownAreaColor(),
+              ),
             ],
           ),
         ),
-      
+      ),
     );
   }
 
@@ -1128,7 +1230,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 颜色指示器
         Container(
           width: 10,
           height: 10,
@@ -1136,19 +1237,18 @@ class _MainFlamePageState extends State<MainFlamePage> {
             color: color,
             borderRadius: BorderRadius.circular(2),
             border: Border.all(
-              color: Colors.grey[400]!,
+              color: Colors.grey.shade400,
               width: 0.5,
             ),
           ),
         ),
         const SizedBox(width: 4),
-        // 标签
         Text(
           label,
           style: TextStyle(
             fontSize: 7,
             fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+            color: Colors.grey.shade700,
           ),
         ),
       ],
