@@ -53,7 +53,7 @@ echo "[build] Flutter web done (${APP}/build/web)"
 INSTALL_BIN_DIST="${BACKEND}/src/app/install/bin/dist"
 rm -rf "${INSTALL_BIN_DIST}"
 mkdir -p "${INSTALL_BIN_DIST}"
-cp -r "${APP}/build/web/*" "${INSTALL_BIN_DIST}"
+cp -a "${APP}/build/web/." "${INSTALL_BIN_DIST}/"
 
 bash "${ROOT}/backend/build.sh" "$@"
 echo "[build] backend done (${BACKEND}/build)"
