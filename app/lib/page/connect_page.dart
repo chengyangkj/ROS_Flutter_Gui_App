@@ -15,7 +15,7 @@ class ConnectPage extends StatefulWidget {
 }
 
 class _ConnectPageState extends State<ConnectPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TextEditingController _ipController =
       TextEditingController(text: '127.0.0.1');
   final TextEditingController _portController =
@@ -23,6 +23,7 @@ class _ConnectPageState extends State<ConnectPage>
   bool _isConnecting = false;
   late AnimationController _animationController;
   late CurvedAnimation _fadeAnimation;
+  late AnimationController _connectShineController;  
 
   @override
   void initState() {
@@ -36,11 +37,16 @@ class _ConnectPageState extends State<ConnectPage>
       curve: Curves.easeOutCubic,
     );
     _animationController.forward();
+    _connectShineController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _connectShineController.dispose();
     _ipController.dispose();
     _portController.dispose();
     super.dispose();
@@ -70,6 +76,14 @@ class _ConnectPageState extends State<ConnectPage>
           final surface = scheme.surface;
           final onSurface = scheme.onSurface;
           final viewPadding = MediaQuery.of(context).viewPadding;
+          final screenWidth = MediaQuery.sizeOf(context).width;
+          final cardMaxWidth = screenWidth < 600
+              ? (screenWidth * 0.92).clamp(280.0, 460.0)
+              : screenWidth < 1100
+                  ? (screenWidth * 0.52).clamp(400.0, 560.0)
+                  : (screenWidth * 0.44).clamp(520.0, 720.0);
+          final cardHorizontalPadding =
+              screenWidth < 600 ? 22.0 : screenWidth < 1100 ? 32.0 : 48.0;
 
           final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
@@ -103,12 +117,10 @@ class _ConnectPageState extends State<ConnectPage>
                   ),
                 ),
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: TechBackgroundPainter(
-                      seedColor: primaryColor,
-                      surfaceColor: surface,
-                      brightness: Theme.of(context).brightness,
-                    ),
+                  child: _CyberBezierBackdrop(
+                    seedColor: primaryColor,
+                    surfaceColor: surface,
+                    brightness: Theme.of(context).brightness,
                   ),
                 ),
                 Positioned(
@@ -117,14 +129,6 @@ class _ConnectPageState extends State<ConnectPage>
                   child: _SoftGlowBlob(
                     diameter: 240,
                     color: scheme.tertiary.withOpacity(0.22),
-                  ),
-                ),
-                Positioned(
-                  right: -60,
-                  top: 110,
-                  child: _SoftGlowBlob(
-                    diameter: 200,
-                    color: scheme.secondary.withOpacity(0.18),
                   ),
                 ),
                 Positioned(
@@ -139,9 +143,11 @@ class _ConnectPageState extends State<ConnectPage>
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: cardHorizontalPadding,
+                      ),
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 460),
+                        constraints: BoxConstraints(maxWidth: cardMaxWidth),
                         child: _GlassPanel(
                           borderRadius: 22,
                           child: Padding(
@@ -209,51 +215,84 @@ class _ConnectPageState extends State<ConnectPage>
                                   SizedBox(
                                     width: double.infinity,
                                     height: 46,
-                                    child: FilledButton(
-                                      onPressed: _isConnecting
-                                          ? null
-                                          : _handleConnect,
-                                      style: FilledButton.styleFrom(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(14),
-                                        ),
-                                      ),
-                                      child: _isConnecting
-                                          ? SizedBox(
-                                              height: 22,
-                                              width: 22,
-                                              child:
-                                                  CircularProgressIndicator(
-                                                strokeWidth: 2.5,
-                                                color: scheme.onPrimary,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          FilledButton(
+                                            onPressed: _isConnecting
+                                                ? null
+                                                : _handleConnect,
+                                            style: FilledButton.styleFrom(
+                                              minimumSize: const Size(
+                                                double.infinity,
+                                                46,
                                               ),
-                                            )
-                                          : Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons
-                                                      .bolt_rounded,
-                                                  size: 18,
-                                                  color:
-                                                      scheme.onPrimary,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  AppLocalizations.of(
-                                                          context)!
-                                                      .connect_robot,
-                                                  style: const TextStyle(
-                                                    fontSize: 15,
-                                                    fontWeight:
-                                                        FontWeight.w700,
-                                                    letterSpacing: -0.2,
-                                                  ),
-                                                ),
-                                              ],
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                              ),
                                             ),
+                                            child: _isConnecting
+                                                ? SizedBox(
+                                                    height: 22,
+                                                    width: 22,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2.5,
+                                                      color: scheme.onPrimary,
+                                                    ),
+                                                  )
+                                                : Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.bolt_rounded,
+                                                        size: 18,
+                                                        color:
+                                                            scheme.onPrimary,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        AppLocalizations.of(
+                                                                context)!
+                                                            .connect_robot,
+                                                        style: const TextStyle(
+                                                          fontSize: 15,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          letterSpacing: -0.2,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                          ),
+                                          if (!_isConnecting)
+                                            Positioned.fill(
+                                              child: IgnorePointer(
+                                                child: AnimatedBuilder(
+                                                  animation:
+                                                      _connectShineController,
+                                                  builder:
+                                                      (BuildContext context,
+                                                          Widget? child) {
+                                                    return CustomPaint(
+                                                      painter:
+                                                          _ConnectButtonShinePainter(
+                                                        progress:
+                                                            _connectShineController
+                                                                .value,
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                               ],
@@ -336,7 +375,6 @@ class _GlassPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final borderColor = scheme.outlineVariant.withOpacity(0.55);
-    final highlight = Colors.white.withOpacity(0.50);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
@@ -362,28 +400,7 @@ class _GlassPanel extends StatelessWidget {
               ),
             ],
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                left: -60,
-                top: -60,
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        highlight.withOpacity(0.60),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              child,
-            ],
-          ),
+          child: child,
         ),
       ),
     );
@@ -416,6 +433,39 @@ class _SoftGlowBlob extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ConnectButtonShinePainter extends CustomPainter {
+  _ConnectButtonShinePainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect rect = Offset.zero & size;
+    final Paint paint = Paint()
+      ..blendMode = BlendMode.softLight
+      ..shader = LinearGradient(
+        begin: Alignment(-1.35 + progress * 2.7, -1.1),
+        end: Alignment(-0.25 + progress * 2.7, 1.1),
+        colors: <Color>[
+          Colors.transparent,
+          Colors.white.withValues(alpha: 0.0),
+          Colors.white.withValues(alpha: 0.38),
+          Colors.white.withValues(alpha: 0.58),
+          Colors.white.withValues(alpha: 0.38),
+          Colors.white.withValues(alpha: 0.0),
+          Colors.transparent,
+        ],
+        stops: const <double>[0.0, 0.38, 0.46, 0.5, 0.54, 0.62, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ConnectButtonShinePainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }
 
@@ -560,102 +610,179 @@ class _FrostedTextField extends StatelessWidget {
   }
 }
 
-class TechBackgroundPainter extends CustomPainter {
+class _CyberBezierBackdrop extends StatefulWidget {
   final Color seedColor;
   final Color surfaceColor;
   final Brightness brightness;
 
-  TechBackgroundPainter({
+  const _CyberBezierBackdrop({
     required this.seedColor,
     required this.surfaceColor,
     required this.brightness,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final base = seedColor;
-    final isDark = brightness == Brightness.dark;
+  State<_CyberBezierBackdrop> createState() => _CyberBezierBackdropState();
+}
 
+class _CyberBezierBackdropState extends State<_CyberBezierBackdrop>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _flowController;
+
+  @override
+  void initState() {
+    super.initState();
+    _flowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 6400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _flowController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _ZigzagFlowBackdropPainter(
+        animation: _flowController,
+        seedColor: widget.seedColor,
+        surfaceColor: widget.surfaceColor,
+        brightness: widget.brightness,
+      ),
+    );
+  }
+}
+
+class _ZigzagFlowBackdropPainter extends CustomPainter {
+  final Animation<double> animation;
+  final Color seedColor;
+  final Color surfaceColor;
+  final Brightness brightness;
+
+  _ZigzagFlowBackdropPainter({
+    required this.animation,
+    required this.seedColor,
+    required this.surfaceColor,
+    required this.brightness,
+  }) : super(repaint: animation);
+
+  static Path _flowBackdropPath(Size s) {
+    final double w = s.width;
+    final double h = s.height;
+    return Path()
+      ..moveTo(w * 0.08, h * 0.22)
+      ..quadraticBezierTo(w * 0.26, h * 0.12, w * 0.40, h * 0.20)
+      ..quadraticBezierTo(w * 0.62, h * 0.30, w * 0.86, h * 0.16)
+      ..quadraticBezierTo(w * 0.92, h * 0.52, w * 0.72, h * 0.64)
+      ..quadraticBezierTo(w * 0.50, h * 0.78, w * 0.18, h * 0.70);
+  }
+
+  void _paintGrid(Canvas canvas, Size size, Color base, bool isDark) {
     final gridPaint = Paint()
       ..color = (isDark ? Colors.white : base)
-          .withOpacity(isDark ? 0.06 : 0.07)
+          .withOpacity(isDark ? 0.048 : 0.058)
       ..strokeWidth = 1;
-
-    const step = 22.0;
+    const double step = 36.0;
     for (double x = 0; x <= size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
     for (double y = 0; y <= size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
+  }
 
-    final pathPaint = Paint()
+  void _paintStaticRail(
+    Canvas canvas,
+    Path path,
+    Color base,
+    bool isDark,
+  ) {
+    final track = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
       ..strokeCap = StrokeCap.round
-      ..color = base.withOpacity(isDark ? 0.18 : 0.16);
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 2.2
+      ..color = base.withOpacity(isDark ? 0.14 : 0.12);
+    canvas.drawPath(path, track);
+  }
 
-    final glowPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round
-      ..color = base.withOpacity(isDark ? 0.10 : 0.09)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+  void _paintFlowPulse(
+    Canvas canvas,
+    Path path,
+    double phase01,
+    Color neon,
+  ) {
+    for (final PathMetric metric in path.computeMetrics()) {
+      final double len = metric.length;
+      if (len < 24) continue;
+      final double head = (phase01 * len) % len;
+      const double tailFrac = 0.12;
+      final double tail = len * tailFrac;
+      double tailStart = head - tail;
 
-    final p = Path()
-      ..moveTo(size.width * 0.08, size.height * 0.22)
-      ..quadraticBezierTo(
-        size.width * 0.26,
-        size.height * 0.12,
-        size.width * 0.40,
-        size.height * 0.20,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.62,
-        size.height * 0.30,
-        size.width * 0.86,
-        size.height * 0.16,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.92,
-        size.height * 0.52,
-        size.width * 0.72,
-        size.height * 0.64,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.50,
-        size.height * 0.78,
-        size.width * 0.18,
-        size.height * 0.70,
-      );
+      final Paint glow = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 6
+        ..color = neon.withOpacity(0.22)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      final Paint core = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 2.2
+        ..color = neon.withOpacity(0.92);
+      final Paint headDot = Paint()
+        ..color = Colors.white.withOpacity(0.85)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
-    canvas.drawPath(p, glowPaint);
-    canvas.drawPath(p, pathPaint);
+      void drawRange(double a, double b) {
+        if (b <= a) return;
+        final Path sub = metric.extractPath(a, b);
+        canvas.drawPath(sub, glow);
+        canvas.drawPath(sub, core);
+      }
 
-    final nodePaint = Paint()..color = base.withOpacity(isDark ? 0.28 : 0.26);
-    final nodeGlow = Paint()
-      ..color = base.withOpacity(isDark ? 0.18 : 0.16)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      if (tailStart >= 0) {
+        drawRange(tailStart, head);
+      } else {
+        drawRange(0, head);
+        drawRange(len + tailStart, len);
+      }
 
-    final nodes = <Offset>[
-      Offset(size.width * 0.08, size.height * 0.22),
-      Offset(size.width * 0.40, size.height * 0.20),
-      Offset(size.width * 0.86, size.height * 0.16),
-      Offset(size.width * 0.72, size.height * 0.64),
-      Offset(size.width * 0.18, size.height * 0.70),
-    ];
-
-    for (final o in nodes) {
-      canvas.drawCircle(o, 7, nodeGlow);
-      canvas.drawCircle(o, 2.2, nodePaint);
+      final Tangent? tan = metric.getTangentForOffset(head);
+      if (tan != null) {
+        canvas.drawCircle(tan.position, 4.5, headDot);
+        canvas.drawCircle(tan.position, 2.4, Paint()..color = neon);
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant TechBackgroundPainter oldDelegate) {
+  void paint(Canvas canvas, Size size) {
+    final double flowT = animation.value;
+    final Color base = seedColor;
+    final bool isDark = brightness == Brightness.dark;
+    _paintGrid(canvas, size, base, isDark);
+
+    final Path track = _flowBackdropPath(size);
+    _paintStaticRail(canvas, track, base, isDark);
+
+    final Color pulse = Color.lerp(Colors.cyanAccent, base, 0.38)!;
+    _paintFlowPulse(canvas, track, flowT, pulse);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ZigzagFlowBackdropPainter oldDelegate) {
     return oldDelegate.seedColor != seedColor ||
         oldDelegate.surfaceColor != surfaceColor ||
-        oldDelegate.brightness != brightness;
+        oldDelegate.brightness != brightness ||
+        oldDelegate.animation != animation;
   }
 }
 
