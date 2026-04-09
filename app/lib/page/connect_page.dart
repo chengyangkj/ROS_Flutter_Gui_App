@@ -69,6 +69,7 @@ class _ConnectPageState extends State<ConnectPage>
           final primaryColor = scheme.primary;
           final surface = scheme.surface;
           final onSurface = scheme.onSurface;
+          final viewPadding = MediaQuery.of(context).viewPadding;
 
           final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
@@ -82,73 +83,72 @@ class _ConnectPageState extends State<ConnectPage>
 
           return Container(
             color: surface,
-            child: SafeArea(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.lerp(surface, primaryColor, 0.10)!,
-                            Color.lerp(surface, primaryColor, 0.06)!,
-                            Color.lerp(surface, scheme.secondary, 0.05)!,
-                            Color.lerp(surface, scheme.tertiary, 0.04)!,
-                          ],
-                          stops: const [0.0, 0.35, 0.7, 1.0],
-                        ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color.lerp(surface, primaryColor, 0.10)!,
+                          Color.lerp(surface, primaryColor, 0.06)!,
+                          Color.lerp(surface, scheme.secondary, 0.05)!,
+                          Color.lerp(surface, scheme.tertiary, 0.04)!,
+                        ],
+                        stops: const [0.0, 0.35, 0.7, 1.0],
                       ),
                     ),
                   ),
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: TechBackgroundPainter(
-                        seedColor: primaryColor,
-                        surfaceColor: surface,
-                        brightness: Theme.of(context).brightness,
-                      ),
+                ),
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: TechBackgroundPainter(
+                      seedColor: primaryColor,
+                      surfaceColor: surface,
+                      brightness: Theme.of(context).brightness,
                     ),
                   ),
-                  Positioned(
-                    left: -80,
-                    top: -70,
-                    child: _SoftGlowBlob(
-                      diameter: 240,
-                      color: scheme.tertiary.withOpacity(0.22),
-                    ),
+                ),
+                Positioned(
+                  left: -80,
+                  top: -70,
+                  child: _SoftGlowBlob(
+                    diameter: 240,
+                    color: scheme.tertiary.withOpacity(0.22),
                   ),
-                  Positioned(
-                    right: -60,
-                    top: 110,
-                    child: _SoftGlowBlob(
-                      diameter: 200,
-                      color: scheme.secondary.withOpacity(0.18),
-                    ),
+                ),
+                Positioned(
+                  right: -60,
+                  top: 110,
+                  child: _SoftGlowBlob(
+                    diameter: 200,
+                    color: scheme.secondary.withOpacity(0.18),
                   ),
-                  Positioned(
-                    right: -90,
-                    bottom: -80,
-                    child: _SoftGlowBlob(
-                      diameter: 260,
-                      color: primaryColor.withOpacity(0.20),
-                    ),
+                ),
+                Positioned(
+                  right: -90,
+                  bottom: -80,
+                  child: _SoftGlowBlob(
+                    diameter: 260,
+                    color: primaryColor.withOpacity(0.20),
                   ),
-                  Center(
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 22),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 460),
-                          child: _GlassPanel(
-                            borderRadius: 22,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
+                ),
+                Center(
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: _GlassPanel(
+                          borderRadius: 22,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
                                   Row(
                                     children: [
                                       _TechMark(color: primaryColor),
@@ -256,29 +256,27 @@ class _ConnectPageState extends State<ConnectPage>
                                             ),
                                     ),
                                   ),
-                                ],
-                              ),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: _GlassIconButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, "/setting"),
-                        icon: Icons.settings_rounded,
-                        tint: primaryColor,
-                      ),
+                ),
+                Positioned(
+                  top: 12 + viewPadding.top,
+                  right: 12 + viewPadding.right,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: _GlassIconButton(
+                      onPressed: () => Navigator.pushNamed(context, "/setting"),
+                      icon: Icons.settings_rounded,
+                      tint: primaryColor,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
