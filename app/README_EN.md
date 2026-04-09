@@ -1,122 +1,133 @@
-<div align="center">
+# Frontend (Flutter GUI)
 
-# ROS Flutter GUI App
+[中文](README.md)
 
-[中文](README.md) | [English](#english)
+Cross-platform **Flutter** client paired with **`backend/`** in this repo: large maps use **HTTP raster tiles** and map/topology **REST**; robot state and control use **WebSocket (protobuf)** plus the same backend’s **HTTP** APIs. Web, Android, iOS, Linux, Windows, etc. are supported per enabled platforms.
 
-<p align="center">
-<img src="https://img.shields.io/github/last-commit/chengyangkj/ROS_Flutter_Gui_App?style=flat-square" alt="GitHub last commit"/>
-<img src="https://img.shields.io/github/stars/chengyangkj/ROS_Flutter_Gui_App?style=flat-square" alt="GitHub stars"/>
-<img src="https://img.shields.io/github/forks/chengyangkj/ROS_Flutter_Gui_App?style=flat-square" alt="GitHub forks"/>
-<img src="https://img.shields.io/github/issues/chengyangkj/ROS_Flutter_Gui_App?style=flat-square" alt="GitHub issues"/>
-<a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=mvzoO6tJQtu0ZQYa_itHW7JrT0i4OCdK&authKey=exOT53pUpRG85mwuSMstWKbLlnrme%2FEuJE0Rt%2Fw6ONNvfHqftoWMay03mk1Qi7yv&noverify=0&group_code=797497206"><img alt="QQ Group" src="https://img.shields.io/badge/QQ%e7%be%a4-797497206-purple"/></a>
-</p>
+Full repo overview: root [README.md](../README.md) · [README_EN.md](../README_EN.md).
 
-<p align="center">
-<img src="https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/web_build.yaml/badge.svg" alt="web"/>
-<img src="https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/android_build.yaml/badge.svg" alt="android"/>
-<img src="https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/linux_build.yaml/badge.svg" alt="linux"/>
-<img src="https://github.com/chengyangkj/ROS_Flutter_Gui_App/actions/workflows/windows_build.yaml/badge.svg" alt="windows"/>
-</p>
+---
 
-</div>
+## 1. Dependencies & environment
 
-## Introduction
+- **Flutter** SDK (`flutter doctor` clean)
+- **Protocol Buffers**: `protoc`, [protoc_plugin](https://pub.dev/packages/protoc_plugin) (`dart pub global activate protoc_plugin`, put `~/.pub-cache/bin` on `PATH`)
+- Run this repo’s **backend** on the robot with the navigation stack up; see [backend/README.md](../backend/README.md) · [backend/README_EN.md](../backend/README_EN.md)
 
-ROS Flutter GUI App is a cross-platform ROS robot human-machine interface developed with Flutter, supporting both ROS1/ROS2. It can run on Android, iOS, Web, Linux, Windows and other platforms. **In this monorepo build**, map/tiles and robot streaming typically go through the bundled **backend** (HTTP + WebSocket protobuf), not only rosbridge; see the Chinese [README.md](README.md) for the full architecture.
+Optional: for **web_video_server** or similar camera streams, match image port and topic in settings (see **Basic settings** below).
 
-### SSH (quick commands & terminal)
+---
 
-After connecting to the backend in the app, you can use **SSH quick commands** and an **SSH shell**. The client opens **`/ws/ssh`** on the same host/port as HTTP; the backend bridges to `sshd` using **`gui_app_settings.json`** (via **`/api/settings`**). Each quick command can enable **sudo**: the app runs  
-`echo '<SSH password>' | sudo -S sh -c '<command>'`  
-on the remote host. Use **HTTPS/WSS** in production. Details and caveats are documented in [README.md](README.md) §4.1 (Chinese). In other deployments, communication with ROS may use rosbridge WebSocket instead.
+## 2. Build
 
-### Key Features
+### 2.1 Monorepo build (recommended)
 
-- 🌟 Cross-platform support - Android, iOS, Web, Linux, Windows
-- 🤖 Support for ROS1/ROS2
-- 🗺️ Map display and navigation
-- 📹 Camera image display
-- 🎮 Robot remote control
-- 🔋 Battery status monitoring
-- 📍 Multi-point navigation
-- 🛠️ Highly configurable
+From repo root run **`./build.sh`**: generates `app/lib/protobuf/*`, builds **backend**, runs **`flutter pub get`** and **`flutter build web`**. Web output: **`app/build/web/`**.
 
-### Demo
-
-![main interface](./doc/image/main.gif)
-![mapping](./doc/image/mapping.gif)
-
-## Feature List
-
-| Feature                       | Status | Note                      |
-| ----------------------------- | ------ | ------------------------- |
-| ROS1/ROS2 Communication       | ✅      |                           |
-| Map Display                   | ✅      |                           |
-| Robot Position Display        | ✅      |                           |
-| Speed Control                 | ✅      |                           |
-| Relocation                    | ✅      |                           |
-| Single/Multi-point Navigation | ✅      |                           |
-| Path Planning Display         | ✅      |                           |
-| Battery Monitoring            | ✅      |                           |
-| Camera Display                | ✅      | Requires web_video_server |
-| Map Editing                   | ❌      | In development            |
-| Topological Map               | ❌      | Planned                   |
-
-## Quick Start
-
-### Installation
-
-1. Download the installation package for your platform from [Release](https://github.com/chengyangkj/ROS_Flutter_Gui_App/releases)
-
-2. Install ROS dependencies:
+### 2.2 Frontend-only development
 
 ```bash
-# ROS1
-sudo apt install ros-${ROS_DISTRO}-rosbridge-suite
-
-# ROS2
-sudo apt install ros-${ROS_DISTRO}-rosbridge-suite
+cd app
+flutter pub get
+flutter run -d chrome    # or another device
 ```
 
-### Configuration
+If `.proto` changes and you did not run root `build.sh`, regenerate Dart under `app/lib/protobuf/` from `protocol/` with `protoc` (same args as root `build.sh`).
 
-1. Launch rosbridge:
+Production Web:
 
 ```bash
-# ROS1
-roslaunch rosbridge_server rosbridge_websocket.launch
-
-# ROS2
-ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+cd app
+flutter build web
 ```
 
-2. Run the application and configure connection parameters
+Serve **`build/web/`** from any static host; locally you can use **`python -m http.server`** inside that folder.
 
-## Detailed Documentation
+---
 
-- [Installation Guide](docs/installation_EN.md) - Installation steps and environment configuration for each platform
-- [Configuration Guide](docs/configuration_EN.md) - Detailed parameter configuration and default values
-- [User Guide](docs/usage_EN.md) - Software functionality instructions and best practices
+## 3. How the client connects to the backend
 
-## Star History
+| Item | Description |
+| --- | --- |
+| Connect screen | Robot (or backend host) **IP** and backend **HTTP port** (matches `web_server.port` in `config.yaml`, default **8080**) |
+| HTTP | Tile URLs, `/api/settings`, map list & edit REST; base `http://<IP>:<port>` |
+| WebSocket | Browser uses `ws://` or `wss://` (when page is HTTPS) for **`/ws/robot`**—occupancy updates, pose, path, diagnostics, etc. as protobuf |
+| Topics & frames | ROS/RW strings come from backend **`gui_app_settings.json`** and **`/api/settings`**; changes from the Settings screen are **POST**ed to the backend, not only local SharedPreferences |
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chengyangkj/Ros_Flutter_Gui_App&type=Timeline&theme=dark" />
-  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=chengyangkj/Ros_Flutter_Gui_App&type=Timeline" />
-  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=chengyangkj/Ros_Flutter_Gui_App&type=Timeline" width="75%" />
-</picture>
+You **do not** need a separate **rosbridge** setup for this flow; older rosbridge-only map modes differ from this monorepo’s default.
 
-## Contributing
+---
 
-Issues and Pull Requests are welcome. See [Contributing Guide](CONTRIBUTING.md) for details.
+## 4. Feature overview
 
-## Acknowledgments
+| Feature | Description |
+| --- | --- |
+| Connect & settings | Connect screen: IP + backend port; settings: language, orientation, gamepad mapping, camera-related, speed limits stay local; ROS topics / frame names live on the backend |
+| Map | Tile basemap; overlays: laser, point cloud, global/local path, trajectory, costmaps, footprint, topology (WS data) |
+| Pose | Pose in map frame, packaged by backend |
+| Reloc & nav | Initial pose and goals via backend HTTP; topology & map edit via HTTP |
+| Teleop | On-screen joystick & gamepad mapping; velocities via **`/robot/cmd_vel`** |
+| Camera | Image topic bridged through backend to WS; failures show placeholder or blank |
+| Map edit | Obstacles & topology via REST |
+| Diagnostics | `DiagnosticArray` from backend; toasts for ERROR/WARN on main UI |
+| Battery | From backend stream |
+| i18n | Chinese / English; portrait/landscape app settings |
+| SSH | See **§4.1** |
 
-- [ros_navigation_command_app](https://github.com/Rongix/ros_navigation_command_app)
-- [roslibdart](https://pub.dev/packages/roslibdart)
-- [matrix_gesture_detector](https://pub.dev/packages/matrix_gesture_detector)
+### 4.1 SSH remote (quick commands / terminal)
 
-## License
+Same backend **HTTP host/port** as the map and teleop stack. SSH is **not** raw browser TCP:
 
-This project is licensed under [CC BY-NC-SA 4.0](LICENSE).
+1. **Connect**: After filling IP/port on the connect screen, **SSH tunnel target matches the current robot IP** (`sshHost` in sync with `robotIp` on the server).
+2. **Tunnel**: Client opens **`/ws/ssh`** over `ws` / `wss` (use `wss` when the page is HTTPS); backend opens **TCP** to `sshHost:sshPort` from `gui_app_settings.json` (usually remote `sshd`). Configure **port, SSH user, password** under **Settings → SSH** and save to the backend.
+3. **Quick commands**: List on main UI. Each entry can enable **sudo**: remote command runs as  
+   `echo '<SSH password>' | sudo -S sh -c '<command>'`  
+   so the **current SSH login password** feeds `sudo -S` (user must have sudo and password must match; otherwise turn off sudo or avoid privileged commands). You can enter normal shell lines (e.g. `shutdown -h now`); a leading `sudo ` is stripped once if present.
+4. **SSH terminal**: Interactive shell; Web and mobile use the tunnel—no native browser TCP.
+5. **Security**: Passwords over WS are cleartext if the page is HTTP; use **HTTPS + WSS** on public networks. Passing sudo passwords on the command line may be visible to `ps` on some systems—use keys or a hardened ops path for high-security deployments.
+
+Settings and command lists persist on the robot in **`gui_app_settings.json`** (via **`/api/settings`**), matching backend **`GuiAppSettings`**.
+
+---
+
+## 5. Recommended workflow
+
+1. On the robot **`source`** ROS, start **backend** (see backend README), plus navigation and required nodes.
+2. Open the app (browser or desktop); on the connect screen enter **IP** and **backend HTTP port** (default **8080**); after connect, **`/api/settings`** loads GUI config.
+3. Adjust app-only options (camera, speed caps, language, …) in **Settings**; changing ROS topic names saves to the backend (backend must be reachable).
+4. Use layers, teleop, nav, diagnostics, map edit on the main screen.
+
+---
+
+## 6. Settings reference
+
+### 6.1 Basic settings (mostly local)
+
+| Setting | Role | Typical value |
+| --- | --- | --- |
+| IP | Backend host | Same as connect screen |
+| Port | Legacy name; used as **backend HTTP port** | **8080** |
+| HTTP service port (if separate) | Must match tile base URL | default or custom |
+| Max linear / angular speed | Teleop caps | e.g. `0.9` |
+| Robot icon size | On-map marker | template |
+| Image port / width / height | MJPEG camera | `8080`, `640×480` |
+
+**`map_frame` / `base_link` / ROS topics** remain editable in Settings but persist on the backend—see backend README **`/api/settings`** and **`NodeConfig` / `GuiAppSettings`**.
+
+### 6.2 Topic templates
+
+**ROS 1 / ROS 2** templates pre-fill backend-side defaults; switching template resets some local/app defaults and tries to sync upstream. Keys and message types follow your ROS stack—compare backend `cfg/config.yaml` **`ros_gui_node`** section.
+
+---
+
+## 7. Known limitations
+
+- Large maps are **tiles + backend**; very poor networks still affect load and cache.
+- **Web** camera depends on CORS and HTTPS/WSS policy; failures may show no image.
+- Huge point clouds / high-rate topics still depend on backend and network efficiency.
+
+---
+
+## 8. License & credits
+
+**[LICENSE](../LICENSE)**

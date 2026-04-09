@@ -1,5 +1,7 @@
 # 后端（ros_gui_backend）
 
+[English](README_EN.md)
+
 部署在机器人侧的单进程服务：**ROS1 / ROS2** 节点与 **HTTP（Drogon）**、**WebSocket 机器人数据流** 同进程运行，为 Flutter/Web 等上位机提供瓦片地图、地图管理 REST、GUI 话题配置持久化等能力。默认地图数据目录为 **`~/.maps`**（无 `HOME` 时为 **`./.maps`**）。
 
 ---

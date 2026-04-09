@@ -1,5 +1,6 @@
 # 前端（Flutter GUI）
 
+[English](README_EN.md)
 
 本目录为 **Flutter** 跨平台客户端，与仓库根目录 **`backend/`** 配套：大地图走 **HTTP 栅格瓦片** 与地图/拓扑 **REST**；机器人状态与控制通过 **WebSocket（protobuf）** 及同一后端的 **HTTP** 接口。支持 Web、Android、iOS、Linux、Windows 等（以当前工程启用的平台为准）。
 

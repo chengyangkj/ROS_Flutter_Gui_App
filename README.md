@@ -31,8 +31,8 @@
 
 | 文档 | 内容 |
 | --- | --- |
-| [backend/README.md](backend/README.md) | 后端编译与部署、进程结构、数据目录、`config.yaml`、HTTP / ROS 摘要 |
-| [app/README.md](app/README.md) | 前端依赖与构建、连接方式、功能与设置、使用流程 |
+| [backend/README.md](backend/README.md) · [backend/README_EN.md](backend/README_EN.md) | 后端编译与部署、进程结构、数据目录、`config.yaml`、HTTP / ROS 摘要 |
+| [app/README.md](app/README.md) · [app/README_EN.md](app/README_EN.md) | 前端依赖与构建、连接方式、功能与设置、使用流程 |
 
 ---
 
