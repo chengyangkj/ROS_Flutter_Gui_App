@@ -56,12 +56,30 @@ class _MapEditPageState extends State<MapEditPage> {
       _globalState.mode.value = Mode.mapEdit;
       try {
         final httpChannel = context.read<HttpChannel>();
-        final mapManager = context.read<WsChannel>().mapManager;
         _currentMapName = await httpChannel.getCurrentMap();
-        final topo = await httpChannel.getTopologyMap();
-        mapManager.updateTopologyMap(topo);
+        await _reloadCurrentMapData(mapName: _currentMapName);
         if (mounted) setState(() {});
       } catch (_) {}
+    });
+  }
+
+  Future<void> _reloadCurrentMapData({String? mapName}) async {
+    if (!mounted) return;
+    final httpChannel = context.read<HttpChannel>();
+    final mapManager = context.read<WsChannel>().mapManager;
+    final targetName = (mapName == null || mapName.isEmpty)
+        ? await httpChannel.getCurrentMap()
+        : mapName;
+    TopologyMap topo = await httpChannel.getTopologyMap();
+    mapManager.updateTopologyMap(topo);
+    if (!mounted) return;
+    _tileMapKey.currentState?.loadMeta();
+    setState(() {
+      _currentMapName = targetName;
+      selectedNavPoint = null;
+      _selectedRoute = null;
+      _editingRouteInfo = null;
+      _routeStartPointName = null;
     });
   }
   
@@ -446,10 +464,7 @@ class _MapEditPageState extends State<MapEditPage> {
         mapName: name,
       );
       await httpChannel.setCurrentMap(name);
-      final topo = await httpChannel.getTopologyMap(mapName: name);
-      mapManager.updateTopologyMap(topo);
-      _tileMapKey.currentState?.loadMeta();
-      setState(() => _currentMapName = name);
+      await _reloadCurrentMapData(mapName: name);
       if (!mounted) return;
       toastification.show(
         context: context,
@@ -488,13 +503,9 @@ class _MapEditPageState extends State<MapEditPage> {
         mapManager: mapManager,
         onSwitchMap: (name) async {
           await httpChannel.setCurrentMap(name);
-          final topo = await httpChannel.getTopologyMap(mapName: name);
-          mapManager.updateTopologyMap(topo);
+          await _reloadCurrentMapData(mapName: name);
           if (!ctx.mounted) return;
           Navigator.of(ctx).pop();
-          if (!mounted) return;
-          _tileMapKey.currentState?.loadMeta();
-          setState(() => _currentMapName = name);
         },
       ),
     );

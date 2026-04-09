@@ -121,6 +121,12 @@ class _MainFlamePageState extends State<MainFlamePage> {
   }
   
   Future<void> _reloadData() async {
+    try {
+      final httpChannel = context.read<HttpChannel>();
+      final wsChannel = context.read<WsChannel>();
+      final topo = await httpChannel.getTopologyMap();
+      wsChannel.mapManager.updateTopologyMap(topo);
+    } catch (_) {}
     _tileMapKey.currentState?.loadMeta();
   }
 
