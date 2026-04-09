@@ -103,14 +103,13 @@ jobs:
         env:
           TAG_NAME: ${{ github.ref_name }}
           TARBALL_ARCH: ${{ matrix.tarball_arch }}
+          ROS_VERSION: ${{ env.ROS_VERSION }}
+          BUILD_OS: ${{ matrix.build_os }}
         run: |
           set -euo pipefail
           INSTALL="${GITHUB_WORKSPACE}/backend/build/install"
           cd "${INSTALL}/bin"
           zip -r "${INSTALL}/backend-${TAG_NAME}-${ROS_VERSION}-${TARBALL_ARCH}-${BUILD_OS}.zip" .
-        env:
-          ROS_VERSION: ${{ env.ROS_VERSION }}
-          BUILD_OS: ${{ matrix.build_os }}
 
       - name: Prepare release metadata
         if: startsWith(github.ref, 'refs/tags/v')
