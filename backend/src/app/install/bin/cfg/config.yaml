@@ -10,4 +10,4 @@ ros_gui_node:
   map_subscribe_transient_local: true
 
 web_server:
-  port: 7684
+  port: 8080
