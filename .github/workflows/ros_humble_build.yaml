@@ -18,6 +18,7 @@ permissions:
 env:
   FLUTTER_ROOT: /opt/flutter
   FLUTTER_VERSION: '3.29.3'
+  ROS_VERSION: humble
 
 jobs:
   build:
@@ -28,10 +29,12 @@ jobs:
           - runner: ubuntu-latest
             container_image: osrf/ros:humble-desktop
             tarball_arch: x86_64
+            build_os: ubuntu22.04
             artifact_name: backend-x86_64
           - runner: ubuntu-24.04-arm
             container_image: ros:humble-ros-base-jammy
             tarball_arch: arm64
+            build_os: ubuntu22.04
             artifact_name: backend-arm64
     runs-on: ${{ matrix.runner }}
     container:
@@ -104,14 +107,23 @@ jobs:
           set -euo pipefail
           INSTALL="${GITHUB_WORKSPACE}/backend/build/install"
           cd "${INSTALL}/bin"
-          zip -r "${INSTALL}/backend-${TAG_NAME}-${TARBALL_ARCH}.zip" .
+          zip -r "${INSTALL}/backend-${TAG_NAME}-${ROS_VERSION}-${TARBALL_ARCH}-${BUILD_OS}.zip" .
+        env:
+          ROS_VERSION: ${{ env.ROS_VERSION }}
+          BUILD_OS: ${{ matrix.build_os }}
+
+      - name: Prepare release metadata
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - name: Upload workflow artifact
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: backend/build/install/backend-${{ github.ref_name }}-${{ matrix.tarball_arch }}.zip
+          path: backend/build/install/backend-${{ github.ref_name }}-${{ env.ROS_VERSION }}-${{ matrix.tarball_arch }}-${{ matrix.build_os }}.zip
 
       - name: Upload to GitHub Release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -119,6 +131,6 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          files: backend/build/install/backend-${{ github.ref_name }}-${{ matrix.tarball_arch }}.zip
+          files: backend/build/install/backend-${{ github.ref_name }}-${{ env.ROS_VERSION }}-${{ matrix.tarball_arch }}-${{ matrix.build_os }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

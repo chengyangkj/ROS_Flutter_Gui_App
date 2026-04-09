@@ -227,6 +227,28 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
+          body: |
+            Version `${{ github.ref_name }}`
+
+            ## Build Artifacts
+
+            ### App
+
+            - Web platform: `app-${{ github.ref_name }}-web.tar.gz` (Web static assets)
+            - Linux x64 platform: `app-${{ github.ref_name }}-linux-x64.tar.gz` (Linux app executable bundle)
+            - Android platform: `app-${{ github.ref_name }}-android.apk` (Android install package)
+            - Windows x64 platform: `app-${{ github.ref_name }}-windows-x64.zip` (Windows app executable bundle)
+
+            ### Backend
+
+            - `backend-[ref_name]-[ros_version]-[arch]-[os].zip`
+
+            ## Notes
+
+            - `[ref_name]` corresponds to the version tag (for example: `v0.0.4`).
+            - `[ros_version]` corresponds to the compatible ROS 2 distribution (for example: `humble`).
+            - `[arch]` corresponds to the CPU architecture (for example: `x86_64` or `arm64`).
+            - `[os]` corresponds to the OS build target (for example: `ubuntu22.04`).
           files: |
             upload/app-${{ github.ref_name }}-web.tar.gz
             upload/app-${{ github.ref_name }}-linux-x64.tar.gz
