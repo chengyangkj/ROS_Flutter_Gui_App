@@ -494,32 +494,42 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   ),
                 ),
               ),
-              // 诊断状态显示
+              // 诊断状态显示（监听 DiagnosticManager，而非仅 Consumer<WsChannel>）
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child: Consumer<WsChannel>(
-                  builder: (context, wsChannel, child) {
-                    final diagnosticManager = wsChannel.diagnosticManager;
-                    final statusCounts = diagnosticManager.getStatusCounts();
-                    
-                    int errorCount = statusCounts[DiagnosticStatus.ERROR] ?? 0;
-                    int warnCount = statusCounts[DiagnosticStatus.WARN] ?? 0;
-                    
-                    Color chipColor = Colors.green;
-                    IconData chipIcon = Icons.check_circle;
-                    String chipText = AppLocalizations.of(context)!.diagnostic_normal;
-                    
-                    if (errorCount > 0) {
-                      chipColor = Colors.red;
-                      chipIcon = Icons.error;
-                      chipText = AppLocalizations.of(context)!.error_count(errorCount.toString());
-                    } else if (warnCount > 0) {
-                      chipColor = Colors.orange;
-                      chipIcon = Icons.warning;
-                      chipText = AppLocalizations.of(context)!.warn_count(warnCount.toString());
-                    }
-                    
-                    return  RawChip(
+                child: Builder(
+                  builder: (BuildContext context) {
+                    final WsChannel ws =
+                        Provider.of<WsChannel>(context, listen: false);
+                    return ListenableBuilder(
+                      listenable: ws.diagnosticManager,
+                      builder: (BuildContext context, Widget? child) {
+                        final Map<int, int> statusCounts =
+                            ws.diagnosticManager.getStatusCounts();
+                        final int errorCount =
+                            statusCounts[DiagnosticStatus.ERROR] ?? 0;
+                        final int warnCount =
+                            statusCounts[DiagnosticStatus.WARN] ?? 0;
+                        final AppLocalizations l10n =
+                            AppLocalizations.of(context)!;
+
+                        Color chipColor = Colors.green;
+                        IconData chipIcon = Icons.check_circle;
+                        String chipText = l10n.diagnostic_normal;
+
+                        if (errorCount > 0) {
+                          chipColor = Colors.red;
+                          chipIcon = Icons.error;
+                          chipText =
+                              l10n.error_count(errorCount.toString());
+                        } else if (warnCount > 0) {
+                          chipColor = Colors.orange;
+                          chipIcon = Icons.warning;
+                          chipText =
+                              l10n.warn_count(warnCount.toString());
+                        }
+
+                        return RawChip(
                           avatar: Icon(
                             chipIcon,
                             color: chipColor,
@@ -529,14 +539,16 @@ class _MainFlamePageState extends State<MainFlamePage> {
                           backgroundColor: chipColor.withOpacity(0.1),
                           elevation: 0,
                           onPressed: () {
-                             Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const DiagnosticPage(),
-                            ),
-                          );
-                        },
-
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (BuildContext context) =>
+                                    const DiagnosticPage(),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     );
                   },
                 ),
