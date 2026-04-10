@@ -61,7 +61,10 @@
 </p>
 <p align="center"><sub>SSH 功能</sub></p>
 
-
+<p align="center">
+  <img src="doc/image/diago_page.jpg" alt="diago page" width="78%" />
+</p>
+<p align="center"><sub>健康诊断</sub></p>
 
 ---
 
